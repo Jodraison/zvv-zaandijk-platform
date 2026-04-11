@@ -1,0 +1,461 @@
+@import "tailwindcss";
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* ZVV Zaandijk VRZ1 (display) — premium club platform: white & cool grey base, vivid club blue, charcoal type */
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bebas), ui-sans-serif, system-ui, sans-serif;
+
+  --color-zvv-night: #0c1929;
+  --color-zvv-ink: #0f172a;
+  --color-zvv-deep: #e8eef5;
+  --color-zvv-card: #ffffff;
+  --color-zvv-card-mid: #f1f5f9;
+  --color-zvv-panel: rgba(255, 255, 255, 0.96);
+  --color-zvv-panel-strong: #ffffff;
+  --color-zvv-border: #e2e8f0;
+  --color-zvv-border-bright: #cbd5e1;
+  --color-zvv-muted: #64748b;
+  --color-zvv-text: #0f172a;
+
+  /* Club blue — professioneel voetbal (tailwind blue-700–800 range) */
+  --color-zvv-primary: #1d4ed8;
+  --color-zvv-primary-hover: #1e40af;
+  --color-zvv-primary-muted: rgba(29, 78, 216, 0.12);
+  --color-zvv-blue-deep: #1e3a8a;
+
+  --color-zvv-win: #15803d;
+  --color-zvv-loss: #dc2626;
+  --color-zvv-draw: #64748b;
+  --color-zvv-mvp: #dc2626;
+
+  --shadow-zvv-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-zvv-card-hover: 0 10px 26px rgba(15, 23, 42, 0.12), 0 28px 56px rgba(29, 78, 216, 0.16);
+  --shadow-zvv-lift: 0 18px 42px rgba(15, 23, 42, 0.14);
+  --shadow-zvv-hero: 0 16px 48px rgba(30, 58, 138, 0.18);
+  --shadow-zvv-match: 0 4px 24px rgba(15, 23, 42, 0.08);
+  --shadow-zvv-btn: 0 4px 14px rgba(29, 78, 216, 0.3);
+
+  --radius-xl: 0.875rem;
+  --radius-2xl: 1.125rem;
+  --radius-3xl: 1.5rem;
+  --radius-match: 1.25rem;
+
+  --space-section: clamp(2.75rem, 6vw, 5rem);
+}
+
+@keyframes club-accent-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes club-mvp-stat-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(220, 38, 38, 0.35));
+  }
+}
+
+@keyframes club-mvp-badge-soft {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 20px 2px rgba(245, 158, 11, 0.2);
+  }
+}
+
+@keyframes club-card-spotlight-ring {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgba(59, 130, 246, 0.28),
+      0 16px 48px rgba(29, 78, 216, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 1px rgba(147, 197, 253, 0.55),
+      0 20px 52px rgba(29, 78, 216, 0.16);
+  }
+}
+
+@keyframes club-reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes club-ambient-drift {
+  0% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+    opacity: 0.75;
+  }
+  50% {
+    transform: translate3d(2%, 1%, 0) scale(1.04);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(-2%, -1%, 0) scale(1);
+    opacity: 0.75;
+  }
+}
+
+
+@layer base {
+  html {
+    @apply scroll-smooth antialiased;
+    width: 100%;
+    overflow-x: hidden;
+  }
+  body {
+    @apply min-h-screen text-zvv-text;
+    width: 100%;
+    overflow-x: hidden;
+    background-color: #f8fafc;
+    background-image: radial-gradient(ellipse 90% 50% at 50% -10%, rgba(29, 78, 216, 0.06), transparent 50%);
+  }
+  * {
+    box-sizing: border-box;
+  }
+  ::selection {
+    background: rgba(29, 78, 216, 0.18);
+    color: var(--color-zvv-ink);
+  }
+}
+
+/* Surfaces — solid premium cards, no glassmorphism */
+@utility glass-panel {
+  background: var(--color-zvv-card);
+  border: 1px solid var(--color-zvv-border);
+  box-shadow: var(--shadow-zvv-card);
+}
+
+@utility glass-panel-subtle {
+  background: var(--color-zvv-card-mid);
+  border: 1px solid var(--color-zvv-border);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+@utility club-card {
+  background: var(--color-zvv-card);
+  border: 1px solid var(--color-zvv-border);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-zvv-card);
+}
+
+@utility text-gradient-gold {
+  color: var(--color-zvv-ink);
+}
+
+@utility text-gradient-ice {
+  color: var(--color-zvv-primary);
+}
+
+@utility text-gradient-chrome {
+  color: var(--color-zvv-ink);
+}
+
+@utility ring-glow {
+  box-shadow: 0 0 0 1px var(--color-zvv-border);
+}
+
+@utility inner-highlight {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+@layer components {
+  .club-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-zvv-primary px-6 py-3 text-[15px] font-semibold text-white transition-all duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zvv-primary active:scale-[0.98];
+    box-shadow: var(--shadow-zvv-btn);
+  }
+  .club-btn-primary:hover {
+    background-color: var(--color-zvv-primary-hover);
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 8px 22px rgba(29, 78, 216, 0.34);
+  }
+  .club-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border-2 border-zvv-primary bg-white px-6 py-3 text-[15px] font-semibold text-zvv-primary transition-all duration-300 ease-out focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-zvv-primary active:scale-[0.98];
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+  }
+  .club-btn-secondary:hover {
+    @apply bg-zvv-primary-muted border-zvv-primary;
+    transform: translateY(-1px) scale(1.01);
+    box-shadow: 0 7px 18px rgba(29, 78, 216, 0.12);
+  }
+  .club-btn-hero {
+    @apply min-h-[52px] px-8 py-3.5 text-base font-semibold tracking-wide;
+  }
+  .club-btn-primary-sm {
+    @apply px-5 py-2.5 text-sm;
+  }
+  .club-section-divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-zvv-border to-transparent;
+  }
+  .club-page-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em] text-zvv-primary;
+  }
+  .club-page-eyebrow-strong {
+    @apply text-[11px] font-bold uppercase tracking-[0.24em] text-zvv-primary;
+  }
+  .club-empty-state {
+    @apply rounded-2xl border-2 border-dashed border-zvv-border bg-zvv-card-mid/80 px-6 py-12 text-center text-sm leading-relaxed text-zvv-muted md:px-8 md:py-14;
+  }
+  .club-section-header {
+    @apply flex flex-col gap-2 border-b border-zvv-border pb-6 md:flex-row md:items-end md:justify-between md:gap-4 md:pb-7;
+  }
+  .club-section-y {
+    margin-top: var(--space-section);
+    margin-bottom: var(--space-section);
+  }
+  /* Editorial hero — blue brand field (copy stays light on this block only) */
+  .club-hero-shell {
+    position: relative;
+    border-radius: var(--radius-3xl);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(135deg, var(--color-zvv-blue-deep) 0%, var(--color-zvv-primary) 52%, #2563eb 100%);
+    box-shadow: var(--shadow-zvv-hero);
+    overflow: hidden;
+  }
+  .club-hero-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 70% at 20% 20%, rgba(255, 255, 255, 0.12), transparent 50%),
+      radial-gradient(ellipse 60% 50% at 90% 80%, rgba(0, 0, 0, 0.15), transparent 45%);
+    pointer-events: none;
+  }
+  .club-hero-inner {
+    position: relative;
+    z-index: 1;
+  }
+  /* Subtiel stadionraster + lichte grondvlek */
+  .club-hero-stadium::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.07;
+    background-image:
+      repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.85) 0 1px, transparent 1px min(4.5vw, 4.5rem)),
+      repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.55) 0 1px, transparent 1px min(3.5vw, 3.25rem)),
+      radial-gradient(ellipse 130% 85% at 50% 115%, rgba(15, 23, 42, 0.06), transparent 52%);
+  }
+  /* On blue hero, global blue eyebrow would disappear — use light labels */
+  .club-hero-shell .club-page-eyebrow,
+  .club-hero-shell .club-page-eyebrow-strong {
+    color: rgba(255, 255, 255, 0.82);
+  }
+  .club-hero-on-blue {
+    @apply text-white;
+  }
+  .club-hero-on-blue-muted {
+    color: rgba(255, 255, 255, 0.88);
+  }
+  /* Full-bleed image hero overlay */
+  .club-hero-photo {
+    position: relative;
+    border-radius: var(--radius-3xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-zvv-hero);
+  }
+  .club-match-panel {
+    border-radius: var(--radius-match);
+    @apply relative overflow-hidden border border-zvv-border bg-zvv-card;
+    box-shadow: var(--shadow-zvv-match);
+  }
+  .club-match-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(29, 78, 216, 0.05) 0%, transparent 40%);
+    pointer-events: none;
+  }
+  .club-match-panel > *:not(.club-match-panel-accent) {
+    position: relative;
+    z-index: 1;
+  }
+  .club-match-panel-accent {
+    @apply absolute left-0 top-0 z-[2] h-full w-1 bg-zvv-primary;
+    box-shadow: 2px 0 12px rgba(29, 78, 216, 0.22);
+  }
+  .club-match-accent-pulse {
+    animation: club-accent-breathe 5s ease-in-out infinite;
+  }
+  .club-stat-tile {
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--color-zvv-border);
+    background: linear-gradient(180deg, #ffffff 0%, var(--color-zvv-card-mid) 100%);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  }
+  .club-card-lift {
+    transition:
+      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.35s ease,
+      box-shadow 0.35s ease;
+  }
+  .club-card-lift:hover {
+    transform: translateY(-4px) scale(1.01);
+    border-color: rgba(29, 78, 216, 0.22);
+    box-shadow: var(--shadow-zvv-card-hover);
+  }
+  .club-section-surface {
+    @apply relative overflow-hidden rounded-3xl border border-zvv-border bg-white px-6 py-8 md:px-10 md:py-11;
+    box-shadow: var(--shadow-zvv-card);
+  }
+  .club-section-surface::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(140deg, rgba(29, 78, 216, 0.07) 0%, transparent 45%),
+      radial-gradient(ellipse 75% 50% at 100% 0%, rgba(147, 197, 253, 0.2), transparent 60%);
+    pointer-events: none;
+  }
+  .club-section-surface > * {
+    position: relative;
+    z-index: 1;
+  }
+  .club-layer-ambient {
+    position: relative;
+    isolation: isolate;
+  }
+  .club-layer-ambient::before,
+  .club-layer-ambient::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+    filter: blur(38px);
+    opacity: 0.5;
+    z-index: -1;
+    animation: club-ambient-drift 22s ease-in-out infinite;
+  }
+  .club-layer-ambient::before {
+    top: -5rem;
+    right: -4rem;
+    width: 22rem;
+    height: 22rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.28), transparent 66%);
+  }
+  .club-layer-ambient::after {
+    bottom: -7rem;
+    left: -5rem;
+    width: 20rem;
+    height: 20rem;
+    border-radius: 9999px;
+    background: radial-gradient(circle, rgba(147, 197, 253, 0.24), transparent 68%);
+    animation-delay: 4s;
+  }
+  .club-reveal {
+    animation: club-reveal-up 0.56s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .club-reveal-delay-1 {
+    animation-delay: 0.08s;
+  }
+  .club-reveal-delay-2 {
+    animation-delay: 0.16s;
+  }
+  /* Blue title bar — editorial section intro */
+  .club-section-bar {
+    @apply rounded-2xl bg-zvv-primary px-6 py-4 text-white shadow-md md:px-8 md:py-5;
+  }
+  .club-mvp-stat-glow {
+    transition:
+      color 0.28s ease,
+      filter 0.28s ease;
+  }
+  .club-mvp-badge-glow {
+    transition:
+      box-shadow 0.28s ease,
+      transform 0.28s ease;
+  }
+  .club-player-card-spotlight {
+    transition:
+      box-shadow 0.28s ease,
+      transform 0.28s ease;
+  }
+  .club-player-card-spotlight:hover {
+    box-shadow:
+      0 0 0 1px rgba(147, 197, 253, 0.55),
+      0 18px 48px rgba(29, 78, 216, 0.18);
+  }
+
+  /* ── Result status circles ──────────────────────────────────────────────── */
+  .result-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+    color: #ffffff;
+    transition:
+      transform 0.2s ease-out,
+      box-shadow 0.2s ease-out;
+  }
+  .result-circle:hover {
+    transform: scale(1.08);
+  }
+  .result-circle-win {
+    background: #22c55e;
+  }
+  .result-circle-draw {
+    background: #9ca3af;
+  }
+  .result-circle-loss {
+    background: #ef4444;
+  }
+}
+
+@media (hover: none) {
+  .club-btn-primary:hover,
+  .club-btn-secondary:hover,
+  .club-card-lift:hover,
+  .club-player-card-spotlight:hover {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-match-accent-pulse {
+    animation: none !important;
+  }
+  .club-card-lift:hover {
+    transform: none;
+  }
+  .club-mvp-stat-glow,
+  .club-mvp-badge-glow,
+  .club-player-card-spotlight {
+    animation: none !important;
+  }
+  .result-circle:hover {
+    transform: none;
+  }
+}

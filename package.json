@@ -1,0 +1,50 @@
+{
+  "name": "zvv-zaandijk-platform",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "migrate:club-atomic": "tsx src/scripts/atomic-club-migration.ts",
+    "fix:club-data": "tsx src/scripts/production-club-data-fix.ts",
+    "import:matches": "tsx src/scripts/import-matches.ts",
+    "import:zaandijk-vr1": "tsx src/scripts/import-zaandijk-vr1-matches.ts",
+    "import:fitness": "tsx src/scripts/import-fitness.ts",
+    "audit:club": "tsx src/scripts/audit-club-data.ts",
+    "repair:match-consistency": "tsx src/scripts/repair-match-consistency.ts",
+    "repair:one-match": "tsx src/scripts/repair-one-match-from-events.ts",
+    "seed:club": "tsx src/scripts/seed-club-data.ts",
+    "seed:real": "node -e \"console.warn('\\n⚠️  seed:real = LEGACY demo (alleen NODE_ENV=development). Productie: seed:club.\\n')\" && tsx src/scripts/seed-real-data.ts",
+    "seed:real:ts-node": "ts-node --transpile-only src/scripts/seed-real-data.ts"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.6.1",
+    "@supabase/supabase-js": "^2.49.8",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.23.12",
+    "next": "^15.3.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "recharts": "^2.15.3",
+    "tailwind-merge": "^3.3.1",
+    "zod": "^3.25.32",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.8",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.6",
+    "@types/react-dom": "^19.1.5",
+    "dotenv": "^16.6.1",
+    "eslint": "^9.27.0",
+    "eslint-config-next": "^15.3.2",
+    "postcss": "^8.5.4",
+    "postgres": "^3.4.9",
+    "tailwindcss": "^4.1.8",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.19.3",
+    "typescript": "^5.8.3"
+  }
+}

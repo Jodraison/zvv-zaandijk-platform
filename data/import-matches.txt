@@ -1,0 +1,22 @@
+# ZVV Zaandijk — wedstrijdimport (tekst → Supabase)
+#
+# Voeg per wedstrijd een blok toe tussen regels die alleen === bevatten.
+# Volledige syntax: src/lib/import/parse-match-blocks.ts
+#
+# npm run import:matches
+# npm run import:matches -- pad/naar.txt [season_id]
+#
+# Score: thuis = Zaandijk eerst (X-Y = Zaandijk-tegenstander); uit = tegenstander eerst.
+# Het onderstaande voorbeeld gebruikt een fictieve datum (2030) zodat het
+# niet botst met echte competitiedata. Vervang door je echte lijst.
+
+===
+kickoff: 2030-06-15T14:00:00.000Z
+opponent: IMPORT_DEMO
+home: true
+score: 3-0
+mvp: Melissa Rietveld
+goals:
+Nienke (2)
+Melissa Rietveld + Emma de Mie
+===
