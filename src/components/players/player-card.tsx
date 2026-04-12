@@ -39,7 +39,7 @@ const playerCardData: Record<string, PlayerCardMeta> = {
   "andrada timmer": { overall: 84, stats: { pac: 86, sho: 82, pas: 78, dri: 83, def: 78, phy: 82 } },
   "melissa donkers": { overall: 80, stats: { pac: 82, sho: 72, pas: 76, dri: 75, def: 82, phy: 80 } },
   "maura hoffman": { overall: 79, stats: { pac: 80, sho: 70, pas: 74, dri: 73, def: 82, phy: 78 } },
-  "mariska oosterhoorn": { overall: 80, stats: { pac: 75, sho: 76, pas: 80, dri: 78, def: 83, phy: 82 } },
+  "mariska oosterhuis": { overall: 80, stats: { pac: 75, sho: 84, pas: 80, dri: 78, def: 83, phy: 84 } },
   "kyra de bakker": { overall: 75, stats: { pac: 78, sho: 70, pas: 72, dri: 71, def: 75, phy: 77 } },
   "lorelai bakker": { overall: 76, stats: { pac: 78, sho: 72, pas: 74, dri: 73, def: 78, phy: 76 } },
   "danique van heeringen": { overall: 74, stats: { pac: 76, sho: 70, pas: 74, dri: 72, def: 70, phy: 75 } },
@@ -88,8 +88,29 @@ function normalizePlayerName(raw: string) {
     .toLowerCase();
 }
 
-function getPlayerCardMeta(name: string): PlayerCardMeta | null {
-  return playerCardData[normalizePlayerName(name)] ?? null;
+function hasAnyFiniteFieldStats(stats: CardStats | null | undefined): boolean {
+  if (!stats) return false;
+  return (["pac", "sho", "pas", "dri", "def", "phy"] as const).some(
+    (k) => typeof stats[k] === "number" && Number.isFinite(stats[k]),
+  );
+}
+
+function hasAnyFiniteGkStats(gk: GkCardStats | null | undefined): boolean {
+  if (!gk) return false;
+  return (["diving", "handling", "kicking", "reflexes", "speed", "positioning"] as const).some(
+    (k) => typeof gk[k] === "number" && Number.isFinite(gk[k]),
+  );
+}
+
+function getPlayerCardMeta(full_name: string): PlayerCardMeta | null {
+  const normalized = normalizePlayerName(full_name);
+  const meta = playerCardData[normalized] ?? null;
+  console.log("MATCH CHECK:", {
+    input: full_name,
+    normalized,
+    found: !!meta,
+  });
+  return meta;
 }
 
 function formatCardStatValue(v: number | null | undefined): number | string {
@@ -142,6 +163,11 @@ export const PlayerCard = memo(function PlayerCard({
   const overall = fifa?.overall ?? null;
   const trimmedRoleLabel = typeof roleLabel === "string" ? roleLabel.trim() : "";
   const isGoalkeeper = trimmedRoleLabel === "GK" || (!trimmedRoleLabel && position === "GK");
+  const useGkStatColumns = Boolean(fifa && isGoalkeeper && hasAnyFiniteGkStats(fifa.gkStats));
+  const showCardStatGrid =
+    fifa != null &&
+    variant !== "homePremium" &&
+    (useGkStatColumns || hasAnyFiniteFieldStats(fifa.stats));
 
   const href = `/selectie/${id}?season=${encodeURIComponent(seasonId)}`;
   const posLine = membershipPositionLabel(safeDisplayPosition, position);
@@ -262,10 +288,10 @@ export const PlayerCard = memo(function PlayerCard({
               <p className="mt-1 font-[family-name:var(--font-display)] text-xl tabular-nums tracking-wide text-zvv-mvp sm:text-2xl">{wotm}</p>
             </div>
           </div>
-          {fifa && variant !== "homePremium" ? (
+          {showCardStatGrid && fifa ? (
             <div className="stats mt-3 border-t border-white/10 pt-2.5 opacity-90">
               <div className="grid grid-cols-6 gap-1.5 text-center">
-                {(isGoalkeeper
+                {(useGkStatColumns
                   ? [
                       { k: "DIV", v: fifa.gkStats?.diving },
                       { k: "HAN", v: fifa.gkStats?.handling },
