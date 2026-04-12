@@ -8,17 +8,18 @@ import { isValidImageUrl, PhotoOrFallback } from "@/components/media/photo-with-
 import { membershipPositionLabel } from "@/lib/membership-position-label";
 
 type CardStats = { pac: number; sho: number; pas: number; dri: number; def: number; phy: number };
+type GkCardStats = {
+  diving: number;
+  handling: number;
+  kicking: number;
+  reflexes: number;
+  speed: number;
+  positioning: number;
+};
 type PlayerCardMeta = {
   overall: number;
   stats: CardStats;
-  gkStats?: {
-    duiken: number;
-    vangen: number;
-    trappen: number;
-    reflexen: number;
-    snelheid: number;
-    positionering: number;
-  };
+  gkStats?: GkCardStats;
 };
 
 const playerCardData: Record<string, PlayerCardMeta> = {
@@ -45,7 +46,7 @@ const playerCardData: Record<string, PlayerCardMeta> = {
   "demi luijting": { overall: 76, stats: { pac: 79, sho: 78, pas: 76, dri: 75, def: 74, phy: 77 } },
   "jelisa de jonge": {
     overall: 84,
-    gkStats: { duiken: 85, vangen: 85, trappen: 88, reflexen: 82, snelheid: 45, positionering: 88 },
+    gkStats: { diving: 85, handling: 85, kicking: 88, reflexes: 82, speed: 45, positioning: 88 },
     stats: { pac: 45, sho: 88, pas: 80, dri: 60, def: 88, phy: 75 },
   },
 };
@@ -91,12 +92,17 @@ function getPlayerCardMeta(name: string): PlayerCardMeta | null {
   return playerCardData[normalizePlayerName(name)] ?? null;
 }
 
+function formatCardStatValue(v: number | null | undefined): number | string {
+  return typeof v === "number" && Number.isFinite(v) ? v : "—";
+}
+
 
 export const PlayerCard = memo(function PlayerCard({
   id,
   name,
   shirt,
   position,
+  roleLabel,
   displayPosition,
   photoUrl,
   goals,
@@ -113,6 +119,7 @@ export const PlayerCard = memo(function PlayerCard({
   name: string;
   shirt: number;
   position: PlayerPosition;
+  roleLabel?: string | null;
   displayPosition: string;
   photoUrl: string | null;
   goals: number;
@@ -133,6 +140,8 @@ export const PlayerCard = memo(function PlayerCard({
 
   const fifa = useMemo(() => getPlayerCardMeta(safeName), [safeName]);
   const overall = fifa?.overall ?? null;
+  const trimmedRoleLabel = typeof roleLabel === "string" ? roleLabel.trim() : "";
+  const isGoalkeeper = trimmedRoleLabel === "GK" || (!trimmedRoleLabel && position === "GK");
 
   const href = `/selectie/${id}?season=${encodeURIComponent(seasonId)}`;
   const posLine = membershipPositionLabel(safeDisplayPosition, position);
@@ -256,17 +265,27 @@ export const PlayerCard = memo(function PlayerCard({
           {fifa && variant !== "homePremium" ? (
             <div className="stats mt-3 border-t border-white/10 pt-2.5 opacity-90">
               <div className="grid grid-cols-6 gap-1.5 text-center">
-                {[
-                  { k: "PAC", v: fifa.stats.pac },
-                  { k: "SHO", v: fifa.stats.sho },
-                  { k: "PAS", v: fifa.stats.pas },
-                  { k: "DRI", v: fifa.stats.dri },
-                  { k: "DEF", v: fifa.stats.def },
-                  { k: "PHY", v: fifa.stats.phy },
-                ].map((s) => (
+                {(isGoalkeeper
+                  ? [
+                      { k: "DIV", v: fifa.gkStats?.diving },
+                      { k: "HAN", v: fifa.gkStats?.handling },
+                      { k: "KIC", v: fifa.gkStats?.kicking },
+                      { k: "REF", v: fifa.gkStats?.reflexes },
+                      { k: "SPD", v: fifa.gkStats?.speed },
+                      { k: "POS", v: fifa.gkStats?.positioning },
+                    ]
+                  : [
+                      { k: "PAC", v: fifa.stats.pac },
+                      { k: "SHO", v: fifa.stats.sho },
+                      { k: "PAS", v: fifa.stats.pas },
+                      { k: "DRI", v: fifa.stats.dri },
+                      { k: "DEF", v: fifa.stats.def },
+                      { k: "PHY", v: fifa.stats.phy },
+                    ]
+                ).map((s) => (
                   <div key={s.k} className="flex flex-col items-center">
                     <p className="text-[9px] tracking-[1px] text-zvv-muted/70">{s.k}</p>
-                    <p className="text-[15px] font-extrabold text-zvv-ink">{s.v}</p>
+                    <p className="text-[15px] font-extrabold text-zvv-ink">{formatCardStatValue(s.v)}</p>
                   </div>
                 ))}
               </div>

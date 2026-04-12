@@ -219,6 +219,7 @@ export function SelectieClient({
                 name={row.full_name}
                 shirt={row.shirt_number}
                 position={row.position}
+                roleLabel={row.role_label}
                 displayPosition={row.display_position}
                 photoUrl={row.photo_url}
                 goals={row.goals_total}

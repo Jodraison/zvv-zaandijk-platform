@@ -140,6 +140,8 @@ export interface PlayerSeasonRankingRow {
   photo_url: string | null;
   shirt_number: number;
   position: PlayerPosition;
+  /** Profiel-rol (bijv. `GK`); bron voor keeper vs veldstatistieken op de kaart */
+  role_label?: string | null;
   /** Zelfde als lidmaatschap.display_position (fallback in UI naar korte enum) */
   display_position: string;
   is_captain: boolean;

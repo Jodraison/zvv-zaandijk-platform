@@ -32,6 +32,7 @@ export function computeRanking(db: ClubDatabase, seasonId: string): PlayerSeason
       photo_url: photo,
       shirt_number,
       position: mem.position as PlayerPosition,
+      role_label: player?.role_label ?? null,
       display_position: mem.display_position,
       is_captain: mem.is_captain,
       is_vice_captain: mem.is_vice_captain,
