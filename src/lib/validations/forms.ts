@@ -25,9 +25,10 @@ const sprintSecondsField = z
 
 export const fitnessSprintBatchRowSchema = z.object({
   player_id: z.string().min(1),
-  sprint_20m: sprintSecondsField,
-  sprint_40m: sprintSecondsField,
-  sprint_60m: sprintSecondsField,
+  total_time_seconds: z
+    .number()
+    .finite()
+    .refine((n) => n > 0 && n < 9999, "Ongeldige tijd"),
 });
 
 export const fitnessSprintBatchSchema = z.object({

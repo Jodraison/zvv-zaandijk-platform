@@ -48,19 +48,17 @@ export async function saveFitnessBatchFormAction(_prev: AdminFormState, formData
         db.fitness_tests = db.fitness_tests.filter((f) => !(f.season_id === season_id && f.test_on === test_on));
         const recorded = recordedAtForTestOn(test_on);
         for (const row of rows) {
-          const s20 = round2(row.sprint_20m);
-          const s40 = round2(row.sprint_40m);
-          const s60 = round2(row.sprint_60m);
+          const total = round2(row.total_time_seconds);
           db.fitness_tests.push({
             id: randomUUID(),
             season_id,
             player_id: row.player_id,
             test_type: "sprint_20_40_60",
             test_on,
-            total_time: round2(s20 + s40 + s60),
-            sprint_20m: s20,
-            sprint_40m: s40,
-            sprint_60m: s60,
+            total_time: total,
+            sprint_20m: 0,
+            sprint_40m: 0,
+            sprint_60m: 0,
             recorded_at: recorded,
             note: null,
             progress_status: null,
