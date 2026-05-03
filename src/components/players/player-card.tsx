@@ -218,15 +218,17 @@ export const PlayerCard = memo(function PlayerCard({
           <span className="pointer-events-none absolute -bottom-6 -left-2 z-[1] font-[family-name:var(--font-display)] text-[8rem] leading-none tracking-tight text-white/14 md:text-[10rem]">
             {safeShirt}
           </span>
-          <PhotoOrFallback
-            url={safePhoto}
-            alt={safeName}
-            className="object-cover object-top transition-transform duration-200 ease-out motion-safe:group-hover:scale-[1.01]"
-            sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 400px"
-            fallback={
-              <span className="font-[family-name:var(--font-display)] text-5xl tracking-wide text-white/70 md:text-6xl">{initials}</span>
-            }
-          />
+          <div className="absolute inset-0 z-0">
+            <PhotoOrFallback
+              url={safePhoto}
+              alt={safeName}
+              className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 400px"
+              fallback={
+                <span className="font-[family-name:var(--font-display)] text-5xl tracking-wide text-white/70 md:text-6xl">{initials}</span>
+              }
+            />
+          </div>
           <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
 
           <div className="absolute right-3 top-3 z-[2] flex min-h-[3.25rem] min-w-[3.25rem] items-center justify-center rounded-2xl border-2 border-white/90 bg-white shadow-md">

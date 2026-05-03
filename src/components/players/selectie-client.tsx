@@ -93,14 +93,16 @@ export function SelectieClient({
               <span className="pointer-events-none absolute -bottom-8 right-1 z-[1] font-[family-name:var(--font-display)] text-[10rem] leading-none tracking-tight text-white/10">
                 {featured.shirt_number}
               </span>
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[inherit] bg-zvv-night shadow-[inset_0_0_120px_rgba(2,6,23,0.34)] [clip-path:inset(0_round_inherit)]">
-                <PhotoOrFallback
-                  url={featured.photo_url}
-                  alt={featured.full_name}
-                  className="rounded-[inherit] object-cover object-top transition-transform duration-200 motion-safe:group-hover:scale-[1.01]"
-                  sizes="(max-width: 1280px) 100vw, 560px"
-                  fallback={<span className="font-[family-name:var(--font-display)] text-6xl text-white/60">#{featured.shirt_number}</span>}
-                />
+              <div className="relative aspect-[4/5] overflow-hidden rounded-[inherit] bg-zvv-night shadow-[inset_0_0_120px_rgba(2,6,23,0.34)] [clip-path:inset(0_round_inherit)]">
+                <div className="absolute inset-0 z-0">
+                  <PhotoOrFallback
+                    url={featured.photo_url}
+                    alt={featured.full_name}
+                    className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
+                    sizes="(max-width: 1280px) 100vw, 560px"
+                    fallback={<span className="font-[family-name:var(--font-display)] text-6xl text-white/60">#{featured.shirt_number}</span>}
+                  />
+                </div>
                 <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-gradient-to-t from-black/76 via-black/26 to-transparent" />
                 <div className="pointer-events-none absolute inset-0 rounded-[inherit] bg-[radial-gradient(ellipse_70%_40%_at_75%_18%,rgba(191,219,254,0.22),transparent_70%)]" />
                 <div className="pointer-events-none absolute inset-0 rounded-[inherit] shadow-[inset_0_0_90px_rgba(15,23,42,0.42)]" />
@@ -127,14 +129,16 @@ export function SelectieClient({
               key={p.player_id}
               className="group relative w-full overflow-hidden rounded-2xl border border-zvv-border/70 bg-gradient-to-br from-[#0b1222] via-[#111827] to-[#1e293b] p-4 shadow-[0_12px_26px_rgba(2,6,23,0.18)] transition-[transform,border-color] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:border-blue-300/25"
             >
-              <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-zvv-night">
-                <PhotoOrFallback
-                  url={p.photo_url}
-                  alt={p.full_name}
-                  className="object-cover object-top transition-transform duration-200 motion-safe:group-hover:scale-[1.01]"
-                  sizes="(max-width: 1280px) 100vw, 420px"
-                  fallback={<span className="font-[family-name:var(--font-display)] text-5xl text-white/60">#{p.shirt_number}</span>}
-                />
+              <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-zvv-night">
+                <div className="absolute inset-0 z-0">
+                  <PhotoOrFallback
+                    url={p.photo_url}
+                    alt={p.full_name}
+                    className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
+                    sizes="(max-width: 1280px) 100vw, 420px"
+                    fallback={<span className="font-[family-name:var(--font-display)] text-5xl text-white/60">#{p.shirt_number}</span>}
+                  />
+                </div>
                 <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/76 via-black/20 to-transparent" />
                 <span className="pointer-events-none absolute -bottom-5 left-2 font-[family-name:var(--font-display)] text-7xl leading-none tracking-tight text-white/12">
                   {p.shirt_number}

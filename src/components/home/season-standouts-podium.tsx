@@ -63,17 +63,19 @@ function StandoutPlinth({
             tier === "center" ? "aspect-[4/5] sm:aspect-[3/4]" : "aspect-[5/6] sm:aspect-[4/5]",
           )}
         >
-          <PhotoOrFallback
-            url={row.photo_url}
-            alt={row.full_name}
-            className="h-full w-full object-cover object-top transition-transform duration-200 motion-safe:group-hover:scale-[1.01]"
-            sizes={tier === "center" ? "(max-width:768px) 100vw, 400px" : "(max-width:768px) 50vw, 280px"}
-            fallback={
-              <span className="flex h-full w-full items-center justify-center font-[family-name:var(--font-display)] text-5xl text-white/40 md:text-6xl">
-                {ini}
-              </span>
-            }
-          />
+          <div className="absolute inset-0 z-0">
+            <PhotoOrFallback
+              url={row.photo_url}
+              alt={row.full_name}
+              className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
+              sizes={tier === "center" ? "(max-width:768px) 100vw, 400px" : "(max-width:768px) 50vw, 280px"}
+              fallback={
+                <span className="flex h-full w-full items-center justify-center font-[family-name:var(--font-display)] text-5xl text-white/40 md:text-6xl">
+                  {ini}
+                </span>
+              }
+            />
+          </div>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zvv-night via-zvv-night/40 to-transparent" />
           <div className="absolute left-4 top-4 flex flex-col items-start gap-2">
             <span className="rounded-lg border border-white/20 bg-black/45 px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">

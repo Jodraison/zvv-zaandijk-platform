@@ -82,18 +82,20 @@ export function PlayerProfileHero({
               {initials}
             </span>
 
-            <PhotoOrFallback
-              url={photoUrl}
-              alt={fullName}
-              className="relative z-[1] object-cover object-top"
-              sizes="(max-width: 768px) 100vw, 360px"
-              priority
-              fallback={
-                <span className="font-[family-name:var(--font-display)] text-7xl font-black tracking-tight text-white/50 sm:text-8xl">
-                  {initials}
-                </span>
-              }
-            />
+            <div className="absolute inset-0 z-[1]">
+              <PhotoOrFallback
+                url={photoUrl}
+                alt={fullName}
+                className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
+                sizes="(max-width: 768px) 100vw, 360px"
+                priority
+                fallback={
+                  <span className="font-[family-name:var(--font-display)] text-7xl font-black tracking-tight text-white/50 sm:text-8xl">
+                    {initials}
+                  </span>
+                }
+              />
+            </div>
             <div className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[#0A192F]/90 via-transparent to-transparent md:bg-gradient-to-r md:from-transparent md:via-[#0A192F]/20 md:to-[#0A192F]/85" />
             <div
               className="pointer-events-none absolute inset-0 z-[2] bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(255,255,255,0.12),transparent_55%)]"

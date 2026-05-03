@@ -25,15 +25,17 @@ export function WotmSpotlight({
       <div className="pointer-events-none absolute -left-24 top-0 h-72 w-72 rounded-full bg-amber-300/15 blur-2xl" aria-hidden />
       <div className="relative grid gap-0 md:grid-cols-[minmax(0,280px)_1fr] md:items-stretch">
         <div className="relative aspect-[4/5] w-full min-h-[14rem] max-h-[22rem] bg-zvv-card-mid md:max-h-none md:min-h-[20rem]">
-          <PhotoOrFallback
-            url={photoUrl ?? null}
-            alt={name}
-            className="object-cover object-top"
-            sizes="(max-width: 768px) 100vw, 280px"
-            fallback={
-              <span className="font-[family-name:var(--font-display)] text-6xl tracking-wide text-amber-600/25 md:text-7xl">{initials}</span>
-            }
-          />
+          <div className="absolute inset-0 z-0">
+            <PhotoOrFallback
+              url={photoUrl ?? null}
+              alt={name}
+              className="absolute inset-0 w-full h-full object-cover object-[center_20%]"
+              sizes="(max-width: 768px) 100vw, 280px"
+              fallback={
+                <span className="font-[family-name:var(--font-display)] text-6xl tracking-wide text-amber-600/25 md:text-7xl">{initials}</span>
+              }
+            />
+          </div>
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:bg-gradient-to-r" />
         </div>
         <div className="flex flex-col justify-center px-7 py-8 md:px-10 md:py-12">
