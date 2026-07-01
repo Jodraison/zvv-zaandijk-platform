@@ -1,13 +1,14 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { MatchAdminForm } from "@/components/admin/match-admin-form";
 
 /** Snelle invoer na een gespeelde wedstrijd — standaard status &apos;gespeeld&apos;. */
-export default async function WedstrijdToevoegenPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function WedstrijdToevoegenPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const seasonPlayers = db.player_season_memberships
     .filter((m) => m.season_id === seasonId)
     .filter((m) => !db.players.find((p) => p.id === m.player_id)?.is_guest)
@@ -39,10 +40,15 @@ export default async function WedstrijdToevoegenPage() {
     opponent: "",
     kickoff_at: new Date().toISOString(),
     is_home: true,
+    match_type: "competition" as const,
+    location: null,
+    referee: null,
+    notes: null,
     goals_against: 0,
     status: "played" as const,
     wotm_player_id: null as string | null,
   };
+  const initialLineup = { starters: [], bench: [], absent: [] as { player_id: string; absence_reason: string | null }[] };
 
   return (
     <div className="space-y-8">
@@ -60,6 +66,7 @@ export default async function WedstrijdToevoegenPage() {
         defaultStatus="played"
         initialMatch={initialMatch}
         initialSelectedIds={[]}
+        initialLineup={initialLineup}
       />
     </div>
   );

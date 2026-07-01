@@ -1,13 +1,14 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { MatchAdminForm } from "@/components/admin/match-admin-form";
 import { buildMatchSelectablePlayers } from "@/lib/queries/match-selectable-players";
 
-export default async function NieuwWedstrijdPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function NieuwWedstrijdPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const members = buildMatchSelectablePlayers(db, seasonId).map((row) => ({
     player_id: row.playerId,
     shirt_number: row.shirtNumber,
@@ -24,6 +25,10 @@ export default async function NieuwWedstrijdPage() {
     opponent: "",
     kickoff_at: new Date(Date.now() + 86400000).toISOString(),
     is_home: true,
+    match_type: "competition" as const,
+    location: null,
+    referee: null,
+    notes: null,
     goals_against: 0,
     status: "scheduled" as const,
     wotm_player_id: null as string | null,

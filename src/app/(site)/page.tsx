@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { computeRanking } from "@/lib/queries/ranking";
 import { nextScheduledMatch, teamFormLast5 } from "@/lib/queries/matches";
 import { TeamFormStrip } from "@/components/home/team-form-strip";
@@ -11,10 +10,12 @@ import { TeamPhotoBlock } from "@/components/home/team-photo-block";
 import { SeasonStandoutsPodium } from "@/components/home/season-standouts-podium";
 import { HomePlayerShowcase } from "@/components/home/home-player-showcase";
 
-export default async function HomePage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function HomePage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const ranking = computeRanking(db, seasonId);
   const nextM = nextScheduledMatch(db, seasonId);
   const form = teamFormLast5(db, seasonId);

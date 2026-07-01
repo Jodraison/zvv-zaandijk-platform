@@ -1,6 +1,6 @@
 import type { MatchGoalEvent, MatchPlayerStat } from "@/types";
 
-export type GoalRowInput = { scorer_player_id: string; assist_player_id?: string };
+export type GoalRowInput = { scorer_player_id: string; assist_player_id?: string; minute?: number };
 
 export type PlayerMatchCountInput = Record<string, { goals: number; assists: number } | undefined>;
 
@@ -29,7 +29,7 @@ export function goalRowsFromPlayerCounts(
     const a = Math.max(0, Math.min(99, Math.floor(counts[pid]?.assists ?? 0)));
     for (let i = 0; i < a; i++) assistQueue.push(pid);
   }
-  const goals: GoalRowInput[] = slots.map((s) => ({ scorer_player_id: s.scorer_player_id }));
+  const goals: GoalRowInput[] = slots.map((s) => ({ scorer_player_id: s.scorer_player_id, minute: 0 }));
   for (const assistPid of assistQueue) {
     const idx = goals.findIndex((r) => !r.assist_player_id && r.scorer_player_id !== assistPid);
     if (idx === -1) {
@@ -102,6 +102,7 @@ export function aggregateStatsFromGoals(
     scorer_player_id: g.scorer_player_id,
     assist_player_id: assistNorm(g.assist_player_id) ?? null,
     sort_order,
+    minute: g.minute ?? 0,
   }));
 
   return { goals_for: goals.length, stats, events };

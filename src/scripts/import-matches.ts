@@ -40,7 +40,7 @@ import {
 const SCHEMA_CHECK: { table: string; columns: string }[] = [
   { table: "matches", columns: "id,season_id,opponent,kickoff_at,is_home,goals_for,goals_against,status,wotm_player_id" },
   { table: "match_player_stats", columns: "match_id,player_id,goals,assists" },
-  { table: "match_goal_events", columns: "id,match_id,scorer_player_id,assist_player_id,sort_order" },
+  { table: "match_goal_events", columns: "id,match_id,scorer_player_id,assist_player_id,sort_order,minute" },
   { table: "players", columns: "id,full_name,is_guest" },
 ];
 
@@ -224,6 +224,7 @@ async function importOneMatch(
     opponent: block.opponent.trim(),
     kickoff_at: kickoffIso,
     is_home: block.isHome,
+    match_type: "competition" as const,
     goals_for: block.goalsFor,
     goals_against: block.goalsAgainst,
     status: "played" as const,
@@ -263,6 +264,7 @@ async function importOneMatch(
     scorer_player_id: e.scorer_player_id,
     assist_player_id: e.assist_player_id,
     sort_order: e.sort_order,
+    minute: e.minute ?? 0,
   }));
 
   if (eventsWithIds.length) {

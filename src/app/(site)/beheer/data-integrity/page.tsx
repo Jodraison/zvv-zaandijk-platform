@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { GlassCard } from "@/components/layout/glass-card";
 
 function runIntegrityChecks(db: Awaited<ReturnType<typeof readDb>>, seasonId: string): string[] {
@@ -43,10 +42,14 @@ function runIntegrityChecks(db: Awaited<ReturnType<typeof readDb>>, seasonId: st
   return errors;
 }
 
-export default async function DataIntegrityPage() {
+export default async function DataIntegrityPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ season?: string }>;
+}) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const errors = runIntegrityChecks(db, seasonId);
 
   return (

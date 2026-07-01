@@ -1,16 +1,17 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { GlassCard } from "@/components/layout/glass-card";
 import { Badge } from "@/components/layout/badge";
 import { selectSeasonFormAction } from "@/actions/season";
 import { isCurrentUserAdmin } from "@/lib/auth/viewer";
 
-export default async function SeizoenenPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function SeizoenenPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const current = resolveSeasonId(db, cookieSeason);
+  const current = await readResolvedSeasonId(db, sp.season);
   const isAdmin = await isCurrentUserAdmin();
 
   return (

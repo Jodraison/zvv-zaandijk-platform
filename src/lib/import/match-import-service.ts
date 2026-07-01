@@ -245,6 +245,7 @@ export async function importSingleMatch(
     opponent: spec.opponent.trim(),
     kickoff_at: kickoffIso,
     is_home: spec.isHome,
+    match_type: "competition" as const,
     goals_for: spec.goalsFor,
     goals_against: spec.goalsAgainst,
     status: "played" as const,
@@ -297,6 +298,7 @@ export async function importSingleMatch(
     scorer_player_id: e.scorer_player_id,
     assist_player_id: e.assist_player_id,
     sort_order: e.sort_order,
+    minute: e.minute ?? 0,
   }));
 
   if (eventsWithIds.length) {

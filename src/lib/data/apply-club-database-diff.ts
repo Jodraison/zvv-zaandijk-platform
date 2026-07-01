@@ -4,8 +4,11 @@ import type {
   FitnessTest,
   Match,
   MatchGoalEvent,
+  MatchCardEvent,
+  MatchLineupEntry,
   MatchMatchdayRosterRow,
   MatchPlayerStat,
+  MatchSubstitution,
   Player,
   PlayerSeasonMembership,
   Season,
@@ -60,6 +63,17 @@ function rosterEq(a: MatchMatchdayRosterRow, b: MatchMatchdayRosterRow) {
   );
 }
 
+function lineupEq(a: MatchLineupEntry, b: MatchLineupEntry) {
+  return (
+    a.match_id === b.match_id &&
+    a.player_id === b.player_id &&
+    a.role === b.role &&
+    a.position === b.position &&
+    a.absence_reason === b.absence_reason &&
+    a.sort_order === b.sort_order
+  );
+}
+
 function memEq(a: PlayerSeasonMembership, b: PlayerSeasonMembership) {
   return (
     a.player_id === b.player_id &&
@@ -79,6 +93,10 @@ function matchEq(a: Match, b: Match) {
     a.opponent === b.opponent &&
     a.kickoff_at === b.kickoff_at &&
     a.is_home === b.is_home &&
+    a.match_type === b.match_type &&
+    a.location === b.location &&
+    a.referee === b.referee &&
+    a.notes === b.notes &&
     a.goals_for === b.goals_for &&
     a.goals_against === b.goals_against &&
     a.status === b.status &&
@@ -96,7 +114,26 @@ function eventEq(a: MatchGoalEvent, b: MatchGoalEvent) {
     a.match_id === b.match_id &&
     a.scorer_player_id === b.scorer_player_id &&
     a.assist_player_id === b.assist_player_id &&
-    a.sort_order === b.sort_order
+    a.sort_order === b.sort_order &&
+    a.minute === b.minute
+  );
+}
+
+function cardEventEq(a: MatchCardEvent, b: MatchCardEvent) {
+  return (
+    a.match_id === b.match_id &&
+    a.player_id === b.player_id &&
+    a.card_type === b.card_type &&
+    a.minute === b.minute
+  );
+}
+
+function substitutionEq(a: MatchSubstitution, b: MatchSubstitution) {
+  return (
+    a.match_id === b.match_id &&
+    a.player_in_id === b.player_in_id &&
+    a.player_out_id === b.player_out_id &&
+    a.minute === b.minute
   );
 }
 
@@ -151,9 +188,12 @@ export async function applyClubDatabaseDiff(
   const afterFitIds = new Set(after.fitness_tests.map((f) => f.id));
 
   const afterRosterKeys = new Set(after.match_matchday_roster.map(rosterKey));
+  const afterLineupIds = new Set(after.match_lineup_entries.map((e) => e.id));
   const afterStatKeys = new Set(after.match_player_stats.map(statKey));
   const afterAttKeys = new Set(after.training_attendance.map(attKey));
   const afterEventIds = new Set(after.match_goal_events.map((e) => e.id));
+  const afterCardEventIds = new Set(after.match_card_events.map((e) => e.id));
+  const afterSubstitutionIds = new Set(after.match_substitutions.map((e) => e.id));
 
   // --- Deletes (kinderen / afhankelijken eerst waar geen CASCADE van parent naar child) ---
   for (const f of before.fitness_tests) {
@@ -178,6 +218,13 @@ export async function applyClubDatabaseDiff(
         .eq("match_id", r.match_id)
         .eq("player_id", r.player_id);
       if (error) fail("match_matchday_roster verwijderen", error.message);
+    }
+  }
+
+  for (const e of before.match_lineup_entries) {
+    if (!afterLineupIds.has(e.id)) {
+      const { error } = await client.from("match_lineup_entries").delete().eq("id", e.id);
+      if (error) fail("match_lineup_entries verwijderen", error.message);
     }
   }
 
@@ -225,6 +272,20 @@ export async function applyClubDatabaseDiff(
     if (!afterEventIds.has(e.id)) {
       const { error } = await client.from("match_goal_events").delete().eq("id", e.id);
       if (error) fail("match_goal_events verwijderen", error.message);
+    }
+  }
+
+  for (const c of before.match_card_events) {
+    if (!afterCardEventIds.has(c.id)) {
+      const { error } = await client.from("match_card_events").delete().eq("id", c.id);
+      if (error) fail("match_card_events verwijderen", error.message);
+    }
+  }
+
+  for (const s of before.match_substitutions) {
+    if (!afterSubstitutionIds.has(s.id)) {
+      const { error } = await client.from("match_substitutions").delete().eq("id", s.id);
+      if (error) fail("match_substitutions verwijderen", error.message);
     }
   }
 
@@ -304,6 +365,10 @@ export async function applyClubDatabaseDiff(
         opponent: m.opponent,
         kickoff_at: m.kickoff_at,
         is_home: m.is_home,
+        match_type: m.match_type,
+        location: m.location,
+        referee: m.referee,
+        notes: m.notes,
         goals_for: m.goals_for,
         goals_against: m.goals_against,
         status: m.status,
@@ -328,6 +393,24 @@ export async function applyClubDatabaseDiff(
         onConflict: "match_id,player_id",
       });
       if (error) fail("match_matchday_roster opslaan", error.message);
+    }
+  }
+
+  for (const e of after.match_lineup_entries) {
+    const b = before.match_lineup_entries.find((x) => x.id === e.id);
+    if (!b || !lineupEq(b, e)) {
+      const row = {
+        id: e.id,
+        match_id: e.match_id,
+        player_id: e.player_id,
+        role: e.role,
+        position: e.position,
+        absence_reason: e.absence_reason,
+        sort_order: e.sort_order,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await client.from("match_lineup_entries").upsert(row as never, { onConflict: "id" });
+      if (error) fail("match_lineup_entries opslaan", error.message);
     }
   }
 
@@ -356,9 +439,42 @@ export async function applyClubDatabaseDiff(
         scorer_player_id: e.scorer_player_id,
         assist_player_id: e.assist_player_id,
         sort_order: e.sort_order,
+        minute: e.minute,
       };
       const { error } = await client.from("match_goal_events").upsert(row as never, { onConflict: "id" });
       if (error) fail("match_goal_events opslaan", error.message);
+    }
+  }
+
+  for (const c of after.match_card_events) {
+    const b = before.match_card_events.find((x) => x.id === c.id);
+    if (!b || !cardEventEq(b, c)) {
+      const row = {
+        id: c.id,
+        match_id: c.match_id,
+        player_id: c.player_id,
+        card_type: c.card_type,
+        minute: c.minute,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await client.from("match_card_events").upsert(row as never, { onConflict: "id" });
+      if (error) fail("match_card_events opslaan", error.message);
+    }
+  }
+
+  for (const s of after.match_substitutions) {
+    const b = before.match_substitutions.find((x) => x.id === s.id);
+    if (!b || !substitutionEq(b, s)) {
+      const row = {
+        id: s.id,
+        match_id: s.match_id,
+        player_in_id: s.player_in_id,
+        player_out_id: s.player_out_id,
+        minute: s.minute,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await client.from("match_substitutions").upsert(row as never, { onConflict: "id" });
+      if (error) fail("match_substitutions opslaan", error.message);
     }
   }
 

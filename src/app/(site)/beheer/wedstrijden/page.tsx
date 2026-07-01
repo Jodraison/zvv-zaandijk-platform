@@ -1,17 +1,19 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { seasonMatches } from "@/lib/queries/matches";
 import { GlassCard } from "@/components/layout/glass-card";
 import { resolveMatchScore } from "@/lib/domain/match-score";
 import { displayTeamLabel } from "@/constants/club";
+import { matchTypeLabel } from "@/lib/match-type";
 import { formatDateTimeNL } from "@/lib/utils/format-date";
 
-export default async function BeheerWedstrijdenPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function BeheerWedstrijdenPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const list = seasonMatches(db, seasonId);
   const q = `?season=${encodeURIComponent(seasonId)}`;
 
@@ -50,7 +52,9 @@ export default async function BeheerWedstrijdenPage() {
               <GlassCard className="transition-[transform,border-color] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:border-zvv-primary/25">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zvv-muted">{statusLabel[m.status] ?? m.status}</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-zvv-muted">
+                      {statusLabel[m.status] ?? m.status} · {matchTypeLabel(m.match_type)}
+                    </p>
                     <p className="mt-1 font-[family-name:var(--font-display)] text-xl tracking-wide text-zvv-ink md:text-2xl">
                       {displayTeamLabel(score.homeTeam)} — {displayTeamLabel(score.awayTeam)}
                     </p>

@@ -23,8 +23,12 @@ EXCEPTION
   WHEN duplicate_object THEN NULL;
 END $$;
 
--- -----------------------------------------------------------------------------
--- Verplichte kern (zoals specificatie)
+DO $$ BEGIN
+  CREATE TYPE public.match_type AS ENUM ('competition', 'cup', 'friendly');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS public.seasons (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -100,10 +104,42 @@ CREATE TABLE IF NOT EXISTS public.match_goal_events (
   match_id uuid NOT NULL REFERENCES public.matches (id) ON DELETE CASCADE,
   scorer_player_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
   assist_player_id uuid REFERENCES public.players (id) ON DELETE SET NULL,
-  sort_order int NOT NULL DEFAULT 0
+  sort_order int NOT NULL DEFAULT 0,
+  minute int NOT NULL DEFAULT 0 CHECK (minute >= 0 AND minute <= 130)
 );
 
 CREATE INDEX IF NOT EXISTS match_goal_events_match_id_idx ON public.match_goal_events (match_id);
+
+ALTER TABLE public.match_goal_events ADD COLUMN IF NOT EXISTS minute int NOT NULL DEFAULT 0;
+
+DO $$ BEGIN
+  CREATE TYPE public.match_card_type AS ENUM ('yellow', 'red');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.match_card_events (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id uuid NOT NULL REFERENCES public.matches (id) ON DELETE CASCADE,
+  player_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
+  card_type public.match_card_type NOT NULL,
+  minute int NOT NULL CHECK (minute >= 0 AND minute <= 130),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT match_card_events_unique_slot UNIQUE (match_id, player_id, card_type, minute)
+);
+
+CREATE TABLE IF NOT EXISTS public.match_substitutions (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id uuid NOT NULL REFERENCES public.matches (id) ON DELETE CASCADE,
+  player_in_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
+  player_out_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
+  minute int NOT NULL CHECK (minute >= 0 AND minute <= 130),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT match_substitutions_players_distinct CHECK (player_in_id <> player_out_id),
+  CONSTRAINT match_substitutions_unique_slot UNIQUE (match_id, player_in_id, player_out_id, minute)
+);
 
 DROP TRIGGER IF EXISTS match_goal_events_validate_before_write ON public.match_goal_events;
 DROP TRIGGER IF EXISTS match_goal_events_rebuild_stats_after_write ON public.match_goal_events;
@@ -222,6 +258,30 @@ ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS goals_for int;
 ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS goals_against int;
 ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS wotm_player_id uuid REFERENCES public.players (id) ON DELETE SET NULL;
 ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS status public.match_status;
+
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS match_type public.match_type NOT NULL DEFAULT 'competition';
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS location text;
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS referee text;
+ALTER TABLE public.matches ADD COLUMN IF NOT EXISTS notes text;
+
+DO $$ BEGIN
+  CREATE TYPE public.match_lineup_role AS ENUM ('starter', 'bench', 'absent');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.match_lineup_entries (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  match_id uuid NOT NULL REFERENCES public.matches (id) ON DELETE CASCADE,
+  player_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
+  role public.match_lineup_role NOT NULL,
+  position text,
+  absence_reason text,
+  sort_order int NOT NULL DEFAULT 0,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT match_lineup_entries_match_player_uid UNIQUE (match_id, player_id)
+);
 
 ALTER TABLE public.match_player_stats ADD COLUMN IF NOT EXISTS match_id uuid REFERENCES public.matches (id) ON DELETE CASCADE;
 ALTER TABLE public.match_player_stats ADD COLUMN IF NOT EXISTS player_id uuid REFERENCES public.players (id) ON DELETE CASCADE;

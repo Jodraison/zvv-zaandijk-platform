@@ -1,12 +1,13 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { TrainingAttendanceDashboard } from "@/components/admin/training-attendance-dashboard";
 
-export default async function BeheerTrainingPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function BeheerTrainingPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const sessions = db.training_sessions
     .filter((s) => s.season_id === seasonId)
     .sort((a, b) => b.session_at.localeCompare(a.session_at))

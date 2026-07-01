@@ -13,6 +13,7 @@ export const optionalPlayerPhotoUrlSchema = z
     return isSafePlayerImageUrl(t) ? t : "";
   });
 export const matchStatusSchema = z.enum(["scheduled", "played", "postponed", "cancelled"]);
+export const matchTypeSchema = z.enum(["competition", "cup", "friendly"]);
 export const fitnessTestTypeSchema = z.literal("sprint_20_40_60");
 
 const sprintSecondsField = z

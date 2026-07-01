@@ -1,7 +1,6 @@
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { GlassCard } from "@/components/layout/glass-card";
 import { PlayerCreateForm } from "@/components/admin/player-create-form";
 import { PlayerEditCard } from "@/components/admin/player-edit-card";
@@ -11,13 +10,12 @@ import { GuestPlayerCreateForm } from "@/components/admin/guest-player-create-fo
 export default async function BeheerSpelersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; season?: string }>;
 }) {
   const db = await readDb();
   const sp = await searchParams;
   const filter = (sp.filter ?? "active") as "all" | "active" | "guests" | "missing" | "incomplete";
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const members = db.player_season_memberships.filter((m) => m.season_id === seasonId);
   const memByPlayer = new Map(members.map((m) => [m.player_id, m]));
   const candidates = db.players

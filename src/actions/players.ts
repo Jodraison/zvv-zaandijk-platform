@@ -348,10 +348,15 @@ export async function deletePlayer(playerId: string, seasonId: string): Promise<
       const stillMember = db.player_season_memberships.some((m) => m.player_id === playerId);
       if (!stillMember) {
         db.match_matchday_roster = db.match_matchday_roster.filter((r) => r.player_id !== playerId);
+        db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.player_id !== playerId);
         db.players = db.players.filter((p) => p.id !== playerId);
         db.match_player_stats = db.match_player_stats.filter((s) => s.player_id !== playerId);
         db.match_goal_events = db.match_goal_events.filter(
           (e) => e.scorer_player_id !== playerId && e.assist_player_id !== playerId,
+        );
+        db.match_card_events = db.match_card_events.filter((e) => e.player_id !== playerId);
+        db.match_substitutions = db.match_substitutions.filter(
+          (e) => e.player_in_id !== playerId && e.player_out_id !== playerId,
         );
         db.training_attendance = db.training_attendance.filter((a) => a.player_id !== playerId);
         db.fitness_tests = db.fitness_tests.filter((f) => f.player_id !== playerId);

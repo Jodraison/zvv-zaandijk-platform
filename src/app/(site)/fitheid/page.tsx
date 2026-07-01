@@ -1,8 +1,7 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
 
 export const dynamic = "force-dynamic";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { fitnessTotalSeconds } from "@/lib/fitness-analytics";
 import { formatSprintSecondsNl } from "@/lib/import/fitness-time";
 import { cn } from "@/lib/utils";
@@ -81,10 +80,14 @@ function LegacyStatusUi({ status }: { status: FitnessProgressStatus | null }) {
   return <span className="text-zvv-muted">—</span>;
 }
 
-export default async function FitheidPage() {
+export default async function FitheidPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ season?: string }>;
+}) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const tests = db.fitness_tests.filter((f) => f.season_id === seasonId && f.test_type === "sprint_20_40_60");
   const members = db.player_season_memberships.filter((m) => m.season_id === seasonId);
   const players = members.map((mem) => ({

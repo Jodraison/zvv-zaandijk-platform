@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { setPreferredSeason } from "@/actions/season";
 import { useSeasonStore } from "@/stores/season-store";
 import type { Season } from "@/types";
@@ -16,11 +16,21 @@ export function SeasonSwitcher({
   compact?: boolean;
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlSeason = searchParams.get("season")?.trim() ?? "";
 
   async function onChange(id: string) {
     useSeasonStore.getState().setSeasonId(id);
+    const selected = seasons.find((s) => s.id === id);
+    if (selected && !selected.is_active) {
+      const active = seasons.find((s) => s.is_active) ?? seasons[0];
+      if (active) await setPreferredSeason(active.id);
+      const path = window.location.pathname;
+      router.push(`${path}?season=${encodeURIComponent(id)}`);
+      return;
+    }
     await setPreferredSeason(id);
-    router.refresh();
+    router.push(window.location.pathname);
   }
 
   if (seasons.length === 0) {
@@ -29,7 +39,12 @@ export function SeasonSwitcher({
     );
   }
 
-  const value = currentSeasonId && seasons.some((s) => s.id === currentSeasonId) ? currentSeasonId : seasons[0].id;
+  const value =
+    urlSeason && seasons.some((s) => s.id === urlSeason)
+      ? urlSeason
+      : currentSeasonId && seasons.some((s) => s.id === currentSeasonId)
+        ? currentSeasonId
+        : seasons[0].id;
 
   return (
     <div

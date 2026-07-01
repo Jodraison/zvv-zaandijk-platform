@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CLUB_NAME, TEAM_DISPLAY_LABEL } from "@/constants/club";
+import { ACTIVE_SEASON_PUBLIC_LABEL } from "@/lib/season-foundation/content-2026-27-spec";
 
 export default function MaintenancePage() {
   return (
@@ -11,8 +12,8 @@ export default function MaintenancePage() {
         </h1>
         <p className="mt-1 text-sm text-zvv-muted">{TEAM_DISPLAY_LABEL}</p>
         <p className="mt-6 text-[15px] leading-relaxed text-zvv-muted">
-          De website is tijdelijk niet beschikbaar vanwege onderhoud. We zijn bezig met voorbereidingen voor het
-          nieuwe seizoen.
+          De website is tijdelijk niet beschikbaar vanwege onderhoud. We zijn bezig met voorbereidingen voor seizoen{" "}
+          {ACTIVE_SEASON_PUBLIC_LABEL}.
         </p>
         <p className="mt-4 text-sm text-zvv-muted">
           Beheerder?{" "}

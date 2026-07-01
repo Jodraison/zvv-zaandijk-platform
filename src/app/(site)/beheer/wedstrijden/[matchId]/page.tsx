@@ -1,15 +1,16 @@
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import Link from "next/link";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { MatchAdminForm } from "@/components/admin/match-admin-form";
 import { buildMatchSelectablePlayers } from "@/lib/queries/match-selectable-players";
+import { getMatchLineupInitial } from "@/lib/queries/match-lineup";
+import { getMatchCardInitial, getMatchSubstitutionInitial } from "@/lib/queries/match-timeline";
 import { formatDateTimeNL } from "@/lib/utils/format-date";
 
 type Props = {
   params: Promise<{ matchId: string }>;
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; season?: string }>;
 };
 
 export default async function EditWedstrijdPage({ params, searchParams }: Props) {
@@ -20,8 +21,7 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
   const m = db.matches.find((x) => x.id === matchId);
   if (!m) notFound();
 
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
 
   const members = buildMatchSelectablePlayers(db, m.season_id, matchId).map((row) => ({
     player_id: row.playerId,
@@ -49,6 +49,10 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
     opponent: m.opponent,
     kickoff_at: m.kickoff_at,
     is_home: m.is_home,
+    match_type: m.match_type,
+    location: m.location,
+    referee: m.referee,
+    notes: m.notes,
     goals_against: m.goals_against,
     status: m.status,
     wotm_player_id: m.wotm_player_id,
@@ -62,6 +66,10 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
   ]);
   const missingReferencedCount = [...referencedPlayerIds].filter((id) => !memberIdSet.has(id)).length;
 
+  const initialLineup = getMatchLineupInitial(db, matchId);
+  const initialCardEvents = getMatchCardInitial(db, matchId);
+  const initialSubstitutionEvents = getMatchSubstitutionInitial(db, matchId);
+
   return (
     <div className="space-y-8">
       <header className="border-b border-zvv-border pb-8">
@@ -69,6 +77,7 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
         <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-wide text-zvv-ink md:text-5xl">Wedstrijd bewerken</h1>
         <p className="mt-3 text-sm text-zvv-muted">
           {m.is_home ? "Thuis" : "Uit"} · {m.opponent} · {formatDateTimeNL(m.kickoff_at)}
+          {m.location ? ` · ${m.location}` : ""}
         </p>
         {(m.integrity_state ?? "verified") !== "verified" ? (
           <p className="mt-3 max-w-2xl rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-800">
@@ -106,7 +115,11 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
         initialGoalEvents={events.map((e) => ({
           scorer_player_id: e.scorer_player_id,
           assist_player_id: e.assist_player_id,
+          minute: e.minute,
         }))}
+        initialLineup={initialLineup}
+        initialCardEvents={initialCardEvents}
+        initialSubstitutionEvents={initialSubstitutionEvents}
         returnToHref={returnTo || undefined}
       />
     </div>

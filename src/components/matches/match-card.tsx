@@ -3,6 +3,7 @@ import type { ClubDatabase, Match } from "@/types";
 import { matchResult } from "@/lib/queries/matches";
 import { resolveMatchScore } from "@/lib/domain/match-score";
 import { displayTeamLabel } from "@/constants/club";
+import { matchTypeLabel } from "@/lib/match-type";
 import { cn } from "@/lib/utils";
 import { formatKickoffLongNl } from "@/lib/utils/format-date";
 
@@ -33,7 +34,8 @@ export function MatchCard({ db, m, seasonId }: { db: ClubDatabase; m: Match; sea
             played ? "bg-zvv-card-mid text-zvv-ink" : "border border-zvv-primary/20 bg-zvv-primary-muted text-zvv-primary",
           )}
         >
-          {played ? "Gespeeld" : m.status === "scheduled" ? "Gepland" : m.status === "postponed" ? "Uitgesteld" : m.status}
+          {matchTypeLabel(m.match_type)}
+          {played ? " · Gespeeld" : m.status === "scheduled" ? " · Gepland" : m.status === "postponed" ? " · Uitgesteld" : m.status === "cancelled" ? " · Afgelast" : ""}
         </span>
         {!played ? <span className="h-2 w-2 rounded-full bg-rose-400/90" aria-hidden /> : null}
         {r && played ? (

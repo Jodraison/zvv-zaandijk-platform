@@ -1,16 +1,17 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { teamAttendanceSummary } from "@/lib/queries/training-fitness";
 import { GlassCard } from "@/components/layout/glass-card";
 import { AttendanceBar } from "@/components/charts/attendance-bar";
 import { Badge } from "@/components/layout/badge";
 import { formatDateNL } from "@/lib/utils/format-date";
 
-export default async function TrainingPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function TrainingPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const sum = teamAttendanceSummary(db, seasonId);
   const bar = sum.bySession.map((s) => ({ label: formatDateNL(s.label), pct: s.pct }));
 

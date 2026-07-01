@@ -5,8 +5,13 @@ import type {
   FitnessTestType,
   Match,
   MatchGoalEvent,
+  MatchCardEvent,
+  MatchCardType,
+  MatchLineupEntry,
+  MatchLineupRole,
   MatchMatchdayRosterRow,
   MatchPlayerStat,
+  MatchSubstitution,
   MatchStatus,
   Player,
   PlayerPosition,
@@ -16,6 +21,7 @@ import type {
   TrainingSession,
   TrainingSessionStatus,
 } from "@/types";
+import { asMatchType, DEFAULT_MATCH_TYPE } from "@/lib/match-type";
 
 function asMatchStatus(s: string): MatchStatus {
   const v = s.toLowerCase();
@@ -42,6 +48,16 @@ export type LoadedClubDatabase = {
   schemaVersion: number;
 };
 
+function asLineupRole(s: string): MatchLineupRole {
+  const v = s.toLowerCase();
+  if (v === "starter" || v === "bench" || v === "absent") return v;
+  return "bench";
+}
+
+function asCardType(s: string): MatchCardType {
+  return s === "red" ? "red" : "yellow";
+}
+
 export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debugLabel = "loadClubDatabase"): Promise<LoadedClubDatabase> {
   const [
     profileRes,
@@ -50,8 +66,11 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     memRes,
     matchesRes,
     rosterRes,
+    lineupRes,
     statsRes,
     eventsRes,
+    cardEventsRes,
+    subEventsRes,
     sessRes,
     attRes,
     fitRes,
@@ -62,8 +81,11 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     client.from("player_season_memberships").select("*"),
     client.from("matches").select("*"),
     client.from("match_matchday_roster").select("*"),
+    client.from("match_lineup_entries").select("*"),
     client.from("match_player_stats").select("*"),
     client.from("match_goal_events").select("*").order("sort_order", { ascending: true }),
+    client.from("match_card_events").select("*"),
+    client.from("match_substitutions").select("*"),
     client.from("training_sessions").select("*").order("session_at", { ascending: false }),
     client.from("training_attendance").select("*"),
     client.from("fitness_tests").select("*").order("test_on", { ascending: false }).order("recorded_at", { ascending: false }),
@@ -76,8 +98,11 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     ["player_season_memberships", memRes],
     ["matches", matchesRes],
     ["match_matchday_roster", rosterRes],
+    ["match_lineup_entries", lineupRes],
     ["match_player_stats", statsRes],
     ["match_goal_events", eventsRes],
+    ["match_card_events", cardEventsRes],
+    ["match_substitutions", subEventsRes],
     ["training_sessions", sessRes],
     ["training_attendance", attRes],
     ["fitness_tests", fitRes],
@@ -173,12 +198,44 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     };
   });
 
+  const match_lineup_entries: MatchLineupEntry[] = (lineupRes.data ?? []).map((r) => {
+    const row = r as {
+      id: string;
+      match_id: string;
+      player_id: string;
+      role: string;
+      position?: string | null;
+      absence_reason?: string | null;
+      sort_order?: number | null;
+    };
+    return {
+      id: row.id,
+      match_id: row.match_id,
+      player_id: row.player_id,
+      role: asLineupRole(row.role),
+      position: typeof row.position === "string" ? row.position : null,
+      absence_reason: typeof row.absence_reason === "string" ? row.absence_reason : null,
+      sort_order: Number(row.sort_order ?? 0),
+    };
+  });
+
   const matches: Match[] = (matchesRes.data ?? []).map((r) => ({
     id: r.id,
     season_id: r.season_id,
     opponent: r.opponent,
     kickoff_at: r.kickoff_at,
     is_home: !!r.is_home,
+    match_type: asMatchType((r as { match_type?: string | null }).match_type ?? DEFAULT_MATCH_TYPE),
+    location:
+      typeof (r as { location?: string | null }).location === "string"
+        ? (r as { location: string }).location
+        : null,
+    referee:
+      typeof (r as { referee?: string | null }).referee === "string"
+        ? (r as { referee: string }).referee
+        : null,
+    notes:
+      typeof (r as { notes?: string | null }).notes === "string" ? (r as { notes: string }).notes : null,
     goals_for: Number(r.goals_for ?? 0),
     goals_against: Number(r.goals_against ?? 0),
     status: asMatchStatus(String(r.status)),
@@ -199,7 +256,42 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     scorer_player_id: r.scorer_player_id,
     assist_player_id: r.assist_player_id ?? null,
     sort_order: Number(r.sort_order ?? 0),
+    minute: Number((r as { minute?: number | null }).minute ?? 0),
   }));
+
+  const match_card_events: MatchCardEvent[] = (cardEventsRes.data ?? []).map((r) => {
+    const row = r as {
+      id: string;
+      match_id: string;
+      player_id: string;
+      card_type: string;
+      minute?: number | null;
+    };
+    return {
+      id: row.id,
+      match_id: row.match_id,
+      player_id: row.player_id,
+      card_type: asCardType(row.card_type),
+      minute: Number(row.minute ?? 0),
+    };
+  });
+
+  const match_substitutions: MatchSubstitution[] = (subEventsRes.data ?? []).map((r) => {
+    const row = r as {
+      id: string;
+      match_id: string;
+      player_in_id: string;
+      player_out_id: string;
+      minute?: number | null;
+    };
+    return {
+      id: row.id,
+      match_id: row.match_id,
+      player_in_id: row.player_in_id,
+      player_out_id: row.player_out_id,
+      minute: Number(row.minute ?? 0),
+    };
+  });
 
   const training_sessions: TrainingSession[] = (sessRes.data ?? []).map((r) => ({
     id: r.id,
@@ -262,8 +354,11 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
       player_season_memberships,
       matches,
       match_matchday_roster,
+      match_lineup_entries,
       match_player_stats,
       match_goal_events,
+      match_card_events,
+      match_substitutions,
       training_sessions,
       training_attendance,
       fitness_tests,

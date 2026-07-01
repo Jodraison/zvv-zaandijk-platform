@@ -1,8 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { buildPlayerDetail } from "@/lib/queries/player-detail";
 import { Badge } from "@/components/layout/badge";
 import { PlayerProfileHero } from "@/components/players/player-profile-hero";
@@ -17,7 +16,10 @@ import { formatDateNL, formatKickoffLongNl } from "@/lib/utils/format-date";
 import { membershipPositionLabel } from "@/lib/membership-position-label";
 import type { PlayerDetailAggregates } from "@/types";
 
-type Props = { params: Promise<{ playerId: string }> };
+type Props = {
+  params: Promise<{ playerId: string }>;
+  searchParams: Promise<{ season?: string }>;
+};
 
 function buildFitnessProRows(series: PlayerDetailAggregates["fitness_series"]): FitnessProRow[] {
   return series.map((f, i) => {
@@ -50,11 +52,11 @@ function buildFitnessProRows(series: PlayerDetailAggregates["fitness_series"]): 
   });
 }
 
-export default async function PlayerDetailPage({ params }: Props) {
+export default async function PlayerDetailPage({ params, searchParams }: Props) {
   const { playerId } = await params;
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const player = db.players.find((p) => p.id === playerId);
   if (!player || player.is_guest) notFound();
   const mem = db.player_season_memberships.find((m) => m.player_id === playerId && m.season_id === seasonId);

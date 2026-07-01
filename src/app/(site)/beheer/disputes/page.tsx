@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { readDb } from "@/lib/data/repository";
-import { cookies } from "next/headers";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { buildPlayerDisputeBreakdown } from "@/lib/queries/player-dispute-breakdown";
 import { requireAdmin } from "@/lib/auth/require-admin";
 import { formatDateNL } from "@/lib/utils/format-date";
@@ -15,9 +14,7 @@ export default async function DisputesPage({ searchParams }: Props) {
   const sp = await searchParams;
   const db = await readDb();
   const playerId = (sp.player ?? "").trim();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const resolvedSeason = resolveSeasonId(db, cookieSeason);
-  const seasonId = (sp.season ?? resolvedSeason).trim();
+  const seasonId = await readResolvedSeasonId(db, sp.season);
 
   const players = [...db.players]
     .sort((a, b) => a.full_name.localeCompare(b.full_name, "nl"));

@@ -1,14 +1,15 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { GlassCard } from "@/components/layout/glass-card";
 import { FitnessBatchForm } from "@/components/admin/fitness-batch-form";
 import { FitnessAdminTable, type FitnessAdminRow } from "@/components/admin/fitness-admin-table";
 
-export default async function BeheerFitheidPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function BeheerFitheidPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const members = db.player_season_memberships
     .filter((m) => m.season_id === seasonId)
     .map((mem) => ({

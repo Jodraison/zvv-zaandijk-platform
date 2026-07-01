@@ -1,6 +1,5 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { computeRanking } from "@/lib/queries/ranking";
 import { SelectieClient } from "@/components/players/selectie-client";
 
@@ -13,11 +12,15 @@ function SelectieFallback() {
   );
 }
 
-export default async function SelectiePage() {
+export default async function SelectiePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ season?: string }>;
+}) {
   try {
+    const sp = await searchParams;
     const db = await readDb();
-    const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-    const seasonId = resolveSeasonId(db, cookieSeason);
+    const seasonId = await readResolvedSeasonId(db, sp.season);
     const ranking = computeRanking(db, seasonId);
     return <SelectieClient rows={ranking} seasonId={seasonId} />;
   } catch {

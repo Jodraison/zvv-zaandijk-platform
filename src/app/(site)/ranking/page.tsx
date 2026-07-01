@@ -1,14 +1,15 @@
-import { cookies } from "next/headers";
 import { readDb } from "@/lib/data/repository";
-import { resolveSeasonId } from "@/lib/season";
+import { readResolvedSeasonId } from "@/actions/season";
 import { computeRanking } from "@/lib/queries/ranking";
 import { RankingBoard } from "@/components/ranking/ranking-board";
 import { isCurrentUserAdmin } from "@/lib/auth/viewer";
 
-export default async function RankingPage() {
+type Props = { searchParams: Promise<{ season?: string }> };
+
+export default async function RankingPage({ searchParams }: Props) {
+  const sp = await searchParams;
   const db = await readDb();
-  const cookieSeason = (await cookies()).get("zvv_season_id")?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason);
+  const seasonId = await readResolvedSeasonId(db, sp.season);
   const rows = computeRanking(db, seasonId);
   const isAdmin = await isCurrentUserAdmin();
 

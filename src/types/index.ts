@@ -1,4 +1,7 @@
 export type MatchStatus = "scheduled" | "played" | "postponed" | "cancelled";
+
+/** Wedstrijdtype — enum in DB (`match_type`). */
+export type MatchType = "competition" | "cup" | "friendly";
 export type TrainingSessionStatus = "completed" | "cancelled";
 
 export type PlayerPosition = "GK" | "DEF" | "MID" | "ATT";
@@ -37,6 +40,19 @@ export interface MatchMatchdayRosterRow {
   position_label: string | null;
 }
 
+/** Opstelling per wedstrijd: basis, bank of afwezig. */
+export type MatchLineupRole = "starter" | "bench" | "absent";
+
+export interface MatchLineupEntry {
+  id: string;
+  match_id: string;
+  player_id: string;
+  role: MatchLineupRole;
+  position: string | null;
+  absence_reason: string | null;
+  sort_order: number;
+}
+
 export interface PlayerSeasonMembership {
   id: string;
   player_id: string;
@@ -55,8 +71,13 @@ export interface Match {
   id: string;
   season_id: string;
   opponent: string;
+  /** Datum + tijd (UTC ISO); enige bron voor aanvang — geen aparte date/time-kolommen. */
   kickoff_at: string;
   is_home: boolean;
+  match_type: MatchType;
+  location: string | null;
+  referee: string | null;
+  notes: string | null;
   goals_for: number;
   goals_against: number;
   status: MatchStatus;
@@ -71,13 +92,32 @@ export interface MatchPlayerStat {
   assists: number;
 }
 
-/** Eén tegendoelpunt-rij; stats worden hiervan afgeleid. */
+/** Eén doelpunt-rij; stats worden hiervan afgeleid. */
 export interface MatchGoalEvent {
   id: string;
   match_id: string;
   scorer_player_id: string;
   assist_player_id: string | null;
   sort_order: number;
+  minute: number;
+}
+
+export type MatchCardType = "yellow" | "red";
+
+export interface MatchCardEvent {
+  id: string;
+  match_id: string;
+  player_id: string;
+  card_type: MatchCardType;
+  minute: number;
+}
+
+export interface MatchSubstitution {
+  id: string;
+  match_id: string;
+  player_in_id: string;
+  player_out_id: string;
+  minute: number;
 }
 
 export interface TrainingSession {
@@ -124,8 +164,11 @@ export interface ClubDatabase {
   player_season_memberships: PlayerSeasonMembership[];
   matches: Match[];
   match_matchday_roster: MatchMatchdayRosterRow[];
+  match_lineup_entries: MatchLineupEntry[];
   match_player_stats: MatchPlayerStat[];
   match_goal_events: MatchGoalEvent[];
+  match_card_events: MatchCardEvent[];
+  match_substitutions: MatchSubstitution[];
   training_sessions: TrainingSession[];
   training_attendance: TrainingAttendance[];
   fitness_tests: FitnessTest[];

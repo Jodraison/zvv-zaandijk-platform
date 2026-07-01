@@ -4,7 +4,10 @@ import { useActionState, useEffect, useMemo, useRef, useState, useTransition } f
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { refreshAfterAdminSave } from "@/lib/admin-refresh";
-import type { MatchStatus } from "@/types";
+import type { MatchStatus, MatchType, MatchLineupRole, MatchCardType } from "@/types";
+import { DEFAULT_MATCH_TYPE } from "@/lib/match-type";
+import { MAX_LINEUP_STARTERS } from "@/lib/match-lineup";
+import type { MatchLineupInitial } from "@/lib/queries/match-lineup";
 import { GlassCard } from "@/components/layout/glass-card";
 import { saveMatchAdminFormStateAction, deleteMatchAdminAction } from "@/actions/match-admin";
 import { addMatchGuestAction, addMatchRosterPlayerAction, removeMatchGuestAction } from "@/actions/match-guest";
@@ -32,6 +35,19 @@ export type MatchAdminMember = {
 type GoalEvent = {
   scorer_player_id: string;
   assist_player_id?: string | null;
+  minute: number;
+};
+
+type CardEvent = {
+  player_id: string;
+  card_type: MatchCardType;
+  minute: number;
+};
+
+type SubstitutionEvent = {
+  player_in_id: string;
+  player_out_id: string;
+  minute: number;
 };
 
 type MatchDraft = {
@@ -39,13 +55,21 @@ type MatchDraft = {
     opponent: string;
     kickoffLocal: string;
     isHome: boolean;
+    matchType: MatchType;
+    location: string;
+    referee: string;
+    notes: string;
     goalsAgainst: number;
     status: MatchStatus;
     goalsFor: number;
   };
   eventDraft: GoalEvent[];
+  cardDraft: CardEvent[];
+  substitutionDraft: SubstitutionEvent[];
   selectedMvpPlayerId: string;
   selectedSquadIds: Record<string, boolean>;
+  lineupRoleByPlayer: Record<string, MatchLineupRole | "">;
+  lineupAbsentReasons: Record<string, string>;
   lastVerifiedSnapshot: string | null;
 };
 
@@ -55,11 +79,42 @@ function toDatetimeLocalValue(iso: string) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function initGoals(initialGoalEvents: { scorer_player_id: string; assist_player_id: string | null }[]): GoalEvent[] {
+function initGoals(
+  initialGoalEvents: { scorer_player_id: string; assist_player_id: string | null; minute?: number }[],
+): GoalEvent[] {
   return initialGoalEvents.map((e) => ({
     scorer_player_id: e.scorer_player_id,
     assist_player_id: e.assist_player_id ?? null,
+    minute: e.minute ?? 0,
   }));
+}
+
+function initCards(initialCardEvents: CardEvent[]): CardEvent[] {
+  return initialCardEvents.map((e) => ({
+    player_id: e.player_id,
+    card_type: e.card_type,
+    minute: e.minute,
+  }));
+}
+
+function initSubstitutions(initialSubstitutionEvents: SubstitutionEvent[]): SubstitutionEvent[] {
+  return initialSubstitutionEvents.map((e) => ({
+    player_in_id: e.player_in_id,
+    player_out_id: e.player_out_id,
+    minute: e.minute,
+  }));
+}
+
+function createInitialLineupState(initialLineup: MatchLineupInitial) {
+  const lineupRoleByPlayer: Record<string, MatchLineupRole | ""> = {};
+  const lineupAbsentReasons: Record<string, string> = {};
+  for (const id of initialLineup.starters) lineupRoleByPlayer[id] = "starter";
+  for (const id of initialLineup.bench) lineupRoleByPlayer[id] = "bench";
+  for (const a of initialLineup.absent) {
+    lineupRoleByPlayer[a.player_id] = "absent";
+    if (a.absence_reason) lineupAbsentReasons[a.player_id] = a.absence_reason;
+  }
+  return { lineupRoleByPlayer, lineupAbsentReasons };
 }
 
 function createInitialDraft(
@@ -70,28 +125,44 @@ function createInitialDraft(
     opponent: string;
     kickoff_at: string;
     is_home: boolean;
+    match_type?: MatchType;
+    location?: string | null;
+    referee?: string | null;
+    notes?: string | null;
     goals_against: number;
     status: MatchStatus;
     wotm_player_id: string | null;
   },
+  initialLineup: MatchLineupInitial,
+  initialCardEvents: CardEvent[],
+  initialSubstitutionEvents: SubstitutionEvent[],
   mode: "create" | "edit",
   defaultStatus: MatchStatus,
 ): MatchDraft {
   const selected: Record<string, boolean> = {};
   for (const m of members) selected[m.player_id] = initialSelectedIds.includes(m.player_id);
   const seededGoals = initGoals(initialGoalEvents);
+  const lineupState = createInitialLineupState(initialLineup);
   return {
     matchMetaDraft: {
       opponent: initialMatch.opponent,
       kickoffLocal: toDatetimeLocalValue(initialMatch.kickoff_at),
       isHome: initialMatch.is_home,
+      matchType: initialMatch.match_type ?? DEFAULT_MATCH_TYPE,
+      location: initialMatch.location ?? "",
+      referee: initialMatch.referee ?? "",
+      notes: initialMatch.notes ?? "",
       goalsAgainst: initialMatch.goals_against,
       status: mode === "create" ? defaultStatus : initialMatch.status,
       goalsFor: seededGoals.length,
     },
     eventDraft: seededGoals,
+    cardDraft: initCards(initialCardEvents),
+    substitutionDraft: initSubstitutions(initialSubstitutionEvents),
     selectedMvpPlayerId: initialMatch.wotm_player_id ?? "",
     selectedSquadIds: selected,
+    lineupRoleByPlayer: lineupState.lineupRoleByPlayer,
+    lineupAbsentReasons: lineupState.lineupAbsentReasons,
     lastVerifiedSnapshot: null,
   };
 }
@@ -126,6 +197,9 @@ export function MatchAdminForm({
   initialMatch,
   initialSelectedIds,
   initialGoalEvents = [],
+  initialLineup = { starters: [], bench: [], absent: [] },
+  initialCardEvents = [],
+  initialSubstitutionEvents = [],
   returnToHref,
 }: {
   seasonId: string;
@@ -137,19 +211,36 @@ export function MatchAdminForm({
     opponent: string;
     kickoff_at: string;
     is_home: boolean;
+    match_type?: MatchType;
+    location?: string | null;
+    referee?: string | null;
+    notes?: string | null;
     goals_against: number;
     status: MatchStatus;
     wotm_player_id: string | null;
   };
   initialSelectedIds: string[];
-  initialGoalEvents?: { scorer_player_id: string; assist_player_id: string | null }[];
+  initialGoalEvents?: { scorer_player_id: string; assist_player_id: string | null; minute?: number }[];
+  initialLineup?: MatchLineupInitial;
+  initialCardEvents?: CardEvent[];
+  initialSubstitutionEvents?: SubstitutionEvent[];
   returnToHref?: string;
 }) {
   const router = useRouter();
   const [saveState, saveAction, savePending] = useActionState(saveMatchAdminFormStateAction, initialMatchAdminFormState);
 
   const [draft, setDraft] = useState<MatchDraft>(() =>
-    createInitialDraft(members, initialSelectedIds, initialGoalEvents, initialMatch, mode, defaultStatus),
+    createInitialDraft(
+      members,
+      initialSelectedIds,
+      initialGoalEvents,
+      initialMatch,
+      initialLineup,
+      initialCardEvents,
+      initialSubstitutionEvents,
+      mode,
+      defaultStatus,
+    ),
   );
 
   const [guestState, setGuestState] = useState<AdminFormState>(initialAdminFormState);
@@ -168,10 +259,16 @@ export function MatchAdminForm({
   const opponent = draft.matchMetaDraft.opponent;
   const kickoffLocal = draft.matchMetaDraft.kickoffLocal;
   const isHome = draft.matchMetaDraft.isHome;
+  const matchType = draft.matchMetaDraft.matchType;
+  const location = draft.matchMetaDraft.location;
+  const referee = draft.matchMetaDraft.referee;
+  const notes = draft.matchMetaDraft.notes;
   const goalsAgainst = draft.matchMetaDraft.goalsAgainst;
   const status = draft.matchMetaDraft.status;
   const goalsForInput = draft.matchMetaDraft.goalsFor;
   const goals = draft.eventDraft;
+  const cards = draft.cardDraft;
+  const substitutions = draft.substitutionDraft;
   const selected = draft.selectedSquadIds;
   const wotmId = draft.selectedMvpPlayerId;
   const lastVerifiedSignature = draft.lastVerifiedSnapshot;
@@ -182,6 +279,14 @@ export function MatchAdminForm({
     setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, kickoffLocal: value } }));
   const setIsHome = (value: boolean) =>
     setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, isHome: value } }));
+  const setMatchType = (value: MatchType) =>
+    setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, matchType: value } }));
+  const setLocation = (value: string) =>
+    setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, location: value } }));
+  const setReferee = (value: string) =>
+    setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, referee: value } }));
+  const setNotes = (value: string) =>
+    setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, notes: value } }));
   const setGoalsAgainst = (value: number) =>
     setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, goalsAgainst: value } }));
   const setStatus = (value: MatchStatus) =>
@@ -193,6 +298,19 @@ export function MatchAdminForm({
       ...prev,
       eventDraft: typeof updater === "function" ? (updater as (rows: GoalEvent[]) => GoalEvent[])(prev.eventDraft) : updater,
     }));
+  const setCards = (updater: CardEvent[] | ((prev: CardEvent[]) => CardEvent[])) =>
+    setDraft((prev) => ({
+      ...prev,
+      cardDraft: typeof updater === "function" ? (updater as (rows: CardEvent[]) => CardEvent[])(prev.cardDraft) : updater,
+    }));
+  const setSubstitutions = (updater: SubstitutionEvent[] | ((prev: SubstitutionEvent[]) => SubstitutionEvent[])) =>
+    setDraft((prev) => ({
+      ...prev,
+      substitutionDraft:
+        typeof updater === "function"
+          ? (updater as (rows: SubstitutionEvent[]) => SubstitutionEvent[])(prev.substitutionDraft)
+          : updater,
+    }));
   const setSelected = (updater: Record<string, boolean> | ((prev: Record<string, boolean>) => Record<string, boolean>)) =>
     setDraft((prev) => ({
       ...prev,
@@ -203,12 +321,46 @@ export function MatchAdminForm({
     }));
   const setWotmId = (value: string) => setDraft((prev) => ({ ...prev, selectedMvpPlayerId: value }));
 
+  const setLineupRole = (playerId: string, role: MatchLineupRole | "") => {
+    setDraft((prev) => {
+      const lineupRoleByPlayer = { ...prev.lineupRoleByPlayer };
+      const lineupAbsentReasons = { ...prev.lineupAbsentReasons };
+      if (!role) {
+        delete lineupRoleByPlayer[playerId];
+        delete lineupAbsentReasons[playerId];
+      } else {
+        lineupRoleByPlayer[playerId] = role;
+        if (role !== "absent") delete lineupAbsentReasons[playerId];
+        else if (!(playerId in lineupAbsentReasons)) lineupAbsentReasons[playerId] = "";
+      }
+      return { ...prev, lineupRoleByPlayer, lineupAbsentReasons };
+    });
+  };
+
+  const setLineupAbsentReason = (playerId: string, reason: string) =>
+    setDraft((prev) => ({
+      ...prev,
+      lineupAbsentReasons: { ...prev.lineupAbsentReasons, [playerId]: reason },
+    }));
+
   const hydratedMatchId = useRef<string | null>(null);
   useEffect(() => {
     if (hydratedMatchId.current === initialMatch.id) return;
     hydratedMatchId.current = initialMatch.id;
-    setDraft(createInitialDraft(members, initialSelectedIds, initialGoalEvents, initialMatch, mode, defaultStatus));
-  }, [mode, defaultStatus, initialMatch, members, initialSelectedIds, initialGoalEvents]);
+    setDraft(
+      createInitialDraft(
+        members,
+        initialSelectedIds,
+        initialGoalEvents,
+        initialMatch,
+        initialLineup,
+        initialCardEvents,
+        initialSubstitutionEvents,
+        mode,
+        defaultStatus,
+      ),
+    );
+  }, [mode, defaultStatus, initialMatch, members, initialSelectedIds, initialGoalEvents, initialLineup, initialCardEvents, initialSubstitutionEvents]);
 
   const selectedIds = useMemo(
     () => members.filter((m) => draft.selectedSquadIds[m.player_id]).map((m) => m.player_id),
@@ -217,6 +369,28 @@ export function MatchAdminForm({
   const squadMembers = useMemo(
     () => members.filter((m) => draft.selectedSquadIds[m.player_id]),
     [draft.selectedSquadIds, members],
+  );
+  const lineupPool = useMemo(
+    () =>
+      members
+        .filter((m) => m.has_season_membership && !m.is_guest)
+        .sort(
+          (a, b) =>
+            (a.shirt_number ?? 99) - (b.shirt_number ?? 99) || a.name.localeCompare(b.name, "nl"),
+        ),
+    [members],
+  );
+  const starterCount = useMemo(
+    () => Object.values(draft.lineupRoleByPlayer).filter((r) => r === "starter").length,
+    [draft.lineupRoleByPlayer],
+  );
+  const benchCount = useMemo(
+    () => Object.values(draft.lineupRoleByPlayer).filter((r) => r === "bench").length,
+    [draft.lineupRoleByPlayer],
+  );
+  const absentCount = useMemo(
+    () => Object.values(draft.lineupRoleByPlayer).filter((r) => r === "absent").length,
+    [draft.lineupRoleByPlayer],
   );
   const squadById = useMemo(() => new Set(squadMembers.map((m) => m.player_id)), [squadMembers]);
 
@@ -268,6 +442,14 @@ export function MatchAdminForm({
     return map;
   }, [goals, squadMembers]);
 
+  const lineupLiveErrors = useMemo(() => {
+    const errs: string[] = [];
+    if (starterCount > MAX_LINEUP_STARTERS) {
+      errs.push(`Maximaal ${MAX_LINEUP_STARTERS} speelsters in de basis.`);
+    }
+    return errs;
+  }, [starterCount]);
+
   const liveErrors = useMemo(() => {
     const errs: string[] = [];
     if (status !== "played") return errs;
@@ -307,12 +489,31 @@ export function MatchAdminForm({
       kickoffIso = "";
     }
 
+    const lineup = (["starter", "bench", "absent"] as const).flatMap((role) => {
+      const ids = lineupPool.filter((m) => draft.lineupRoleByPlayer[m.player_id] === role).map((m) => m.player_id);
+      return ids.map((player_id, sort_order) => {
+        const member = lineupPool.find((m) => m.player_id === player_id);
+        return {
+          player_id,
+          role,
+          position: member?.position_label?.trim() || null,
+          absence_reason:
+            role === "absent" ? draft.lineupAbsentReasons[player_id]?.trim() || null : null,
+          sort_order,
+        };
+      });
+    });
+
     const payload = {
       match_id: mode === "edit" && initialMatch.id !== "new" ? initialMatch.id : "",
       season_id: seasonId,
       opponent,
       kickoff_at: kickoffIso,
       is_home: isHome,
+      match_type: matchType,
+      location: location.trim() || null,
+      referee: referee.trim() || null,
+      notes: notes.trim() || null,
       status,
       goals_for: status === "played" ? goals.length : 0,
       goals_against: goalsAgainst,
@@ -322,12 +523,38 @@ export function MatchAdminForm({
           ? goals.map((g) => ({
               scorer_player_id: g.scorer_player_id,
               assist_player_id: g.assist_player_id || "",
+              minute: g.minute,
             }))
           : [],
+      cards: status === "played" ? cards : [],
+      substitutions: status === "played" ? substitutions : [],
       wotm_player_id: status === "played" ? wotmId : "",
+      lineup,
     };
     return JSON.stringify(payload);
-  }, [goals, goalsAgainst, goalsForInput, initialMatch.id, isHome, kickoffLocal, mode, opponent, seasonId, selectedIds, status, wotmId]);
+  }, [
+    draft.lineupAbsentReasons,
+    draft.lineupRoleByPlayer,
+    goals,
+    cards,
+    substitutions,
+    goalsAgainst,
+    goalsForInput,
+    initialMatch.id,
+    isHome,
+    kickoffLocal,
+    lineupPool,
+    location,
+    matchType,
+    mode,
+    notes,
+    opponent,
+    referee,
+    seasonId,
+    selectedIds,
+    status,
+    wotmId,
+  ]);
 
   useEffect(() => {
     if (saveState.status !== "success" || !saveState.matchId) return;
@@ -342,15 +569,23 @@ export function MatchAdminForm({
   }, [saveState, mode, returnToHref, router, seasonId]);
 
   const busy = savePending || busyGuest || busyDelete;
-  const submitBlocked = busy || (status === "played" && liveErrors.length > 0);
+  const submitBlocked = busy || lineupLiveErrors.length > 0 || (status === "played" && liveErrors.length > 0);
   const fieldErrors = saveState.status === "error" ? saveState.fieldErrors : undefined;
   const goalMsgs = collectGoalFieldMessages(fieldErrors);
 
-  const handleAddGoal = () => setGoals((prev) => [...prev, { scorer_player_id: "", assist_player_id: null }]);
+  const handleAddGoal = () => setGoals((prev) => [...prev, { scorer_player_id: "", assist_player_id: null, minute: 0 }]);
   const handleGoalUpdate = (idx: number, patch: Partial<GoalEvent>) => setGoals((prev) => prev.map((g, i) => (i === idx ? { ...g, ...patch } : g)));
   const handleGoalDelete = (idx: number) => setGoals((prev) => prev.filter((_, i) => i !== idx));
+  const handleAddCard = () => setCards((prev) => [...prev, { player_id: "", card_type: "yellow", minute: 0 }]);
+  const handleCardUpdate = (idx: number, patch: Partial<CardEvent>) => setCards((prev) => prev.map((c, i) => (i === idx ? { ...c, ...patch } : c)));
+  const handleCardDelete = (idx: number) => setCards((prev) => prev.filter((_, i) => i !== idx));
+  const handleAddSubstitution = () =>
+    setSubstitutions((prev) => [...prev, { player_in_id: "", player_out_id: "", minute: 0 }]);
+  const handleSubstitutionUpdate = (idx: number, patch: Partial<SubstitutionEvent>) =>
+    setSubstitutions((prev) => prev.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
+  const handleSubstitutionDelete = (idx: number) => setSubstitutions((prev) => prev.filter((_, i) => i !== idx));
   const handleAddGoalForPlayer = (playerId: string) =>
-    setGoals((prev) => [...prev, { scorer_player_id: playerId, assist_player_id: null }]);
+    setGoals((prev) => [...prev, { scorer_player_id: playerId, assist_player_id: null, minute: 0 }]);
   const handleQuickAssist = (playerId: string) => {
     setGoals((prev) => {
       const i = [...prev].reverse().findIndex((g) => !g.assist_player_id && g.scorer_player_id !== playerId);
@@ -539,6 +774,22 @@ export function MatchAdminForm({
                 </select>
               </label>
               <label className="block space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Wedstrijdtype</span>
+                <select
+                  required
+                  value={matchType}
+                  onChange={(e) => setMatchType(e.target.value as MatchType)}
+                  className={inputCls}
+                >
+                  <option value="competition">Competitie</option>
+                  <option value="cup">Beker</option>
+                  <option value="friendly">Oefenwedstrijd</option>
+                </select>
+                {fieldMessage(fieldErrors, "match_type") ? (
+                  <span className="text-xs text-red-600">{fieldMessage(fieldErrors, "match_type")}</span>
+                ) : null}
+              </label>
+              <label className="block space-y-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Status</span>
                 <select value={status} onChange={(e) => setStatus(e.target.value as MatchStatus)} className={inputCls}>
                   <option value="scheduled">Gepland</option>
@@ -555,7 +806,99 @@ export function MatchAdminForm({
                 <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Goals tegen</span>
                 <input type="number" min={0} max={99} value={goalsAgainst} onChange={(e) => setGoalsAgainst(Math.max(0, Math.min(99, Number(e.target.value) || 0)))} className={inputCls} />
               </label>
+              <label className="block space-y-2 md:col-span-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Locatie</span>
+                <input value={location} onChange={(e) => setLocation(e.target.value)} className={inputCls} placeholder="Optioneel" maxLength={200} />
+              </label>
+              <label className="block space-y-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Scheidsrechter</span>
+                <input value={referee} onChange={(e) => setReferee(e.target.value)} className={inputCls} placeholder="Optioneel" maxLength={120} />
+              </label>
+              <label className="block space-y-2 md:col-span-2">
+                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Notities</span>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  className={`${inputCls} min-h-[88px] resize-y`}
+                  placeholder="Optioneel — interne toelichting"
+                  maxLength={2000}
+                />
+              </label>
             </div>
+          </div>
+
+          <div className="space-y-4 border-t border-zvv-border py-8">
+            <p className="club-page-eyebrow">Opstelling</p>
+            <p className="text-sm text-zvv-muted">
+              Basis maximaal {MAX_LINEUP_STARTERS} speelsters · alleen seizoensselectie. Bank en afwezig zijn los van de
+              wedstrijdselectie bij gespeelde wedstrijden.
+            </p>
+            <div className="flex flex-wrap gap-4 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
+              <span>Basis: {starterCount}/{MAX_LINEUP_STARTERS}</span>
+              <span>Bank: {benchCount}</span>
+              <span>Afwezig: {absentCount}</span>
+            </div>
+            {lineupLiveErrors.length > 0 ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {lineupLiveErrors.join(" ")}
+              </div>
+            ) : null}
+            {fieldMessage(fieldErrors, "lineup") ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                {fieldMessage(fieldErrors, "lineup")}
+              </div>
+            ) : null}
+            {lineupPool.length === 0 ? (
+              <p className="text-sm text-zvv-muted">Geen seizoensselectie gevonden voor dit seizoen.</p>
+            ) : (
+              <div className="space-y-2">
+                {lineupPool.map((m) => {
+                  const role = draft.lineupRoleByPlayer[m.player_id] ?? "";
+                  return (
+                    <div
+                      key={`lineup-${m.player_id}`}
+                      className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid/40 p-3 md:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] md:items-center"
+                    >
+                      <div className="min-w-0 text-sm font-medium text-zvv-ink">
+                        {m.shirt_number != null ? `#${m.shirt_number}` : "—"} {m.name}
+                        {m.position_label ? (
+                          <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-zvv-muted">
+                            {m.position_label}
+                          </span>
+                        ) : null}
+                      </div>
+                      <select
+                        value={role}
+                        onChange={(e) => {
+                          const next = e.target.value as MatchLineupRole | "";
+                          if (next === "starter" && role !== "starter" && starterCount >= MAX_LINEUP_STARTERS) return;
+                          setLineupRole(m.player_id, next);
+                        }}
+                        className={inputCls}
+                        disabled={busy}
+                      >
+                        <option value="">Niet geselecteerd</option>
+                        <option value="starter">Basis</option>
+                        <option value="bench">Bank</option>
+                        <option value="absent">Afwezig</option>
+                      </select>
+                      {role === "absent" ? (
+                        <input
+                          value={draft.lineupAbsentReasons[m.player_id] ?? ""}
+                          onChange={(e) => setLineupAbsentReason(m.player_id, e.target.value)}
+                          className={inputCls}
+                          placeholder="Reden (optioneel)"
+                          maxLength={200}
+                          disabled={busy}
+                        />
+                      ) : (
+                        <span className="hidden text-xs text-zvv-muted md:block">—</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {status === "played" ? (
@@ -641,8 +984,24 @@ export function MatchAdminForm({
                   <button type="button" onClick={handleAddGoal} disabled={busy || squadMembers.length === 0} className="club-btn-secondary">+ Goal toevoegen</button>
                 </div>
                 {goals.map((g, idx) => (
-                  <div key={`goal-${idx}`} className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[1fr_1fr_auto]">
-                    <p className="md:col-span-3 text-xs font-bold uppercase tracking-wider text-zvv-muted">Goal #{idx + 1}</p>
+                  <div key={`goal-${idx}`} className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[5rem_1fr_1fr_auto]">
+                    <p className="md:col-span-4 text-xs font-bold uppercase tracking-wider text-zvv-muted">Goal #{idx + 1}</p>
+                    <label className="block space-y-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={130}
+                        value={g.minute}
+                        onChange={(e) =>
+                          handleGoalUpdate(idx, {
+                            minute: Math.max(0, Math.min(130, Number(e.target.value) || 0)),
+                          })
+                        }
+                        className={inputCls}
+                        disabled={busy}
+                      />
+                    </label>
                     <select value={g.scorer_player_id} onChange={(e) => handleGoalUpdate(idx, { scorer_player_id: e.target.value })} className={inputCls} disabled={busy}>
                       <option value="">Kies scorer</option>
                       {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.shirt_number != null ? `#${m.shirt_number} ` : ""}{m.name}</option>)}
@@ -665,6 +1024,149 @@ export function MatchAdminForm({
                     })}
                   </div>
                 </div>
+              </div>
+
+              <div className="space-y-4 py-8">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="club-page-eyebrow">Kaarten</p>
+                  <button type="button" onClick={handleAddCard} disabled={busy || squadMembers.length === 0} className="club-btn-secondary">
+                    + Kaart toevoegen
+                  </button>
+                </div>
+                {fieldMessage(fieldErrors, "cards") ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    {fieldMessage(fieldErrors, "cards")}
+                  </div>
+                ) : null}
+                {cards.map((c, idx) => (
+                  <div key={`card-${idx}`} className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[5rem_1fr_8rem_auto]">
+                    <label className="block space-y-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={130}
+                        value={c.minute}
+                        onChange={(e) =>
+                          handleCardUpdate(idx, {
+                            minute: Math.max(0, Math.min(130, Number(e.target.value) || 0)),
+                          })
+                        }
+                        className={inputCls}
+                        disabled={busy}
+                      />
+                    </label>
+                    <select
+                      value={c.player_id}
+                      onChange={(e) => handleCardUpdate(idx, { player_id: e.target.value })}
+                      className={inputCls}
+                      disabled={busy}
+                    >
+                      <option value="">Kies speelster</option>
+                      {squadMembers.map((m) => (
+                        <option key={m.player_id} value={m.player_id}>
+                          {m.shirt_number != null ? `#${m.shirt_number} ` : ""}
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={c.card_type}
+                      onChange={(e) => handleCardUpdate(idx, { card_type: e.target.value as MatchCardType })}
+                      className={inputCls}
+                      disabled={busy}
+                    >
+                      <option value="yellow">Gele kaart</option>
+                      <option value="red">Rode kaart</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleCardDelete(idx)}
+                      disabled={busy}
+                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-40"
+                    >
+                      Verwijder
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-4 py-8">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="club-page-eyebrow">Wissels</p>
+                  <button
+                    type="button"
+                    onClick={handleAddSubstitution}
+                    disabled={busy || squadMembers.length === 0}
+                    className="club-btn-secondary"
+                  >
+                    + Wissel toevoegen
+                  </button>
+                </div>
+                {fieldMessage(fieldErrors, "substitutions") ? (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+                    {fieldMessage(fieldErrors, "substitutions")}
+                  </div>
+                ) : null}
+                {substitutions.map((s, idx) => (
+                  <div
+                    key={`sub-${idx}`}
+                    className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[5rem_1fr_1fr_auto]"
+                  >
+                    <label className="block space-y-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={130}
+                        value={s.minute}
+                        onChange={(e) =>
+                          handleSubstitutionUpdate(idx, {
+                            minute: Math.max(0, Math.min(130, Number(e.target.value) || 0)),
+                          })
+                        }
+                        className={inputCls}
+                        disabled={busy}
+                      />
+                    </label>
+                    <select
+                      value={s.player_out_id}
+                      onChange={(e) => handleSubstitutionUpdate(idx, { player_out_id: e.target.value })}
+                      className={inputCls}
+                      disabled={busy}
+                    >
+                      <option value="">Speelster eruit</option>
+                      {squadMembers.map((m) => (
+                        <option key={m.player_id} value={m.player_id}>
+                          {m.shirt_number != null ? `#${m.shirt_number} ` : ""}
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={s.player_in_id}
+                      onChange={(e) => handleSubstitutionUpdate(idx, { player_in_id: e.target.value })}
+                      className={inputCls}
+                      disabled={busy}
+                    >
+                      <option value="">Speelster erin</option>
+                      {squadMembers.map((m) => (
+                        <option key={m.player_id} value={m.player_id}>
+                          {m.shirt_number != null ? `#${m.shirt_number} ` : ""}
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleSubstitutionDelete(idx)}
+                      disabled={busy}
+                      className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-40"
+                    >
+                      Verwijder
+                    </button>
+                  </div>
+                ))}
               </div>
 
               <div className="space-y-4 py-8">

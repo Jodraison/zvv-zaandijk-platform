@@ -5,11 +5,15 @@ import { z } from "zod";
 import { matchAdminPayloadSchema } from "@/lib/validations/match-admin";
 import { aggregateStatsFromGoals } from "@/lib/match-goal-helpers";
 import { mutateDb } from "@/lib/data/mutate";
+import { readDb } from "@/lib/data/repository";
 import { isPlayerSelectable } from "@/lib/queries/match-selectable-players";
-import type { MatchGoalEvent } from "@/types";
+import type { MatchGoalEvent, MatchLineupEntry, MatchCardEvent, MatchSubstitution } from "@/types";
+import { validateMatchCardEvents } from "@/lib/queries/match-timeline";
+import { validateMatchSubstitutions } from "@/lib/match-substitutions";
 import { normalizeMutationError } from "@/lib/forms/admin-action-state";
 import type { MatchAdminActionResult, MatchAdminFormState } from "@/lib/admin/match-admin-types";
 import type { MatchVerificationPayload } from "@/lib/admin/verification-types";
+import { membershipPositionLabel, validateMatchLineup } from "@/lib/match-lineup";
 
 type MatchVerificationCore = {
   match_id: string;
@@ -108,6 +112,16 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
   }
 
   const data = parsed.data;
+  const dbForLineup = await readDb();
+  const existingForLineup = data.match_id?.trim()
+    ? dbForLineup.matches.find((m) => m.id === data.match_id?.trim())
+    : undefined;
+  const lineupSeasonId = existingForLineup?.season_id ?? data.season_id;
+  const lineupCheck = validateMatchLineup(dbForLineup, lineupSeasonId, data.lineup);
+  if (!lineupCheck.ok) {
+    return { ok: false, error: lineupCheck.error, fieldErrors: lineupCheck.fieldErrors };
+  }
+
   const kickCheck = new Date(data.kickoff_at);
   if (Number.isNaN(kickCheck.getTime())) {
     return {
@@ -124,8 +138,25 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
     ? data.goals.map((g) => ({
         scorer_player_id: g.scorer_player_id,
         assist_player_id: (typeof g.assist_player_id === "string" ? g.assist_player_id : "")?.trim() || undefined,
+        minute: g.minute,
       }))
     : [];
+
+  if (played) {
+    const cardCheck = validateMatchCardEvents(dbForLineup, data.selected_player_ids, data.cards);
+    if (!cardCheck.ok) {
+      return { ok: false, error: cardCheck.error, fieldErrors: cardCheck.fieldErrors };
+    }
+    const subCheck = validateMatchSubstitutions(
+      dbForLineup,
+      data.selected_player_ids,
+      data.lineup,
+      data.substitutions,
+    );
+    if (!subCheck.ok) {
+      return { ok: false, error: subCheck.error, fieldErrors: subCheck.fieldErrors };
+    }
+  }
 
   if (played) {
     for (let i = 0; i < goalsPayload.length; i++) {
@@ -184,6 +215,8 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       };
       db.match_player_stats = db.match_player_stats.filter((s) => s.match_id !== matchId);
       db.match_goal_events = db.match_goal_events.filter((e) => e.match_id !== matchId);
+      db.match_card_events = db.match_card_events.filter((e) => e.match_id !== matchId);
+      db.match_substitutions = db.match_substitutions.filter((e) => e.match_id !== matchId);
 
       let goals_for = 0;
       let wotm: string | null = null;
@@ -223,6 +256,10 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         opponent: data.opponent.trim(),
         kickoff_at: kickoffIso,
         is_home: data.is_home,
+        match_type: data.match_type,
+        location: data.location,
+        referee: data.referee,
+        notes: data.notes,
         goals_for,
         goals_against: played ? data.goals_against : data.goals_against,
         status: data.status,
@@ -234,6 +271,39 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       auditAction = existing ? "update" : "create";
       if (existing) Object.assign(existing, row);
       else db.matches.push(row);
+
+      db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.match_id !== matchId);
+      const lineupSeasonId = existing?.season_id ?? data.season_id;
+      const lineupRows: MatchLineupEntry[] = data.lineup.map((entry, index) => ({
+        id: randomUUID(),
+        match_id: matchId,
+        player_id: entry.player_id,
+        role: entry.role,
+        position: entry.position ?? membershipPositionLabel(db, lineupSeasonId, entry.player_id),
+        absence_reason: entry.role === "absent" ? entry.absence_reason : null,
+        sort_order: entry.sort_order ?? index,
+      }));
+      db.match_lineup_entries.push(...lineupRows);
+
+      if (played) {
+        const cardRows: MatchCardEvent[] = data.cards.map((c) => ({
+          id: randomUUID(),
+          match_id: matchId,
+          player_id: c.player_id,
+          card_type: c.card_type,
+          minute: c.minute,
+        }));
+        db.match_card_events.push(...cardRows);
+
+        const subRows: MatchSubstitution[] = data.substitutions.map((s) => ({
+          id: randomUUID(),
+          match_id: matchId,
+          player_in_id: s.player_in_id,
+          player_out_id: s.player_out_id,
+          minute: s.minute,
+        }));
+        db.match_substitutions.push(...subRows);
+      }
 
       verification = verifyMatchIntegrity(db, matchId);
       const verifiedRow = db.matches.find((m) => m.id === matchId);
@@ -329,6 +399,9 @@ export async function deleteMatchAdminAction(matchId: string): Promise<MatchAdmi
     await mutateDb(
       (db) => {
         db.match_matchday_roster = db.match_matchday_roster.filter((r) => r.match_id !== matchId);
+        db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.match_id !== matchId);
+        db.match_card_events = db.match_card_events.filter((e) => e.match_id !== matchId);
+        db.match_substitutions = db.match_substitutions.filter((e) => e.match_id !== matchId);
         db.matches = db.matches.filter((m) => m.id !== matchId);
         db.match_player_stats = db.match_player_stats.filter((s) => s.match_id !== matchId);
         db.match_goal_events = db.match_goal_events.filter((e) => e.match_id !== matchId);
