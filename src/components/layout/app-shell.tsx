@@ -14,6 +14,7 @@ const baseNav = [
   { href: "/wedstrijden", label: "Wedstrijden" },
   { href: "/ranking", label: "Ranking" },
   { href: "/statistieken", label: "Statistieken" },
+  { href: "/academie", label: "Academie" },
   { href: "/training", label: "Training" },
   { href: "/fitheid", label: "Fitheid" },
   { href: "/seizoenen", label: "Seizoenen" },
