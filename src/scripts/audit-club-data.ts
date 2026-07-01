@@ -235,9 +235,6 @@ async function main(): Promise<void> {
     if (wotm && !playerById.has(wotm)) {
       broken.push(`Wedstrijd ${m.opponent}: wotm_player_id onbekend`);
     }
-    if (wotm && rows.length && !rows.some((r) => String(r.player_id) === wotm)) {
-      broken.push(`Wedstrijd ${m.opponent}: MVP staat niet in match_player_stats (geen stats-rij voor MVP).`);
-    }
   }
 
   const { data: eventsRaw, error: eE } = await client.from("match_goal_events").select("*");

@@ -93,6 +93,9 @@ function verifyMatchIntegrity(db: import("@/types").ClubDatabase, matchId: strin
   if (goalsFromStats !== events.length) throw new Error("Post-validatie: stat-goals mismatch met events.");
   if (assistsFromStats !== assistsFromEvents) throw new Error("Post-validatie: stat-assists mismatch met events.");
   if (!match.wotm_player_id) throw new Error("Post-validatie: MVP ontbreekt.");
+  if (!db.players.some((p) => p.id === match.wotm_player_id)) {
+    throw new Error("Post-validatie: MVP verwijst naar onbekende speler.");
+  }
   return {
     match_id: matchId,
     persisted_goal_events_count: events.length,

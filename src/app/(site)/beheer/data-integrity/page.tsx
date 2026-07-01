@@ -13,8 +13,12 @@ function runIntegrityChecks(db: Awaited<ReturnType<typeof readDb>>, seasonId: st
       if (m.goals_for !== events.length) errors.push(`Match ${m.id}: goals_for (${m.goals_for}) != events (${events.length})`);
       const g = stats.reduce((a, s) => a + s.goals, 0);
       if (g !== events.length) errors.push(`Match ${m.id}: stat-goals (${g}) != events (${events.length})`);
-      if (m.wotm_player_id && !db.players.some((p) => p.id === m.wotm_player_id)) errors.push(`Match ${m.id}: MVP verwijst naar onbekende speler`);
+      if (m.wotm_player_id && !db.players.some((p) => p.id === m.wotm_player_id)) {
+        errors.push(`Match ${m.id}: MVP verwijst naar onbekende speler`);
+      }
       if (!m.wotm_player_id) errors.push(`Match ${m.id}: MVP ontbreekt`);
+    } else if (m.wotm_player_id) {
+      errors.push(`Match ${m.id}: MVP gezet op niet-gespeelde wedstrijd`);
     }
   }
   for (const e of db.match_goal_events) {

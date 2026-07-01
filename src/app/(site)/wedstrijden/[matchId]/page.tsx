@@ -31,11 +31,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
   const resultNl = result === "W" ? "Winst" : result === "L" ? "Verlies" : result === "D" ? "Gelijk" : null;
 
   const wotm = m.wotm_player_id ? db.players.find((p) => p.id === m.wotm_player_id) : null;
-  const wotmMem = m.wotm_player_id
-    ? db.player_season_memberships.find((x) => x.player_id === m.wotm_player_id && x.season_id === m.season_id)
-    : null;
-  const wotmPl = m.wotm_player_id ? db.players.find((p) => p.id === m.wotm_player_id) : null;
-  const wotmIsGuest = !!wotmPl?.is_guest;
+  const wotmIsGuest = !!wotm?.is_guest;
   const wotmShirt = m.wotm_player_id ? matchdayShirtForPlayer(db, matchId, m.season_id, m.wotm_player_id) : null;
 
   const timeline = buildMatchTimeline(db, matchId);
@@ -111,7 +107,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
         </div>
       </section>
 
-      {wotm && (wotmMem || wotmIsGuest) ? (
+      {wotm && m.status === "played" ? (
         <WotmSpotlight name={wotm.full_name} shirt={wotmShirt} isGuest={wotmIsGuest} photoUrl={wotm.photo_url} />
       ) : m.status === "played" ? (
         <div className="rounded-2xl border border-zvv-border bg-zvv-card-mid/50 px-6 py-8 text-center text-[15px] text-zvv-muted">
