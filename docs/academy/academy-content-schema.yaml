@@ -1,0 +1,375 @@
+# Academy Content Schema — ACADEMY-ARCH-v1.1
+# Phase B Foundation · schema only · no content values
+# Supersedes: ad-hoc Phase 2 field names
+# Governance: frozen — wijzigingen alleen via ACR
+
+schema:
+  id: academy-content-schema
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  description: >
+    Canonieke velddefinities voor Academy metadata, sidecars en registries.
+    Scheidt CONTENT (L5 markdown), METADATA (sidecars/registries),
+    NAVIGATIE (routes/UI) en PERSOONLIJKE DATA (runtime DB — gedefinieerd, niet hier opgeslagen).
+
+# ─────────────────────────────────────────────────────────────────────────────
+# LAYER ALIASES (mens ↔ canoniek)
+# User-facing veldnamen mappen 1:1 op layer IDs — geen dubbele semantiek
+# ─────────────────────────────────────────────────────────────────────────────
+
+layer_aliases:
+  trigger: L0          # inline op Visual-tab
+  visual: L1
+  twenty_seconds: L2   # UI: "20 sec" · Activate
+  apply: L3            # wedstrijd-context only
+  two_minutes: L4      # UI: "2 min" · Remember
+  full: L5             # UI: "Volledig" · bestaande markdown (geen sidecar)
+
+layers:
+  L0:
+    id: layer.trigger
+    ui_tab: null       # inline boven L1
+    max_words: 25
+    per_position: optional_one_line
+    purpose: "Wanneer zie je dit?"
+  L1:
+    id: layer.visual
+    ui_tab: Visual
+    per_position: highlight_only
+    purpose: Herkenning · timing · ruimte
+  L2:
+    id: layer.activate
+    ui_tab: "20 sec"
+    alias: twenty_seconds
+    max_words: 40
+    per_position: required
+    purpose: Activeren · niet leren
+  L3:
+    id: layer.apply
+    ui_tab: Apply
+    alias: apply
+    max_words: 30
+    checklist_items: 3
+    per_position: required
+    context: match_only
+    purpose: Toepassen · checklist · roep
+  L4:
+    id: layer.remember
+    ui_tab: "2 min"
+    alias: two_minutes
+    max_words: 200
+    per_position: required
+    fields:
+      - fouten       # max 3
+      - afspraken    # max 3
+      - gedragingen  # max 3
+    purpose: Onthouden zonder uitleg
+  L5:
+    id: layer.full
+    ui_tab: Volledig
+    storage: content_file
+    purpose: Begrijpen · PB markdown bron
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ID PATTERNS (frozen)
+# ─────────────────────────────────────────────────────────────────────────────
+
+id_patterns:
+  playbook: "pb.{n}"              # n ≥ 1 · geen bovengrens
+  visual: "vis.t{n}"              # n = T## nummer zonder prefix
+  situation: "sit.{slug}"
+  problem: "prob.{slug}"
+  moment: "moment.{s1-s6}"
+  position: "pos.{slug}"
+  tag: "tag.{slug}"
+  cue: "cue.{slug}"
+  exercise: "ex.{pb_n}"
+  anchor: "anker.{pos_slug}"
+  team: "team.{slug}"
+  season: "season.{team_slug}.{year}"
+  match: "match.{team_slug}.{date_iso}"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEFINITIONS — registry entities (metadata vlak)
+# ─────────────────────────────────────────────────────────────────────────────
+
+definitions:
+
+  PlaybookRegistryEntry:
+    description: Metadata voor één playbook — geen L0-L4 inhoud
+    required: [id, number, slug, title, phase_code, content_path, content_status, sidecar_status]
+    properties:
+      id: { type: string, pattern: "^pb\\.\\d+$" }
+      number: { type: integer, minimum: 1 }
+      slug: { type: string, pattern: "^[a-z0-9-]+$" }
+      title: { type: string }
+      subtitle: { type: string, nullable: true }
+      phase_code:
+        type: string
+        description: "ACE/L/O code · bijv. S4.1 · L01 · O0"
+      ace_module:
+        type: string
+        enum: [O0, L, S1, S2, S3, S4, S5, S6, PERSONAL]
+      moment_id: { type: string, nullable: true, ref: Moment }
+      module: { type: integer, default: 2 }
+      objective: { type: string, nullable: true }
+      content_path: { type: string }
+      content_status: { enum: [draft, published, deprecated] }
+      sidecar_status: { enum: [pending, in_progress, complete] }
+      sidecar_path: { type: string, nullable: true }
+      type:
+        enum: [tactical, foundation, personal_compilation]
+        default: tactical
+      flagship: { type: boolean, default: false }
+      anchor_playbook: { type: boolean, default: false }
+      difficulty: { enum: [foundation, intermediate, advanced, flagship] }
+      prerequisites: { type: array, items: { ref: PlaybookRegistryEntry } }
+      follows_with: { type: string, nullable: true, ref: PlaybookRegistryEntry }
+      related_playbooks: { type: array, items: { ref: PlaybookRegistryEntry } }
+      situation_refs: { type: array, items: { ref: SituationRegistryEntry } }
+      problem_refs: { type: array, items: { ref: ProblemRegistryEntry } }
+      position_refs:
+        type: array
+        description: Posities met significante §8 content
+        items: { ref: PositionRegistryEntry }
+      visual_primary_ref: { type: string, nullable: true, ref: VisualRegistryEntry }
+      visual_refs: { type: array, items: { ref: VisualRegistryEntry } }
+      exercise_ref: { type: string, nullable: true, ref: Exercise }
+      tags: { type: array, items: { ref: TagRegistryEntry } }
+      search_terms: { type: array, items: { type: string } }
+      curriculum_week: { type: integer, nullable: true, minimum: 1 }
+      retrofit_wave: { type: integer, nullable: true, minimum: 0 }
+      extract_path: { enum: [manual, semi_auto, auto] }
+      trainer_points: { type: array, items: { type: string }, nullable: true }
+      captain_points: { type: array, items: { type: string }, nullable: true }
+
+  SituationRegistryEntry:
+    required: [id, slug, label_nl, moment_id, status]
+    properties:
+      id: { type: string, pattern: "^sit\\." }
+      slug: { type: string }
+      label_nl: { type: string }
+      label_player: { type: string, nullable: true }
+      moment_id: { ref: Moment }
+      parent_situation_id: { type: string, nullable: true, ref: SituationRegistryEntry }
+      status: { enum: [core, extended] }
+      pb_refs: { type: array, items: { ref: PlaybookRegistryEntry } }
+      problem_refs: { type: array, items: { ref: ProblemRegistryEntry } }
+      tag_refs: { type: array, items: { ref: TagRegistryEntry } }
+      visual_primary_ref: { type: string, nullable: true }
+      search_terms: { type: array, items: { type: string } }
+      sort_order: { type: integer }
+
+  ProblemRegistryEntry:
+    required: [id, slug, label_player, status]
+    properties:
+      id: { type: string, pattern: "^prob\\." }
+      slug: { type: string }
+      label_player:
+        type: string
+        description: Altijd spelerstaal · eerste persoon
+      label_short: { type: string, nullable: true }
+      status: { enum: [core, extended, mvp] }
+      mvp_priority: { type: integer, nullable: true, minimum: 1 }
+      situation_refs: { type: array, items: { ref: SituationRegistryEntry } }
+      pb_refs: { type: array, items: { ref: PlaybookRegistryEntry } }
+      tag_refs: { type: array, items: { ref: TagRegistryEntry } }
+      default_layer: { enum: [L2, L4], default: L2 }
+      search_terms: { type: array, items: { type: string } }
+      sort_order: { type: integer }
+
+  PositionRegistryEntry:
+    required: [id, slug, name_nl, abbrev, line]
+    properties:
+      id: { type: string, pattern: "^pos\\." }
+      slug: { type: string }
+      name_nl: { type: string }
+      abbrev: { type: string, maxLength: 3 }
+      line: { enum: [keeper, defence, midfield, attack] }
+      sort_order: { type: integer }
+      dashboard_route: { type: string, default: "/positie" }
+      anchor_ref: { ref: PositieAnker }
+      default_widgets:
+        type: array
+        description: Widget IDs op Positie-dashboard (§4.1 v1.1)
+        items:
+          enum: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+      core_pb_refs: { type: array, items: { ref: PlaybookRegistryEntry } }
+
+  PositieAnker:
+    required: [id, position_id, tasks]
+    properties:
+      id: { type: string, pattern: "^anker\\." }
+      position_id: { ref: PositionRegistryEntry }
+      tasks:
+        type: array
+        minItems: 3
+        maxItems: 3
+        items:
+          type: object
+          required: [label, pb_ref]
+          properties:
+            label: { type: string }
+            pb_ref: { ref: PlaybookRegistryEntry }
+
+  TagRegistryEntry:
+    required: [id, slug, label_nl, category]
+    properties:
+      id: { type: string, pattern: "^tag\\." }
+      slug: { type: string }
+      label_nl: { type: string }
+      category:
+        enum: [phase, tactical, mental, communication, set_piece, match_management]
+      description: { type: string }
+      mutually_exclusive_with: { type: array, items: { ref: TagRegistryEntry } }
+
+  VisualRegistryEntry:
+    required: [id, slug, title, status]
+    properties:
+      id: { type: string, pattern: "^vis\\.t\\d+$" }
+      slug: { type: string }
+      title: { type: string }
+      pb_ref: { ref: PlaybookRegistryEntry, nullable: true }
+      type:
+        enum: [animation, static, split_screen, template, platform]
+      anchor: { type: boolean, default: false }
+      anchor_priority: { type: integer, nullable: true }
+      highlight_positions: { type: array, items: { ref: PositionRegistryEntry } }
+      status: { enum: [spec_only, brief_ready, rendered] }
+      spec_ref: { type: string, nullable: true, description: "T## in PB markdown" }
+
+  CueRegistryEntry:
+    required: [id, slug, text]
+    properties:
+      id: { type: string, pattern: "^cue\\." }
+      slug: { type: string }
+      text: { type: string, maxLength: 40 }
+      pb_ref: { ref: PlaybookRegistryEntry, nullable: true }
+      layer: { enum: [L2, L3], default: L2 }
+
+  Exercise:
+    required: [id, pb_ref]
+    properties:
+      id: { type: string, pattern: "^ex\\.\\d+$" }
+      pb_ref: { ref: PlaybookRegistryEntry }
+      label: { type: string, nullable: true }
+      duration_min: { type: integer, nullable: true }
+      optional: { type: boolean, default: true }
+
+  Moment:
+    required: [id, slug, label_nl, ace, anchor_pb]
+    properties:
+      id: { type: string, pattern: "^moment\\.s[1-6]$" }
+      slug: { type: string }
+      label_nl: { type: string }
+      ace: { enum: [S1, S2, S3, S4, S5, S6] }
+      anchor_pb: { ref: PlaybookRegistryEntry }
+      pb_range: { type: array, items: { ref: PlaybookRegistryEntry } }
+      sort_order: { type: integer }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SIDECAR SCHEMA (per playbook — Phase E invulling)
+# Bestand: sidecars/pb-{n}-meta.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+
+sidecar:
+  file_pattern: "sidecars/pb-{number:02d}-meta.yaml"
+  required: [schema_version, pb, slug, moment_ids, layers]
+  properties:
+    schema_version: { type: string, const: "1.1.0" }
+    pb: { type: integer, minimum: 1 }
+    slug: { type: string }
+    moment_ids: { type: array, items: { ref: Moment } }
+    situation_ids: { type: array, items: { ref: SituationRegistryEntry } }
+    problem_ids: { type: array, items: { ref: ProblemRegistryEntry } }
+    visual_primary: { ref: VisualRegistryEntry }
+    exercise: { type: string, nullable: true }
+    tags: { type: array, items: { ref: TagRegistryEntry } }
+    search_terms: { type: array, items: { type: string } }
+    trainer_points: { type: array, maxItems: 3, items: { type: string } }
+    captain_points: { type: array, maxItems: 5, items: { type: string } }
+    layers:
+      type: object
+      required: [L0, L2, L3, L4]
+      properties:
+        L0:
+          type: object
+          properties:
+            shared: { type: string }
+            by_position: { type: object, additionalProperties: { type: string } }
+        L2:
+          type: object
+          description: twenty_seconds · 11 posities
+          additionalProperties:
+            type: array
+            maxItems: 4
+            items: { type: string }
+        L3:
+          type: object
+          description: apply · checklist + cue per positie
+          additionalProperties:
+            type: object
+            properties:
+              checklist: { type: array, maxItems: 3, items: { type: string } }
+              cue: { type: string }
+        L4:
+          type: object
+          description: two_minutes · 11 posities
+          additionalProperties:
+            type: object
+            properties:
+              fouten: { type: array, maxItems: 3, items: { type: string } }
+              afspraken: { type: array, maxItems: 3, items: { type: string } }
+              gedragingen: { type: array, maxItems: 3, items: { type: string } }
+    completeness:
+      type: object
+      properties:
+        L0: { enum: [empty, draft, approved] }
+        L2: { enum: [empty, draft, approved] }
+        L3: { enum: [empty, draft, approved] }
+        L4: { enum: [empty, draft, approved] }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# PERSOONLIJKE DATA (runtime — schema definitie only · geen opslag hier)
+# ─────────────────────────────────────────────────────────────────────────────
+
+personal_data_entities:
+  User:
+    fields: [id, primary_position_id, secondary_position_id, role, team_id]
+  Reflection:
+    fields: [id, user_id, match_id, answers, pb_ref, prob_ref, created_at]
+  Leerpunt:
+    fields: [id, user_id, reflection_id, prob_ref, pb_ref, active_until_week, resolved]
+  WeekPlan:
+    fields: [id, season_id, week_number, pb_ref, exercise_ref, tpl_points, pushed_at]
+  Pin:
+    fields: [id, user_id, target_type, target_id, sort_order]
+  LastViewed:
+    fields: [id, user_id, target_type, target_id, viewed_at]
+  SpeelboekSnapshot:
+    fields: [id, user_id, season_id, generated_at, source_pins, source_leerpunten]
+  CaptainCard:
+    fields: [id, team_id, week_plan_id, script_60s, roepen, afspraken]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VALIDATION RULES
+# ─────────────────────────────────────────────────────────────────────────────
+
+validation_rules:
+  - rule: unique_ids
+    scope: all_registries
+  - rule: pb_refs_must_exist
+    scope: [situations, problems, visuals, anchors]
+  - rule: moment_refs_must_exist
+    scope: situations
+  - rule: tag_refs_must_exist
+    scope: [situations, problems, playbooks]
+  - rule: L3_apply_not_in_sidecar_for_non_match_default
+    note: L3 inhoud alleen in sidecar · UI toont alleen in wedstrijd-context
+  - rule: L5_never_in_sidecar
+  - rule: player_language_problems
+    scope: problems.label_player
+  - rule: no_pb_number_in_search_display_title
+  - rule: core_situations_count
+    expected: 22
+    registry: academy-registry-situations.yaml

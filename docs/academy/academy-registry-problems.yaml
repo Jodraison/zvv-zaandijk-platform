@@ -1,0 +1,197 @@
+# Academy Registry — Problems (Probleem-navigator)
+# Phase B · ACADEMY-ARCH-v1.1
+# Spelerstaal · eerste persoon
+
+registry:
+  id: academy-registry-problems
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  core_count: 10
+  mvp_count: 7
+  extended_count: 4
+  total_count: 14
+
+problems:
+
+  # ── CORE 10 (frozen) ─────────────────────────────────────────────────────
+
+  - id: prob.te-snel-wegspelen
+    slug: te-snel-wegspelen
+    label_player: "Ik speel te snel weg"
+    label_short: "Te snel weg"
+    status: core
+    mvp_priority: 1
+    situation_refs: [sit.eerste-pass, sit.counter, sit.balverovering]
+    pb_refs: [pb.27, pb.28, pb.5]
+    tag_refs: [tag.balbezit, tag.omschakelen]
+    default_layer: L2
+    search_terms: [snel weg, blind, eerste pass, haast]
+    sort_order: 1
+
+  - id: prob.positie-kwijt
+    slug: positie-kwijt
+    label_player: "Ik verlies mijn positie"
+    label_short: "Positie kwijt"
+    status: core
+    mvp_priority: 2
+    situation_refs: [sit.verdedigingsblok, sit.lijnen-samen, sit.midblock]
+    pb_refs: [pb.20, pb.21, pb.33]
+    tag_refs: [tag.verdedigen, tag.wedstrijdmanagement]
+    default_layer: L2
+    search_terms: [positie kwijt, waar moet ik staan, kwijt]
+    sort_order: 2
+
+  - id: prob.counters-tegen
+    slug: counters-tegen
+    label_player: "We krijgen counters tegen"
+    label_short: "Counters tegen"
+    status: core
+    mvp_priority: 3
+    situation_refs: [sit.balverlies-centraal, sit.balverlies-moment, sit.counter]
+    pb_refs: [pb.18, pb.28, pb.19]
+    tag_refs: [tag.omschakelen, tag.verdedigen]
+    default_layer: L2
+    search_terms: [counter tegen, counters, balverlies]
+    sort_order: 3
+
+  - id: prob.uitstappen-twijfel
+    slug: uitstappen-twijfel
+    label_player: "Ik weet niet wanneer ik moet uitstappen"
+    label_short: "Uitstappen twijfel"
+    status: core
+    mvp_priority: 4
+    situation_refs: [sit.duel-1v1, sit.uitstappen, sit.tussen-linies-verdedigen]
+    pb_refs: [pb.25, pb.24]
+    tag_refs: [tag.verdedigen]
+    default_layer: L2
+    search_terms: [uitstappen, duel, wanneer, twijfel]
+    sort_order: 4
+
+  - id: prob.iedereen-naar-bal
+    slug: iedereen-naar-bal
+    label_player: "Iedereen rent naar de bal"
+    label_short: "Naar de bal"
+    status: core
+    mvp_priority: 5
+    situation_refs: [sit.ingooi, sit.ingooi-gespreid, sit.lijnen-samen]
+    pb_refs: [pb.32, pb.33, pb.7]
+    tag_refs: [tag.standaards, tag.communicatie]
+    default_layer: L2
+    search_terms: [iedereen bal, crowd, ingooi]
+    sort_order: 5
+
+  - id: prob.te-weinig-communicatie
+    slug: te-weinig-communicatie
+    label_player: "Ik praat te weinig op het veld"
+    label_short: "Te weinig comm"
+    status: core
+    mvp_priority: 6
+    situation_refs: [sit.lijnen-samen, sit.dode-spelmoment]
+    pb_refs: [pb.30, pb.33]
+    tag_refs: [tag.communicatie]
+    default_layer: L2
+    search_terms: [praten, roepen, communicatie, stil]
+    sort_order: 6
+
+  - id: prob.paniek-na-tegoal
+    slug: paniek-na-tegoal
+    label_player: "Ik raak in paniek na een tegendoelpunt"
+    label_short: "Paniek na goal"
+    status: core
+    mvp_priority: 7
+    situation_refs: [sit.wedstrijd-90-min, sit.momentum, sit.achterstand]
+    pb_refs: [pb.34]
+    tag_refs: [tag.mentaal, tag.wedstrijdmanagement]
+    default_layer: L2
+    search_terms: [paniek, tegoal, stress, reset]
+    sort_order: 7
+
+  - id: prob.druk-zetten
+    slug: druk-zetten
+    label_player: "Ik heb moeite met druk zetten"
+    label_short: "Druk zetten"
+    status: core
+    mvp_priority: null
+    situation_refs: [sit.hoog-press, sit.hoog-druk-zetten, sit.counterpressing]
+    pb_refs: [pb.23, pb.16]
+    tag_refs: [tag.verdedigen, tag.omschakelen]
+    default_layer: L2
+    search_terms: [druk zetten, pressing, press]
+    sort_order: 8
+
+  - id: prob.uitgespeeld
+    slug: uitgespeeld
+    label_player: "Ik word uitgespeeld"
+    label_short: "Uitgespeeld"
+    status: core
+    mvp_priority: null
+    situation_refs: [sit.tussen-linies-verdedigen, sit.tussen-linies-aanvallend]
+    pb_refs: [pb.24, pb.8]
+    tag_refs: [tag.verdedigen, tag.balbezit]
+    default_layer: L2
+    search_terms: [uitgespeeld, tussen linies, dicht]
+    sort_order: 9
+
+  - id: prob.achter-bal-aan
+    slug: achter-bal-aan
+    label_player: "Ik ren achter de bal aan"
+    label_short: "Achter bal aan"
+    status: core
+    mvp_priority: null
+    situation_refs: [sit.balverlies-moment, sit.direct-compact]
+    pb_refs: [pb.14, pb.33]
+    tag_refs: [tag.omschakelen]
+    default_layer: L2
+    search_terms: [achter bal, rennen, jagen]
+    sort_order: 10
+
+  # ── EXTENDED (spelerstaal · geen ACR voor toevoegen) ─────────────────────
+
+  - id: prob.verlies-duels
+    slug: verlies-duels
+    label_player: "Ik verlies te veel duels"
+    label_short: "Duels verliezen"
+    status: extended
+    mvp_priority: null
+    situation_refs: [sit.duel-1v1, sit.uitstappen]
+    pb_refs: [pb.25]
+    tag_refs: [tag.verdedigen]
+    default_layer: L2
+    search_terms: [duels, verliezen, kracht]
+    sort_order: 11
+
+  - id: prob.twijfel-aan-bal
+    slug: twijfel-aan-bal
+    label_player: "Ik twijfel als ik de bal krijg"
+    label_short: "Twijfel aan bal"
+    status: extended
+    situation_refs: [sit.bezit-onder-druk, sit.beslissen-onder-druk]
+    pb_refs: [pb.5, pb.13]
+    tag_refs: [tag.balbezit, tag.mentaal]
+    default_layer: L2
+    search_terms: [twijfel, beslissen, druk]
+    sort_order: 12
+
+  - id: prob.geen-overzicht
+    slug: geen-overzicht
+    label_player: "Ik zie niet wat er om me heen gebeurt"
+    label_short: "Geen overzicht"
+    status: extended
+    situation_refs: [sit.wedstrijd-lezen, sit.systeem-ademt]
+    pb_refs: [pb.1, pb.2]
+    tag_refs: [tag.wedstrijdmanagement, tag.mentaal]
+    default_layer: L2
+    search_terms: [overzicht, kijken, scan]
+    sort_order: 13
+
+  - id: prob.moe-laatste-kwartier
+    slug: moe-laatste-kwartier
+    label_player: "Ik word slordig in het laatste kwartier"
+    label_short: "Moe laatste kwart"
+    status: extended
+    situation_refs: [sit.wedstrijd-90-min, sit.wedstrijd-uitspelen]
+    pb_refs: [pb.34]
+    tag_refs: [tag.wedstrijdmanagement, tag.mentaal]
+    default_layer: L2
+    search_terms: [moe, laatste kwartier, 80 minuten]
+    sort_order: 14

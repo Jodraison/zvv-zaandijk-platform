@@ -14,8 +14,9 @@
 | **WCPE v2.2** | `world-class-playbook-engine.md` | **Playbook** — schrijven · coach-stem · structuur |
 | **WVLP v1.0** | `world-class-visual-learning-protocol.md` | **Visual learning** — 4 lagen · visuals |
 | **ACE v1.0** | `academy-curriculum-engine.md` | **Curriculum** — volgorde · voorkennis |
+| **FDPS v1.0** | `academy-final-development-phase.md` | **Schrijven PB13+** — 4e klas · Praatje→Plaatje→Daadje |
 
-**WPE staat boven alles.** Subordinate standaarden implementeren; WPE **certificeert** publicatie.
+**WPE staat boven alles.** FDPS bepaalt **hoe speelsters het lezen** (PB13+). WPE **certificeert** publicatie.
 
 ---
 

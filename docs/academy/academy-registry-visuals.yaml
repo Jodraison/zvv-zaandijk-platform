@@ -1,0 +1,192 @@
+# Academy Registry — Anchor Visuals (12 priority · geen 437)
+# Phase B · ACADEMY-ARCH-v1.1
+# Spec refs naar T## in PB markdown — nog niet gerenderd
+
+registry:
+  id: academy-registry-visuals
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  anchor_count: 12
+  total_count: 14
+
+visuals:
+
+  - id: vis.t002
+    slug: 4231-ademt
+    title: "4-2-3-1 ademt"
+    pb_ref: pb.2
+    spec_ref: T002
+    type: static
+    anchor: true
+    anchor_priority: 1
+    highlight_positions: [pos.keeper, pos.lcv, pos.rcv, pos.lb, pos.rb, pos.l6, pos.r6, pos.10, pos.lw, pos.rw, pos.spits]
+    status: spec_only
+    search_terms: [4231, systeem, ademen]
+
+  - id: vis.t168
+    slug: blok-schuiven
+    title: "Blok schuift mee"
+    pb_ref: pb.20
+    spec_ref: T168
+    type: animation
+    anchor: true
+    anchor_priority: 2
+    highlight_positions: [pos.lcv, pos.rcv, pos.lb, pos.rb, pos.l6, pos.r6]
+    status: spec_only
+    search_terms: [blok, schuiven, verdedigen]
+
+  - id: vis.t170
+    slug: goed-vs-fout-blok
+    title: "Goed vs fout — blok (template)"
+    pb_ref: pb.20
+    spec_ref: T170
+    type: split_screen
+    anchor: true
+    anchor_priority: 11
+    highlight_positions: [pos.lcv, pos.rcv, pos.lb, pos.rb]
+    status: spec_only
+    search_terms: [goed fout, contrast, patroon]
+
+  - id: vis.t270
+    slug: omschakeling-min52
+    title: "Omschakeling minuut 52"
+    pb_ref: pb.26
+    spec_ref: T270
+    type: animation
+    anchor: true
+    anchor_priority: 3
+    highlight_positions: [pos.l6, pos.r6, pos.10, pos.lw, pos.rw, pos.spits]
+    status: spec_only
+    search_terms: [omschakeling, balwinst, S4]
+
+  - id: vis.t294
+    slug: eerste-pass-ketting
+    title: "Eerste pass ketting"
+    pb_ref: pb.27
+    spec_ref: T294
+    type: animation
+    anchor: true
+    anchor_priority: 4
+    highlight_positions: [pos.l6, pos.10, pos.lb, pos.lw]
+    status: spec_only
+    search_terms: [eerste pass, ketting, balwinst]
+
+  - id: vis.t307
+    slug: counter-timer
+    title: "Counter timer 0–10 sec"
+    pb_ref: pb.28
+    spec_ref: T307
+    type: animation
+    anchor: true
+    anchor_priority: 5
+    highlight_positions: [pos.lw, pos.rw, pos.spits, pos.10]
+    status: spec_only
+    search_terms: [counter, timer, timing]
+
+  - id: vis.t343
+    slug: dode-spelmoment-organisatie
+    title: "Dode spelmoment organisatie"
+    pb_ref: pb.30
+    spec_ref: T343
+    type: static
+    anchor: true
+    anchor_priority: 6
+    highlight_positions: [pos.keeper, pos.lcv, pos.rcv, pos.spits]
+    status: spec_only
+    search_terms: [standaard, dode bal, organisatie]
+
+  - id: vis.t361
+    slug: corner-loops
+    title: "Corner loops — waarom bewegen"
+    pb_ref: pb.31
+    spec_ref: T361
+    type: animation
+    anchor: true
+    anchor_priority: 7
+    highlight_positions: [pos.lw, pos.rw, pos.spits, pos.l6, pos.r6]
+    status: spec_only
+    search_terms: [corner, loops, bewegen]
+
+  - id: vis.t379
+    slug: ingooi-gespreid
+    title: "Ingooi — gespreid staan"
+    pb_ref: pb.32
+    spec_ref: T379
+    type: static
+    anchor: true
+    anchor_priority: 8
+    highlight_positions: [pos.lb, pos.rb, pos.l6, pos.r6, pos.lw, pos.rw]
+    status: spec_only
+    search_terms: [ingooi, gespreid, throw-in]
+
+  - id: vis.t398
+    slug: elastiek-drie-linies
+    title: "Elastiek — drie linies systeem"
+    pb_ref: pb.33
+    spec_ref: T398
+    type: animation
+    anchor: true
+    anchor_priority: 9
+    highlight_positions: [pos.keeper, pos.lcv, pos.rcv, pos.lb, pos.rb, pos.l6, pos.r6, pos.10, pos.lw, pos.rw, pos.spits]
+    status: spec_only
+    search_terms: [linies, elastiek, systeem]
+
+  - id: vis.t418
+    slug: momentum-90-min
+    title: "Momentum 0–90 minuten"
+    pb_ref: pb.34
+    spec_ref: T418
+    type: static
+    anchor: true
+    anchor_priority: 10
+    highlight_positions: [pos.10, pos.l6, pos.r6, pos.spits]
+    status: spec_only
+    search_terms: [momentum, 90 min, fase]
+
+  - id: vis.t076
+    slug: bezit-onder-druk-anker
+    title: "Bezit onder druk — anker"
+    pb_ref: pb.13
+    spec_ref: T076
+    type: animation
+    anchor: false
+    highlight_positions: [pos.l6, pos.r6, pos.10]
+    status: spec_only
+
+  - id: vis.t086
+    slug: balverlies-compact-anker
+    title: "Balverlies — compact anker"
+    pb_ref: pb.14
+    spec_ref: T086
+    type: animation
+    anchor: false
+    highlight_positions: [pos.l6, pos.r6, pos.lcv, pos.rcv]
+    status: spec_only
+
+  - id: vis.t999
+    slug: positie-highlight-platform
+    title: "Positie-highlight veld (platform template)"
+    pb_ref: null
+    spec_ref: null
+    type: platform
+    anchor: true
+    anchor_priority: 12
+    highlight_positions: [pos.keeper, pos.lcv, pos.rcv, pos.lb, pos.rb, pos.l6, pos.r6, pos.10, pos.lw, pos.rw, pos.spits]
+    status: spec_only
+    search_terms: [positie, highlight, veld]
+
+# Per-PB primary visuals (niet anker · refs voor sidecar Phase E)
+# Uitgebreid via registry append — pattern: vis.t{###} spec_ref in PB markdown
+
+pb_primary_visual_refs:
+  pb.13: vis.t076
+  pb.14: vis.t086
+  pb.20: vis.t168
+  pb.26: vis.t270
+  pb.27: vis.t294
+  pb.28: vis.t307
+  pb.30: vis.t343
+  pb.31: vis.t361
+  pb.32: vis.t379
+  pb.33: vis.t398
+  pb.34: vis.t418

@@ -1,0 +1,799 @@
+# Academy Registry — Playbooks PB01–PB35
+# Phase B · metadata only · ACADEMY-ARCH-v1.1
+# Geen L0-L4 inhoud · geen markdown wijzigingen
+
+registry:
+  id: academy-registry-playbooks
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  count: 35
+
+playbooks:
+
+  # ── O0 / L — Foundation (Wave 0 · manual extract) ──────────────────────
+
+  - id: pb.1
+    number: 1
+    slug: wat-gebeurt-er-nu
+    title: "Wat gebeurt er nu?"
+    phase_code: L01
+    ace_module: O0
+    moment_id: null
+    module: 2
+    objective: "Wedstrijd lezen — herkennen wat er verandert"
+    content_path: module-2/playbook-01-L01-content.md
+    content_status: published
+    sidecar_status: pending
+    sidecar_path: null
+    type: foundation
+    flagship: false
+    anchor_playbook: false
+    difficulty: foundation
+    prerequisites: []
+    follows_with: pb.2
+    related_playbooks: [pb.2, pb.3]
+    situation_refs: [sit.wedstrijd-lezen, sit.bal-terug-keeper]
+    problem_refs: []
+    visual_primary_ref: null
+    visual_refs: []
+    exercise_ref: null
+    tags: [tag.wedstrijdmanagement, tag.mentaal]
+    search_terms: [lezen, scan, wedstrijd, herkennen]
+    curriculum_week: 1
+    retrofit_wave: 0
+    extract_path: manual
+
+  - id: pb.2
+    number: 2
+    slug: ons-4231-ademt
+    title: "Ons 4-2-3-1 ademt"
+    phase_code: O0
+    ace_module: O0
+    moment_id: null
+    module: 2
+    objective: "Systeem begrijpen — het team beweegt als één geheel"
+    content_path: module-2/playbook-02-content.md
+    content_status: published
+    sidecar_status: pending
+    type: foundation
+    flagship: false
+    anchor_playbook: true
+    difficulty: foundation
+    prerequisites: [pb.1]
+    follows_with: pb.3
+    related_playbooks: [pb.1, pb.3, pb.7]
+    situation_refs: [sit.systeem-ademt]
+    problem_refs: [prob.positie-kwijt]
+    visual_primary_ref: vis.t002
+    tags: [tag.balbezit, tag.opbouwen]
+    search_terms: [4231, systeem, ademen, compact]
+    curriculum_week: 2
+    retrofit_wave: 0
+    extract_path: manual
+
+  - id: pb.3
+    number: 3
+    slug: principes-elke-situatie
+    title: "Principes in elke situatie"
+    phase_code: L03
+    ace_module: O0
+    moment_id: null
+    module: 2
+    objective: "8 principes toepassen ongeacht fase"
+    content_path: module-2/playbook-03-L03-content.md
+    content_status: published
+    sidecar_status: pending
+    type: foundation
+    prerequisites: [pb.2]
+    follows_with: pb.4
+    related_playbooks: [pb.2, pb.4, pb.6]
+    situation_refs: [sit.principes-toepassen]
+    tags: [tag.balbezit, tag.omschakelen]
+    search_terms: [principes, keuzes, team]
+    curriculum_week: 3
+    retrofit_wave: 0
+    extract_path: manual
+
+  - id: pb.4
+    number: 4
+    slug: ruimtes-zien
+    title: "Ruimtes zien"
+    phase_code: L04
+    ace_module: O0
+    moment_id: null
+    module: 2
+    objective: "Ruimte vóór · tussen · achter herkennen"
+    content_path: module-2/playbook-04-L04-content.md
+    content_status: published
+    sidecar_status: pending
+    type: foundation
+    prerequisites: [pb.3]
+    follows_with: pb.5
+    related_playbooks: [pb.3, pb.5, pb.9]
+    situation_refs: [sit.ruimte-voor, sit.ruimte-tussen]
+    tags: [tag.balbezit]
+    search_terms: [ruimte, scan, diepte]
+    curriculum_week: 4
+    retrofit_wave: 0
+    extract_path: manual
+
+  - id: pb.5
+    number: 5
+    slug: beslissen-3-seconden
+    title: "Beslissen in 3 seconden"
+    phase_code: L05
+    ace_module: O0
+    moment_id: null
+    module: 2
+    objective: "Snelle beslissing onder druk — terug is oké"
+    content_path: module-2/playbook-05-L05-content.md
+    content_status: published
+    sidecar_status: pending
+    type: foundation
+    prerequisites: [pb.4]
+    follows_with: pb.6
+    related_playbooks: [pb.4, pb.6, pb.13]
+    situation_refs: [sit.beslissen-onder-druk]
+    problem_refs: [prob.te-snel-wegspelen, prob.twijfel-aan-bal]
+    tags: [tag.balbezit, tag.mentaal]
+    search_terms: [beslissen, druk, terug, 3 seconden]
+    curriculum_week: 5
+    retrofit_wave: 0
+    extract_path: manual
+
+  # ── S1 — Wij hebben bal (Wave 6/8 · semi-auto) ───────────────────────────
+
+  - id: pb.6
+    number: 6
+    slug: wij-hebben-de-bal
+    title: "Wij hebben de bal"
+    phase_code: S1.0
+    ace_module: S1
+    moment_id: moment.s1
+    module: 2
+    objective: "Balbezit als geheel — iedereen doet mee zonder bal"
+    content_path: module-2/playbook-06-S10-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: true
+    difficulty: intermediate
+    prerequisites: [pb.1, pb.2, pb.3, pb.4, pb.5]
+    follows_with: pb.7
+    related_playbooks: [pb.7, pb.8, pb.13]
+    situation_refs: [sit.balbezit]
+    tags: [tag.balbezit]
+    search_terms: [bezit, bal, aanvallen]
+    curriculum_week: 6
+    retrofit_wave: 6
+    extract_path: semi_auto
+
+  - id: pb.7
+    number: 7
+    slug: opbouwen-van-achteren
+    title: "Opbouwen van achteren"
+    phase_code: S1.1
+    ace_module: S1
+    moment_id: moment.s1
+    objective: "Keeper en verdediging bouwen op onder druk"
+    content_path: module-2/playbook-07-S11-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: false
+    prerequisites: [pb.6]
+    follows_with: pb.8
+    situation_refs: [sit.opbouwen-keeper, sit.keeper-bouwt-op]
+    problem_refs: [prob.iedereen-naar-bal]
+    tags: [tag.balbezit, tag.opbouwen]
+    search_terms: [opbouw, keeper, achteren]
+    curriculum_week: 7
+    retrofit_wave: 6
+    extract_path: semi_auto
+
+  - id: pb.8
+    number: 8
+    slug: spelen-tussen-linies
+    title: "Spelen tussen de linies"
+    phase_code: S1.2
+    ace_module: S1
+    moment_id: moment.s1
+    content_path: module-2/playbook-08-S12-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.7]
+    follows_with: pb.9
+    situation_refs: [sit.tussen-linies-aanvallend, sit.pocket-tussen-linies]
+    problem_refs: [prob.uitgespeeld]
+    tags: [tag.balbezit]
+    search_terms: [tussen linies, pocket, 10]
+    curriculum_week: 8
+    retrofit_wave: 6
+    extract_path: semi_auto
+
+  - id: pb.9
+    number: 9
+    slug: breedte-en-diepte
+    title: "Breedte en diepte"
+    phase_code: S1.3
+    ace_module: S1
+    moment_id: moment.s1
+    content_path: module-2/playbook-09-S13-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.8]
+    follows_with: pb.10
+    situation_refs: [sit.breedte-diepte, sit.switch-van-kant]
+    tags: [tag.balbezit]
+    search_terms: [breed, diep, switch]
+    curriculum_week: 9
+    retrofit_wave: 8
+    extract_path: semi_auto
+
+  - id: pb.10
+    number: 10
+    slug: halfspaces-derde-man
+    title: "Halfspaces, derde man en voorspellen"
+    phase_code: S1.4
+    ace_module: S1
+    moment_id: moment.s1
+    content_path: module-2/playbook-10-S14-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.9]
+    follows_with: pb.11
+    situation_refs: [sit.halfspace, sit.derde-man]
+    tags: [tag.balbezit]
+    search_terms: [halfspace, derde man, voorspellen]
+    curriculum_week: 10
+    retrofit_wave: 8
+    extract_path: semi_auto
+
+  - id: pb.11
+    number: 11
+    slug: laatste-derde-dreigen
+    title: "Laatste derde / Dreiging creëren"
+    phase_code: S1.5
+    ace_module: S1
+    moment_id: moment.s1
+    content_path: module-2/playbook-11-S15-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.10]
+    follows_with: pb.12
+    situation_refs: [sit.dreigen-laatste-derde, sit.afronden]
+    tags: [tag.balbezit]
+    search_terms: [dreigen, laatste derde, goal]
+    curriculum_week: 11
+    retrofit_wave: 8
+    extract_path: semi_auto
+
+  - id: pb.12
+    number: 12
+    slug: ondertal-in-bezit
+    title: "Ondertal in bezit"
+    phase_code: S1.6
+    ace_module: S1
+    moment_id: moment.s1
+    content_path: module-2/playbook-12-S16-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.11]
+    follows_with: pb.13
+    situation_refs: [sit.ondertal-links, sit.ondertal-rechts, sit.ondertal-bezit]
+    tags: [tag.balbezit, tag.omschakelen]
+    search_terms: [ondertal, man down, bezit]
+    curriculum_week: 12
+    retrofit_wave: 8
+    extract_path: semi_auto
+
+  - id: pb.13
+    number: 13
+    slug: bezit-onder-druk
+    title: "Bezit onder druk"
+    phase_code: S1.7
+    ace_module: S1
+    moment_id: moment.s1
+    content_path: module-2/playbook-13-S17-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: false
+    prerequisites: [pb.12]
+    follows_with: pb.14
+    situation_refs: [sit.bezit-onder-druk, sit.uit-under-pressure]
+    problem_refs: [prob.twijfel-aan-bal]
+    visual_primary_ref: vis.t076
+    tags: [tag.balbezit, tag.verdedigen]
+    search_terms: [druk, pressing tegen, bezit]
+    curriculum_week: 13
+    retrofit_wave: 8
+    extract_path: auto
+
+  # ── S2 — Wij verliezen bal ───────────────────────────────────────────────
+
+  - id: pb.14
+    number: 14
+    slug: wij-verliezen-de-bal
+    title: "Wij verliezen de bal"
+    phase_code: S2.0
+    ace_module: S2
+    moment_id: moment.s2
+    content_path: module-2/playbook-14-S20-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: true
+    prerequisites: [pb.13]
+    follows_with: pb.15
+    situation_refs: [sit.balverlies-moment, sit.compact-worden]
+    problem_refs: [prob.achter-bal-aan, prob.counters-tegen]
+    visual_primary_ref: vis.t086
+    tags: [tag.omschakelen, tag.verdedigen]
+    search_terms: [balverlies, verliezen, omschakelen]
+    curriculum_week: 14
+    retrofit_wave: 5
+    extract_path: auto
+
+  - id: pb.15
+    number: 15
+    slug: direct-compact
+    title: "Direct compact"
+    phase_code: S2.1
+    ace_module: S2
+    moment_id: moment.s2
+    content_path: module-2/playbook-15-S21-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.14]
+    follows_with: pb.16
+    situation_refs: [sit.direct-compact, sit.compact-centraal]
+    tags: [tag.omschakelen, tag.verdedigen]
+    search_terms: [compact, direct, dicht]
+    curriculum_week: 15
+    retrofit_wave: 5
+    extract_path: auto
+
+  - id: pb.16
+    number: 16
+    slug: counterpressing
+    title: "Counterpressing"
+    phase_code: S2.2
+    ace_module: S2
+    moment_id: moment.s2
+    content_path: module-2/playbook-16-S22-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.15]
+    follows_with: pb.17
+    situation_refs: [sit.counterpressing, sit.gegenpressing]
+    problem_refs: [prob.druk-zetten]
+    tags: [tag.omschakelen, tag.verdedigen]
+    search_terms: [counterpress, pressing, direct]
+    curriculum_week: 16
+    retrofit_wave: 5
+    extract_path: auto
+
+  - id: pb.17
+    number: 17
+    slug: balverlies-op-flank
+    title: "Balverlies op de flank"
+    phase_code: S2.3
+    ace_module: S2
+    moment_id: moment.s2
+    content_path: module-2/playbook-17-S23-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.16]
+    follows_with: pb.18
+    situation_refs: [sit.balverlies-flank, sit.balverlies-links]
+    tags: [tag.omschakelen]
+    search_terms: [flank, balverlies, links]
+    curriculum_week: 17
+    retrofit_wave: 8
+    extract_path: auto
+
+  - id: pb.18
+    number: 18
+    slug: balverlies-centraal
+    title: "Balverlies centraal"
+    phase_code: S2.4
+    ace_module: S2
+    moment_id: moment.s2
+    content_path: module-2/playbook-18-S24-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.17]
+    follows_with: pb.19
+    situation_refs: [sit.balverlies-centraal]
+    problem_refs: [prob.counters-tegen]
+    tags: [tag.omschakelen]
+    search_terms: [centraal, balverlies, counter]
+    curriculum_week: 18
+    retrofit_wave: 8
+    extract_path: auto
+
+  - id: pb.19
+    number: 19
+    slug: balverlies-achterin
+    title: "Balverlies achterin"
+    phase_code: S2.5
+    ace_module: S2
+    moment_id: moment.s2
+    content_path: module-2/playbook-19-S25-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.18]
+    follows_with: pb.20
+    situation_refs: [sit.balverlies-achterin, sit.nood-rest]
+    tags: [tag.omschakelen, tag.verdedigen]
+    search_terms: [achterin, balverlies, rest]
+    curriculum_week: 19
+    retrofit_wave: 8
+    extract_path: auto
+
+  # ── S3 — Tegenstander heeft bal ──────────────────────────────────────────
+
+  - id: pb.20
+    number: 20
+    slug: tegenstander-heeft-bal
+    title: "Tegenstander heeft de bal"
+    phase_code: S3.0
+    ace_module: S3
+    moment_id: moment.s3
+    content_path: module-2/playbook-20-S30-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: true
+    flagship: true
+    prerequisites: [pb.19]
+    follows_with: pb.21
+    situation_refs: [sit.verdedigingsblok, sit.blok-schuiven]
+    problem_refs: [prob.positie-kwijt]
+    visual_primary_ref: vis.t168
+    tags: [tag.verdedigen]
+    search_terms: [verdedigen, blok, organisatie]
+    curriculum_week: 20
+    retrofit_wave: 4
+    extract_path: auto
+
+  - id: pb.21
+    number: 21
+    slug: midblock-organiseren
+    title: "Midblock organiseren"
+    phase_code: S3.1
+    ace_module: S3
+    moment_id: moment.s3
+    content_path: module-2/playbook-21-S31-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.20]
+    follows_with: pb.22
+    situation_refs: [sit.midblock, sit.midblock-organiseren]
+    tags: [tag.verdedigen]
+    search_terms: [midblock, midden, blok]
+    curriculum_week: 21
+    retrofit_wave: 4
+    extract_path: auto
+
+  - id: pb.22
+    number: 22
+    slug: laag-blok
+    title: "Laag blok"
+    phase_code: S3.2
+    ace_module: S3
+    moment_id: moment.s3
+    content_path: module-2/playbook-22-S32-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.21]
+    follows_with: pb.23
+    situation_refs: [sit.laag-blok, sit.corner-tegen-verdedigen]
+    tags: [tag.verdedigen, tag.standaards]
+    search_terms: [laag, blok, compact verdedigen]
+    curriculum_week: 22
+    retrofit_wave: 4
+    extract_path: auto
+
+  - id: pb.23
+    number: 23
+    slug: hoog-pressing
+    title: "Hoog pressing"
+    phase_code: S3.3
+    ace_module: S3
+    moment_id: moment.s3
+    content_path: module-2/playbook-23-S33-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.22]
+    follows_with: pb.24
+    situation_refs: [sit.hoog-press, sit.hoog-druk-zetten]
+    problem_refs: [prob.druk-zetten]
+    tags: [tag.verdedigen, tag.omschakelen]
+    search_terms: [hoog, press, pressing]
+    curriculum_week: 23
+    retrofit_wave: 7
+    extract_path: auto
+
+  - id: pb.24
+    number: 24
+    slug: verdedigen-tussen-linies
+    title: "Verdedigen tussen de linies"
+    phase_code: S3.4
+    ace_module: S3
+    moment_id: moment.s3
+    content_path: module-2/playbook-24-S34-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.23]
+    follows_with: pb.25
+    situation_refs: [sit.tussen-linies-verdedigen, sit.bal-tussen-linies]
+    problem_refs: [prob.uitgespeeld, prob.uitstappen-twijfel]
+    tags: [tag.verdedigen]
+    search_terms: [tussen linies, verdedigen, pocket]
+    curriculum_week: 24
+    retrofit_wave: 7
+    extract_path: auto
+
+  - id: pb.25
+    number: 25
+    slug: duel-1-tegen-1
+    title: "1-tegen-1 & duels"
+    phase_code: S3.5
+    ace_module: S3
+    moment_id: moment.s3
+    content_path: module-2/playbook-25-S35-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.24]
+    follows_with: pb.26
+    situation_refs: [sit.duel-1v1, sit.uitstappen]
+    problem_refs: [prob.uitstappen-twijfel, prob.verlies-duels]
+    tags: [tag.verdedigen]
+    search_terms: [duel, 1v1, uitstappen]
+    curriculum_week: 25
+    retrofit_wave: 7
+    extract_path: auto
+
+  # ── S4 — Wij winnen bal ──────────────────────────────────────────────────
+
+  - id: pb.26
+    number: 26
+    slug: wij-veroveren-de-bal
+    title: "Wij veroveren de bal"
+    phase_code: S4.0
+    ace_module: S4
+    moment_id: moment.s4
+    content_path: module-2/playbook-26-S40-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: true
+    flagship: true
+    prerequisites: [pb.25]
+    follows_with: pb.27
+    situation_refs: [sit.balverovering, sit.omschakeling-aanvallend]
+    visual_primary_ref: vis.t270
+    tags: [tag.omschakelen, tag.balbezit]
+    search_terms: [balwinst, veroveren, omschakelen]
+    curriculum_week: 26
+    retrofit_wave: 1
+    extract_path: auto
+
+  - id: pb.27
+    number: 27
+    slug: eerste-pass-na-balverovering
+    title: "Eerste pass na balverovering"
+    phase_code: S4.1
+    ace_module: S4
+    moment_id: moment.s4
+    content_path: module-2/playbook-27-S41-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    flagship: true
+    prerequisites: [pb.26]
+    follows_with: pb.28
+    situation_refs: [sit.eerste-pass, sit.eerste-pass-na-winst]
+    problem_refs: [prob.te-snel-wegspelen]
+    visual_primary_ref: vis.t294
+    tags: [tag.omschakelen, tag.balbezit]
+    search_terms: [eerste pass, balwinst, ketting]
+    curriculum_week: 27
+    retrofit_wave: 1
+    extract_path: auto
+
+  - id: pb.28
+    number: 28
+    slug: counteraanval
+    title: "Counteraanval"
+    phase_code: S4.2
+    ace_module: S4
+    moment_id: moment.s4
+    content_path: module-2/playbook-28-S42-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    flagship: true
+    prerequisites: [pb.27]
+    follows_with: pb.29
+    situation_refs: [sit.counter, sit.counter-timer]
+    problem_refs: [prob.counters-tegen, prob.te-snel-wegspelen]
+    visual_primary_ref: vis.t307
+    tags: [tag.omschakelen]
+    search_terms: [counter, omschakeling, snel]
+    curriculum_week: 28
+    retrofit_wave: 1
+    extract_path: auto
+
+  - id: pb.29
+    number: 29
+    slug: bezit-hervatten
+    title: "Bezit hervatten"
+    phase_code: S4.3
+    ace_module: S4
+    moment_id: moment.s4
+    content_path: module-2/playbook-29-S43-content.md
+    content_status: published
+    sidecar_status: pending
+    prerequisites: [pb.28]
+    follows_with: pb.30
+    situation_refs: [sit.bezit-hervatten, sit.rustig-bezit-na-counter]
+    tags: [tag.balbezit, tag.omschakelen]
+    search_terms: [bezit hervatten, rustig, tempo]
+    curriculum_week: 29
+    retrofit_wave: 1
+    extract_path: auto
+
+  # ── S5 — Standaards ──────────────────────────────────────────────────────
+
+  - id: pb.30
+    number: 30
+    slug: dode-spelmomenten
+    title: "Dode spelmomenten"
+    phase_code: S5.0
+    ace_module: S5
+    moment_id: moment.s5
+    content_path: module-2/playbook-30-S50-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: true
+    prerequisites: [pb.29]
+    follows_with: pb.31
+    situation_refs: [sit.dode-spelmoment, sit.standaards-voorbereiden, sit.tweede-bal]
+    problem_refs: [prob.te-weinig-communicatie]
+    visual_primary_ref: vis.t343
+    tags: [tag.standaards]
+    search_terms: [standaard, dode bal, tweede bal]
+    curriculum_week: 30
+    retrofit_wave: 2
+    extract_path: auto
+
+  - id: pb.31
+    number: 31
+    slug: corners-vrije-trappen-aanvallend
+    title: "Aanvallende corners & vrije trappen"
+    phase_code: S5.1
+    ace_module: S5
+    moment_id: moment.s5
+    content_path: module-2/playbook-31-S51-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    flagship: true
+    prerequisites: [pb.30]
+    follows_with: pb.32
+    situation_refs: [sit.corner-voor, sit.vrije-trap-aanvallend]
+    visual_primary_ref: vis.t361
+    tags: [tag.standaards]
+    search_terms: [corner, vrije trap, standaard]
+    curriculum_week: 31
+    retrofit_wave: 2
+    extract_path: auto
+
+  - id: pb.32
+    number: 32
+    slug: ingooien-aftrap
+    title: "Ingooien & Aftrap"
+    phase_code: S5.2
+    ace_module: S5
+    moment_id: moment.s5
+    content_path: module-2/playbook-32-S52-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    flagship: true
+    prerequisites: [pb.31]
+    follows_with: pb.33
+    situation_refs: [sit.ingooi, sit.aftrap, sit.ingooi-gespreid]
+    problem_refs: [prob.iedereen-naar-bal]
+    visual_primary_ref: vis.t379
+    tags: [tag.standaards, tag.communicatie]
+    search_terms: [ingooi, aftrap, throw-in]
+    curriculum_week: 32
+    retrofit_wave: 2
+    extract_path: auto
+
+  # ── S6 — Wedstrijd lezen ─────────────────────────────────────────────────
+
+  - id: pb.33
+    number: 33
+    slug: lijnen-samen
+    title: "Lijnen Samen"
+    phase_code: S6.0
+    ace_module: S6
+    moment_id: moment.s6
+    content_path: module-2/playbook-33-S60-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    anchor_playbook: true
+    flagship: true
+    prerequisites: [pb.32]
+    follows_with: pb.34
+    situation_refs: [sit.lijnen-samen, sit.drie-linies-systeem]
+    problem_refs: [prob.positie-kwijt, prob.te-weinig-communicatie]
+    visual_primary_ref: vis.t398
+    tags: [tag.wedstrijdmanagement, tag.communicatie]
+    search_terms: [linies, systeem, samen]
+    curriculum_week: 33
+    retrofit_wave: 3
+    extract_path: auto
+
+  - id: pb.34
+    number: 34
+    slug: wedstrijd-lezen-90-minuten
+    title: "De Wedstrijd Lezen Over 90 Minuten"
+    phase_code: S6.1
+    ace_module: S6
+    moment_id: moment.s6
+    content_path: module-2/playbook-34-S61-content.md
+    content_status: published
+    sidecar_status: pending
+    type: tactical
+    flagship: true
+    prerequisites: [pb.33]
+    follows_with: pb.35
+    situation_refs: [sit.wedstrijd-90-min, sit.wedstrijd-uitspelen, sit.achterstand, sit.voorsprong-beschermen, sit.momentum]
+    problem_refs: [prob.paniek-na-tegoal]
+    visual_primary_ref: vis.t418
+    tags: [tag.wedstrijdmanagement, tag.mentaal]
+    search_terms: [90 minuten, fase, momentum, wedstrijd lezen]
+    curriculum_week: 34
+    retrofit_wave: 3
+    extract_path: auto
+
+  # ── PB35 — Persoonlijk (geen tactische les) ──────────────────────────────
+
+  - id: pb.35
+    number: 35
+    slug: mijn-speelboek
+    title: "Mijn Speelboek"
+    phase_code: S6.2
+    ace_module: PERSONAL
+    moment_id: null
+    module: 2
+    objective: "Persoonlijke compilatie — auto-gegenereerd uit pins, leerpunten en ankers"
+    content_path: null
+    content_status: draft
+    sidecar_status: pending
+    type: personal_compilation
+    flagship: false
+    anchor_playbook: false
+    difficulty: foundation
+    prerequisites: [pb.34]
+    follows_with: null
+    related_playbooks: []
+    situation_refs: []
+    problem_refs: []
+    visual_primary_ref: null
+    tags: [tag.wedstrijdmanagement]
+    search_terms: [mijn speelboek, persoonlijk, seizoen]
+    curriculum_week: null
+    retrofit_wave: null
+    extract_path: manual
+    unlock:
+      type: auto_compilation
+      conditions: [week_20, trainer_manual, season_progress_70pct]

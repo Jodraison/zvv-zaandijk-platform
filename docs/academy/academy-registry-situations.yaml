@@ -1,0 +1,800 @@
+# Academy Registry — Situations
+# Phase B · ACADEMY-ARCH-v1.1
+# 6 ACE-momenten · 22 core · extended schaalbaar
+
+registry:
+  id: academy-registry-situations
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  core_count: 22
+  extended_count: 48
+  total_count: 70
+
+moments:
+
+  - id: moment.s1
+    slug: wij-hebben-bal
+    label_nl: "Wij hebben bal"
+    ace: S1
+    anchor_pb: pb.6
+    pb_range: [pb.6, pb.7, pb.8, pb.9, pb.10, pb.11, pb.12, pb.13]
+    sort_order: 1
+    sub_nav: [opbouwen, tussen-linies, breed-diep, halfspace, dreigen, onder-druk]
+
+  - id: moment.s2
+    slug: wij-verliezen-bal
+    label_nl: "Wij verliezen bal"
+    ace: S2
+    anchor_pb: pb.14
+    pb_range: [pb.14, pb.15, pb.16, pb.17, pb.18, pb.19]
+    sort_order: 2
+    sub_nav: [compact, pressing, flank, centrum, achterin]
+
+  - id: moment.s3
+    slug: tegenstander-heeft-bal
+    label_nl: "Tegenstander heeft bal"
+    ace: S3
+    anchor_pb: pb.20
+    pb_range: [pb.20, pb.21, pb.22, pb.23, pb.24, pb.25]
+    sort_order: 3
+    sub_nav: [blok, midblock, laag, hoog-press, tussen-linies, duels]
+
+  - id: moment.s4
+    slug: wij-winnen-bal
+    label_nl: "Wij winnen bal"
+    ace: S4
+    anchor_pb: pb.26
+    pb_range: [pb.26, pb.27, pb.28, pb.29]
+    sort_order: 4
+    sub_nav: [moment, eerste-pass, counter, bezit-hervatten]
+
+  - id: moment.s5
+    slug: standaards
+    label_nl: "Standaards"
+    ace: S5
+    anchor_pb: pb.30
+    pb_range: [pb.30, pb.31, pb.32]
+    sort_order: 5
+    sub_nav: [voorbereiden, corner, ingooi-aftrap]
+
+  - id: moment.s6
+    slug: wedstrijd-lezen
+    label_nl: "Wedstrijd lezen"
+    ace: S6
+    anchor_pb: pb.33
+    pb_range: [pb.33, pb.34]
+    sort_order: 6
+    sub_nav: [linien-samen, negentig-minuten]
+
+situations:
+
+  # ── CORE 22 (frozen) ─────────────────────────────────────────────────────
+
+  - id: sit.wedstrijd-lezen
+    slug: wedstrijd-lezen
+    label_nl: "Wedstrijd lezen"
+    label_player: "Ik wil snappen wat er gebeurt"
+    moment_id: null
+    status: core
+    pb_refs: [pb.1]
+    tag_refs: [tag.wedstrijdmanagement, tag.mentaal]
+    search_terms: [lezen, scan, wat gebeurt er]
+    sort_order: 1
+
+  - id: sit.opbouwen-keeper
+    slug: opbouwen-keeper
+    label_nl: "Opbouwen van achteren"
+    label_player: "De keeper heeft de bal"
+    moment_id: moment.s1
+    status: core
+    pb_refs: [pb.7]
+    tag_refs: [tag.balbezit, tag.opbouwen]
+    visual_primary_ref: null
+    search_terms: [keeper, opbouw, achteren, bouwen op]
+    sort_order: 10
+
+  - id: sit.tussen-linies-aanvallend
+    slug: tussen-linies-aanvallend
+    label_nl: "Spelen tussen de linies"
+    label_player: "Er is ruimte tussen hun linies"
+    moment_id: moment.s1
+    status: core
+    pb_refs: [pb.8]
+    tag_refs: [tag.balbezit]
+    search_terms: [tussen linies, pocket, 10]
+    sort_order: 11
+
+  - id: sit.breedte-diepte
+    slug: breedte-diepte
+    label_nl: "Breedte en diepte"
+    label_player: "We moeten het veld groot maken"
+    moment_id: moment.s1
+    status: core
+    pb_refs: [pb.9]
+    tag_refs: [tag.balbezit]
+    search_terms: [breed, diep, switch]
+    sort_order: 12
+
+  - id: sit.bezit-onder-druk
+    slug: bezit-onder-druk
+    label_nl: "Bezit onder druk"
+    label_player: "Ze pressen ons met bal"
+    moment_id: moment.s1
+    status: core
+    pb_refs: [pb.13]
+    tag_refs: [tag.balbezit, tag.verdedigen]
+    visual_primary_ref: vis.t076
+    search_terms: [druk, pressing, bezit onder druk]
+    sort_order: 13
+
+  - id: sit.balverlies-moment
+    slug: balverlies-moment
+    label_nl: "Balverlies — eerste seconden"
+    label_player: "We verliezen net de bal"
+    moment_id: moment.s2
+    status: core
+    pb_refs: [pb.14]
+    tag_refs: [tag.omschakelen]
+    visual_primary_ref: vis.t086
+    search_terms: [balverlies, verliezen, omschakelen]
+    sort_order: 20
+
+  - id: sit.direct-compact
+    slug: direct-compact
+    label_nl: "Direct compact"
+    label_player: "Iedereen moet dichtbij"
+    moment_id: moment.s2
+    status: core
+    pb_refs: [pb.15]
+    tag_refs: [tag.omschakelen, tag.verdedigen]
+    search_terms: [compact, direct, dicht]
+    sort_order: 21
+
+  - id: sit.counterpressing
+    slug: counterpressing
+    label_nl: "Counterpressing"
+    label_player: "We jagen de bal meteen terug"
+    moment_id: moment.s2
+    status: core
+    pb_refs: [pb.16]
+    tag_refs: [tag.omschakelen]
+    search_terms: [counterpress, pressing, jagen]
+    sort_order: 22
+
+  - id: sit.balverlies-centraal
+    slug: balverlies-centraal
+    label_nl: "Balverlies centraal"
+    label_player: "Bal kwijt in het midden"
+    moment_id: moment.s2
+    status: core
+    pb_refs: [pb.18]
+    tag_refs: [tag.omschakelen]
+    search_terms: [centraal, balverlies, midden]
+    sort_order: 23
+
+  - id: sit.verdedigingsblok
+    slug: verdedigingsblok
+    label_nl: "Verdedigingsblok organiseren"
+    label_player: "Zij hebben de bal — we staan"
+    moment_id: moment.s3
+    status: core
+    pb_refs: [pb.20]
+    tag_refs: [tag.verdedigen]
+    visual_primary_ref: vis.t168
+    search_terms: [blok, verdedigen, organisatie]
+    sort_order: 30
+
+  - id: sit.midblock
+    slug: midblock
+    label_nl: "Midblock"
+    label_player: "We verdedigen in het midden"
+    moment_id: moment.s3
+    status: core
+    pb_refs: [pb.21]
+    tag_refs: [tag.verdedigen]
+    search_terms: [midblock, midden]
+    sort_order: 31
+
+  - id: sit.laag-blok
+    slug: laag-blok
+    label_nl: "Laag blok"
+    label_player: "We verdedigen laag"
+    moment_id: moment.s3
+    status: core
+    pb_refs: [pb.22]
+    tag_refs: [tag.verdedigen]
+    search_terms: [laag, blok, laag blok]
+    sort_order: 32
+
+  - id: sit.hoog-press
+    slug: hoog-press
+    label_nl: "Hoog pressing"
+    label_player: "We zetten hoog druk"
+    moment_id: moment.s3
+    status: core
+    pb_refs: [pb.23]
+    tag_refs: [tag.verdedigen, tag.omschakelen]
+    search_terms: [hoog, press, druk zetten]
+    sort_order: 33
+
+  - id: sit.tussen-linies-verdedigen
+    slug: tussen-linies-verdedigen
+    label_nl: "Bal tussen de linies"
+    label_player: "De bal zit tussen onze linies"
+    moment_id: moment.s3
+    status: core
+    pb_refs: [pb.24]
+    tag_refs: [tag.verdedigen]
+    search_terms: [tussen linies, pocket verdedigen]
+    sort_order: 34
+
+  - id: sit.duel-1v1
+    slug: duel-1v1
+    label_nl: "1-tegen-1 duel"
+    label_player: "Ik moet een duel winnen"
+    moment_id: moment.s3
+    status: core
+    pb_refs: [pb.25]
+    tag_refs: [tag.verdedigen]
+    search_terms: [duel, 1v1, uitstappen]
+    sort_order: 35
+
+  - id: sit.balverovering
+    slug: balverovering
+    label_nl: "Balverovering"
+    label_player: "We winnen net de bal"
+    moment_id: moment.s4
+    status: core
+    pb_refs: [pb.26]
+    tag_refs: [tag.omschakelen, tag.balbezit]
+    visual_primary_ref: vis.t270
+    search_terms: [balwinst, veroveren, omschakeling]
+    sort_order: 40
+
+  - id: sit.eerste-pass
+    slug: eerste-pass
+    label_nl: "Eerste pass na balwinst"
+    label_player: "Ik krijg de bal na een winst"
+    moment_id: moment.s4
+    status: core
+    pb_refs: [pb.27]
+    tag_refs: [tag.omschakelen, tag.balbezit]
+    visual_primary_ref: vis.t294
+    search_terms: [eerste pass, balwinst, ketting]
+    sort_order: 41
+
+  - id: sit.counter
+    slug: counter
+    label_nl: "Counteraanval"
+    label_player: "We kunnen counteren"
+    moment_id: moment.s4
+    status: core
+    pb_refs: [pb.28]
+    tag_refs: [tag.omschakelen]
+    visual_primary_ref: vis.t307
+    search_terms: [counter, snel, omschakeling]
+    sort_order: 42
+
+  - id: sit.dode-spelmoment
+    slug: dode-spelmoment
+    label_nl: "Dode spelmoment"
+    label_player: "De bal is uit — standaard"
+    moment_id: moment.s5
+    status: core
+    pb_refs: [pb.30]
+    tag_refs: [tag.standaards]
+    visual_primary_ref: vis.t343
+    search_terms: [standaard, dode bal, set piece]
+    sort_order: 50
+
+  - id: sit.corner-voor
+    slug: corner-voor
+    label_nl: "Corner voor ons"
+    label_player: "We hebben een corner"
+    moment_id: moment.s5
+    status: core
+    pb_refs: [pb.31]
+    tag_refs: [tag.standaards]
+    visual_primary_ref: vis.t361
+    search_terms: [corner, hoekschop]
+    sort_order: 51
+
+  - id: sit.ingooi
+    slug: ingooi
+    label_nl: "Ingooi"
+    label_player: "We gooien in"
+    moment_id: moment.s5
+    status: core
+    pb_refs: [pb.32]
+    tag_refs: [tag.standaards, tag.communicatie]
+    visual_primary_ref: vis.t379
+    search_terms: [ingooi, throw-in, inwerpen]
+    sort_order: 52
+
+  - id: sit.lijnen-samen
+    slug: lijnen-samen
+    label_nl: "Lijnen samen"
+    label_player: "Alle linies moeten meebewegen"
+    moment_id: moment.s6
+    status: core
+    pb_refs: [pb.33]
+    tag_refs: [tag.wedstrijdmanagement, tag.communicatie]
+    visual_primary_ref: vis.t398
+    search_terms: [linies, systeem, samen]
+    sort_order: 60
+
+  # ── EXTENDED (schaalbaar · PB35+ zonder ACR op structuur) ────────────────
+
+  - id: sit.keeper-bouwt-op
+    slug: keeper-bouwt-op
+    label_nl: "Keeper bouwt op"
+    label_player: "Onze keeper heeft de bal"
+    moment_id: moment.s1
+    parent_situation_id: sit.opbouwen-keeper
+    status: extended
+    pb_refs: [pb.7]
+    tag_refs: [tag.balbezit, tag.opbouwen]
+    search_terms: [keeper bouwt op]
+    sort_order: 101
+
+  - id: sit.ondertal-links
+    slug: ondertal-links
+    label_nl: "Ondertal links"
+    label_player: "We zijn met minder aan de linkerkant"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.12]
+    tag_refs: [tag.balbezit]
+    search_terms: [ondertal, links, man down]
+    sort_order: 102
+
+  - id: sit.ondertal-rechts
+    slug: ondertal-rechts
+    label_nl: "Ondertal rechts"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.12]
+    tag_refs: [tag.balbezit]
+    sort_order: 103
+
+  - id: sit.halfspace
+    slug: halfspace
+    label_nl: "Halfspace spelen"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.10]
+    tag_refs: [tag.balbezit]
+    search_terms: [halfspace, tussen]
+    sort_order: 104
+
+  - id: sit.dreigen-laatste-derde
+    slug: dreigen-laatste-derde
+    label_nl: "Dreigen in laatste derde"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.11]
+    tag_refs: [tag.balbezit]
+    sort_order: 105
+
+  - id: sit.balverlies-flank
+    slug: balverlies-flank
+    label_nl: "Balverlies op de flank"
+    moment_id: moment.s2
+    status: extended
+    pb_refs: [pb.17]
+    tag_refs: [tag.omschakelen]
+    search_terms: [flank, balverlies]
+    sort_order: 110
+
+  - id: sit.balverlies-achterin
+    slug: balverlies-achterin
+    label_nl: "Balverlies achterin"
+    moment_id: moment.s2
+    status: extended
+    pb_refs: [pb.19]
+    tag_refs: [tag.omschakelen, tag.verdedigen]
+    search_terms: [achterin, balverlies]
+    sort_order: 111
+
+  - id: sit.gegenpressing
+    slug: gegenpressing
+    label_nl: "Gegenpressing"
+    moment_id: moment.s2
+    parent_situation_id: sit.counterpressing
+    status: extended
+    pb_refs: [pb.16]
+    tag_refs: [tag.omschakelen]
+    sort_order: 112
+
+  - id: sit.hoog-druk-zetten
+    slug: hoog-druk-zetten
+    label_nl: "Hoog druk zetten"
+    moment_id: moment.s3
+    parent_situation_id: sit.hoog-press
+    status: extended
+    pb_refs: [pb.23]
+    tag_refs: [tag.verdedigen]
+    search_terms: [hoog druk, pressing]
+    sort_order: 120
+
+  - id: sit.corner-tegen-verdedigen
+    slug: corner-tegen-verdedigen
+    label_nl: "Corner tegen verdedigen"
+    label_player: "Zij hebben een corner"
+    moment_id: moment.s3
+    status: extended
+    pb_refs: [pb.22]
+    tag_refs: [tag.verdedigen, tag.standaards]
+    search_terms: [corner tegen, verdedigen corner]
+    sort_order: 121
+
+  - id: sit.uitstappen
+    slug: uitstappen
+    label_nl: "Uitstappen in duel"
+    moment_id: moment.s3
+    parent_situation_id: sit.duel-1v1
+    status: extended
+    pb_refs: [pb.25, pb.24]
+    tag_refs: [tag.verdedigen]
+    search_terms: [uitstappen, duel, vertragen]
+    sort_order: 122
+
+  - id: sit.bezit-hervatten
+    slug: bezit-hervatten
+    label_nl: "Bezit hervatten na counter"
+    moment_id: moment.s4
+    status: extended
+    pb_refs: [pb.29]
+    tag_refs: [tag.balbezit]
+    search_terms: [bezit hervatten, rustig]
+    sort_order: 130
+
+  - id: sit.counter-timer
+    slug: counter-timer
+    label_nl: "Counter timing"
+    moment_id: moment.s4
+    parent_situation_id: sit.counter
+    status: extended
+    pb_refs: [pb.28]
+    tag_refs: [tag.omschakelen]
+    sort_order: 131
+
+  - id: sit.vrije-trap-aanvallend
+    slug: vrije-trap-aanvallend
+    label_nl: "Vrije trap aanvallend"
+    moment_id: moment.s5
+    status: extended
+    pb_refs: [pb.31]
+    tag_refs: [tag.standaards]
+    search_terms: [vrije trap, free kick]
+    sort_order: 140
+
+  - id: sit.aftrap
+    slug: aftrap
+    label_nl: "Aftrap"
+    label_player: "We trappen af"
+    moment_id: moment.s5
+    status: extended
+    pb_refs: [pb.32]
+    tag_refs: [tag.standaards]
+    search_terms: [aftrap, kick-off]
+    sort_order: 141
+
+  - id: sit.ingooi-gespreid
+    slug: ingooi-gespreid
+    label_nl: "Ingooi — gespreid staan"
+    moment_id: moment.s5
+    parent_situation_id: sit.ingooi
+    status: extended
+    pb_refs: [pb.32]
+    tag_refs: [tag.standaards, tag.communicatie]
+    search_terms: [ingooi gespreid, throw in]
+    sort_order: 142
+
+  - id: sit.tweede-bal
+    slug: tweede-bal
+    label_nl: "Tweede bal vechten"
+    moment_id: moment.s5
+    status: extended
+    pb_refs: [pb.30]
+    tag_refs: [tag.standaards]
+    search_terms: [tweede bal, second ball]
+    sort_order: 143
+
+  - id: sit.wedstrijd-90-min
+    slug: wedstrijd-90-min
+    label_nl: "Wedstrijd over 90 minuten"
+    moment_id: moment.s6
+    status: extended
+    pb_refs: [pb.34]
+    tag_refs: [tag.wedstrijdmanagement]
+    visual_primary_ref: vis.t418
+    search_terms: [90 minuten, fases]
+    sort_order: 150
+
+  - id: sit.wedstrijd-uitspelen
+    slug: wedstrijd-uitspelen
+    label_nl: "Wedstrijd uitspelen"
+    label_player: "We moeten de wedstrijd uitzitten"
+    moment_id: moment.s6
+    status: extended
+    pb_refs: [pb.34]
+    tag_refs: [tag.wedstrijdmanagement]
+    search_terms: [uitspelen, slot, tijd spelen]
+    sort_order: 151
+
+  - id: sit.achterstand
+    slug: achterstand
+    label_nl: "Achterstand"
+    label_player: "We staan achter"
+    moment_id: moment.s6
+    status: extended
+    pb_refs: [pb.34]
+    tag_refs: [tag.wedstrijdmanagement, tag.mentaal]
+    search_terms: [achterstand, achter, score]
+    sort_order: 152
+
+  - id: sit.voorsprong-beschermen
+    slug: voorsprong-beschermen
+    label_nl: "Voorsprong beschermen"
+    label_player: "We staan voor"
+    moment_id: moment.s6
+    status: extended
+    pb_refs: [pb.34]
+    tag_refs: [tag.wedstrijdmanagement]
+    search_terms: [voorsprong, voor, kill]
+    sort_order: 153
+
+  - id: sit.momentum
+    slug: momentum
+    label_nl: "Momentum lezen"
+    moment_id: moment.s6
+    status: extended
+    pb_refs: [pb.34]
+    tag_refs: [tag.wedstrijdmanagement, tag.mentaal]
+    search_terms: [momentum, wind, curve]
+    sort_order: 154
+
+  - id: sit.systeem-ademt
+    slug: systeem-ademt
+    label_nl: "Systeem ademt"
+    moment_id: null
+    status: extended
+    pb_refs: [pb.2]
+    tag_refs: [tag.balbezit]
+    visual_primary_ref: vis.t002
+    sort_order: 155
+
+  - id: sit.bal-terug-keeper
+    slug: bal-terug-keeper
+    label_nl: "Bal terug op keeper"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.1, pb.7]
+    tag_refs: [tag.opbouwen]
+    search_terms: [bal terug, keeper]
+    sort_order: 156
+
+  - id: sit.bal-tussen-linies
+    slug: bal-tussen-linies
+    label_nl: "Bal tussen linies (verdedigend)"
+    moment_id: moment.s3
+    parent_situation_id: sit.tussen-linies-verdedigen
+    status: extended
+    pb_refs: [pb.24]
+    tag_refs: [tag.verdedigen]
+    sort_order: 157
+
+  - id: sit.omschakeling-aanvallend
+    slug: omschakeling-aanvallend
+    label_nl: "Omschakeling naar aanval"
+    moment_id: moment.s4
+    status: extended
+    pb_refs: [pb.26]
+    tag_refs: [tag.omschakelen]
+    sort_order: 158
+
+  - id: sit.standaards-voorbereiden
+    slug: standaards-voorbereiden
+    label_nl: "Standaards voorbereiden"
+    moment_id: moment.s5
+    status: extended
+    pb_refs: [pb.30]
+    tag_refs: [tag.standaards]
+    sort_order: 159
+
+  - id: sit.drie-linies-systeem
+    slug: drie-linies-systeem
+    label_nl: "Drie linies als systeem"
+    moment_id: moment.s6
+    parent_situation_id: sit.lijnen-samen
+    status: extended
+    pb_refs: [pb.33]
+    tag_refs: [tag.wedstrijdmanagement]
+    sort_order: 160
+
+  - id: sit.rust-modus
+    slug: rust-modus
+    label_nl: "Rust — aanpassen"
+    moment_id: moment.s6
+    status: extended
+    pb_refs: [pb.34, pb.33]
+    tag_refs: [tag.wedstrijdmanagement, tag.coachen]
+    search_terms: [rust, halftime, aanpassen]
+    sort_order: 161
+
+  - id: sit.principes-toepassen
+    slug: principes-toepassen
+    label_nl: "Principes toepassen"
+    moment_id: null
+    status: extended
+    pb_refs: [pb.3]
+    tag_refs: [tag.balbezit]
+    sort_order: 162
+
+  - id: sit.ruimte-voor
+    slug: ruimte-voor
+    label_nl: "Ruimte vóór"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.4]
+    tag_refs: [tag.balbezit]
+    sort_order: 163
+
+  - id: sit.ruimte-tussen
+    slug: ruimte-tussen
+    label_nl: "Ruimte tussen"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.4]
+    tag_refs: [tag.balbezit]
+    sort_order: 164
+
+  - id: sit.beslissen-onder-druk
+    slug: beslissen-onder-druk
+    label_nl: "Beslissen onder druk"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.5, pb.13]
+    tag_refs: [tag.balbezit, tag.mentaal]
+    sort_order: 165
+
+  - id: sit.balbezit
+    slug: balbezit
+    label_nl: "Wij hebben bal"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.6]
+    tag_refs: [tag.balbezit]
+    sort_order: 166
+
+  - id: sit.pocket-tussen-linies
+    slug: pocket-tussen-linies
+    label_nl: "Pocket tussen linies"
+    moment_id: moment.s1
+    parent_situation_id: sit.tussen-linies-aanvallend
+    status: extended
+    pb_refs: [pb.8]
+    tag_refs: [tag.balbezit]
+    sort_order: 167
+
+  - id: sit.switch-van-kant
+    slug: switch-van-kant
+    label_nl: "Switch van kant"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.9]
+    tag_refs: [tag.balbezit]
+    sort_order: 168
+
+  - id: sit.derde-man
+    slug: derde-man
+    label_nl: "Derde man"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.10]
+    tag_refs: [tag.balbezit]
+    sort_order: 169
+
+  - id: sit.afronden
+    slug: afronden
+    label_nl: "Afronden"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.11]
+    tag_refs: [tag.balbezit]
+    sort_order: 170
+
+  - id: sit.ondertal-bezit
+    slug: ondertal-bezit
+    label_nl: "Ondertal in bezit"
+    moment_id: moment.s1
+    status: extended
+    pb_refs: [pb.12]
+    tag_refs: [tag.balbezit]
+    sort_order: 171
+
+  - id: sit.uit-under-pressure
+    slug: uit-under-pressure
+    label_nl: "Uitspelen onder druk"
+    moment_id: moment.s1
+    parent_situation_id: sit.bezit-onder-druk
+    status: extended
+    pb_refs: [pb.13]
+    tag_refs: [tag.balbezit]
+    sort_order: 172
+
+  - id: sit.compact-worden
+    slug: compact-worden
+    label_nl: "Compact worden"
+    moment_id: moment.s2
+    status: extended
+    pb_refs: [pb.14]
+    tag_refs: [tag.omschakelen]
+    sort_order: 173
+
+  - id: sit.compact-centraal
+    slug: compact-centraal
+    label_nl: "Compact centraal"
+    moment_id: moment.s2
+    status: extended
+    pb_refs: [pb.15]
+    tag_refs: [tag.omschakelen]
+    sort_order: 174
+
+  - id: sit.balverlies-links
+    slug: balverlies-links
+    label_nl: "Balverlies links"
+    moment_id: moment.s2
+    status: extended
+    pb_refs: [pb.17]
+    tag_refs: [tag.omschakelen]
+    sort_order: 175
+
+  - id: sit.nood-rest
+    slug: nood-rest
+    label_nl: "Nood-rest achterin"
+    moment_id: moment.s2
+    status: extended
+    pb_refs: [pb.19]
+    tag_refs: [tag.verdedigen]
+    sort_order: 176
+
+  - id: sit.blok-schuiven
+    slug: blok-schuiven
+    label_nl: "Blok schuift mee"
+    moment_id: moment.s3
+    parent_situation_id: sit.verdedigingsblok
+    status: extended
+    pb_refs: [pb.20]
+    tag_refs: [tag.verdedigen]
+    sort_order: 177
+
+  - id: sit.midblock-organiseren
+    slug: midblock-organiseren
+    label_nl: "Midblock organiseren"
+    moment_id: moment.s3
+    parent_situation_id: sit.midblock
+    status: extended
+    pb_refs: [pb.21]
+    tag_refs: [tag.verdedigen]
+    sort_order: 178
+
+  - id: sit.eerste-pass-na-winst
+    slug: eerste-pass-na-winst
+    label_nl: "Eerste pass na winst"
+    moment_id: moment.s4
+    parent_situation_id: sit.eerste-pass
+    status: extended
+    pb_refs: [pb.27]
+    tag_refs: [tag.omschakelen]
+    sort_order: 179
+
+  - id: sit.rustig-bezit-na-counter
+    slug: rustig-bezit-na-counter
+    label_nl: "Rustig bezit na counter"
+    moment_id: moment.s4
+    status: extended
+    pb_refs: [pb.29]
+    tag_refs: [tag.balbezit]
+    sort_order: 180

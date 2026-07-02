@@ -1,0 +1,74 @@
+# Academy Registry — Tags (canoniek · geen overlap)
+# Phase B · ACADEMY-ARCH-v1.1
+
+registry:
+  id: academy-registry-tags
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  count: 9
+
+tags:
+
+  - id: tag.balbezit
+    slug: balbezit
+    label_nl: Balbezit
+    category: tactical
+    description: "Wij hebben de bal — aanvallend organisatie en bezit"
+    mutually_exclusive_with: []
+
+  - id: tag.verdedigen
+    slug: verdedigen
+    label_nl: Verdedigen
+    category: tactical
+    description: "Tegenstander heeft bal — blok, duels, dekking"
+    mutually_exclusive_with: []
+
+  - id: tag.omschakelen
+    slug: omschakelen
+    label_nl: Omschakelen
+    category: tactical
+    description: "Moment van balverlies of balwinst — transitie"
+    mutually_exclusive_with: []
+
+  - id: tag.standaards
+    slug: standaards
+    label_nl: Standaards
+    category: set_piece
+    description: "Dode spelmomenten — corner, vrije trap, ingooi, aftrap"
+    mutually_exclusive_with: []
+
+  - id: tag.wedstrijdmanagement
+    slug: wedstrijdmanagement
+    label_nl: Wedstrijdmanagement
+    category: match_management
+    description: "Fase, tempo, score, momentum over 90 minuten"
+    mutually_exclusive_with: []
+
+  - id: tag.mentaal
+    slug: mentaal
+    label_nl: Mentaal
+    category: mental
+    description: "Mindset, paniek, focus, reset na tegoal"
+    mutually_exclusive_with: []
+
+  - id: tag.communicatie
+    slug: communicatie
+    label_nl: Communicatie
+    category: communication
+    description: "Roepen, bevestigen, comm-ketting, organisatie"
+    mutually_exclusive_with: []
+
+  - id: tag.coachen
+    slug: coachen
+    label_nl: Coachen
+    category: coaching
+    description: "Trainer/captain perspectief — TPL, observatie, briefing"
+    mutually_exclusive_with: []
+
+  - id: tag.opbouwen
+    slug: opbouwen
+    label_nl: Opbouwen
+    category: tactical
+    description: "Opbouwen van achteren — keeper en verdediging (subset van balbezit)"
+    mutually_exclusive_with: []
+    parent_tag: tag.balbezit

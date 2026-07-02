@@ -1,10 +1,23 @@
 # World Class Playbook Engine
 
 **ZVV Zaandijk VRZ1 — Football Academy**  
-**Versie 2.2 — Subordinate aan WPE v1.0**  
+**Versie 2.3 — Subordinate aan FDPS v1.0 (PB13+)**  
 **Status:** Definitief · Geen implementatie · Geen code
 
-> **Let op:** Dit is de **Playbook Writing Engine**. **Performance Engine** = `world-class-performance-engine.md` (WPE v1.0 / WCPE v3.0).
+> **Let op:** Dit is de **Playbook Writing Engine**. **Final Development Phase** = `academy-final-development-phase.md` (FDPS) — schrijfstandaard voor publiek vanaf PB13.
+
+---
+
+## Wijziging v2.2 → v2.3 (Final Development Phase)
+
+| v2.2 | FDPS v1.0 (PB13+) |
+|------|-------------------|
+| Coach-stem algemeen | **12 vragen** per eenheid · **Praatje→Plaatje→Daadje** |
+| Visuals gespecificeerd | **Echte** visuals verplicht voor publicatie |
+| PB11/12 = flagship | PB11/12 = **ondergrens** · elke nieuwe **beter + duidelijker** |
+| Leestijd flexibel | **Max.** leestijd 4e-klas (2×/week) |
+
+**Zie:** `academy-final-development-phase.md`
 
 ---
 
@@ -52,7 +65,7 @@
 | **1 (hoogst)** | **World Class Performance Engine (WPE v1.0)** | Gedrag · certificering · publicatie |
 | 2 | **Academy Curriculum Engine (ACE)** | Welke entry · wanneer · voorkennis |
 | 3 | **World Class Visual Learning Protocol (WVLP)** | 4 lagen · visuals |
-| 4 | **World Class Playbook Engine v2.2** | Coach-stem · denken · structuur |
+| 4 | **World Class Playbook Engine v2.3** | Coach-stem · structuur · **FDPS PB13+** |
 | 5 | FLES · FMS · Language · Authoring · Blueprint | Kwaliteit · structuur |
 | 6 | Playbook Entry Standard | 11 secties |
 

@@ -1,0 +1,145 @@
+# Academy Sidecar Template — LEGE STRUCTUUR
+# Phase B · ACADEMY-ARCH-v1.1
+# Kopieer naar sidecars/pb-{NN}-meta.yaml · Phase E invulling
+# NOOIT L5 markdown wijzigen
+
+schema_version: "1.1.0"
+architecture_ref: ACADEMY-ARCH-v1.1
+
+# ── Identiteit ────────────────────────────────────────────────────────────────
+pb: null                    # integer · bijv. 27
+slug: null                  # string · bijv. eerste-pass-na-balverovering
+
+# ── Relaties (refs naar registries) ───────────────────────────────────────────
+moment_ids: []              # bijv. [moment.s4]
+situation_ids: []           # bijv. [sit.eerste-pass]
+problem_ids: []             # bijv. [prob.te-snel-wegspelen]
+visual_primary: null        # bijv. vis.t294
+visual_refs: []             # extra visuals uit PB minimumset
+tags: []                    # bijv. [tag.omschakelen, tag.balbezit]
+search_terms: []            # extra zoektermen boven registry
+
+# ── Oefening (optioneel) ──────────────────────────────────────────────────────
+exercise: null              # string · bijv. "Rondje eerste pass · 4 min"
+
+# ── Trainer / Captain (metadata · geen L5) ───────────────────────────────────
+trainer_points: []          # max 3 · TPL observeerpunten
+captain_points: []          # max 5 · roepen / teamafspraken
+
+# ── Lagen L0–L4 (GEEN L5 — L5 = content markdown) ───────────────────────────
+# Positie-slugs: keeper · lcv · rcv · lb · rb · l6 · r6 · "10" · lw · rw · spits
+
+layers:
+
+  L0:
+    shared: null            # trigger · 1 zin · "Wanneer zie je dit?"
+    by_position: {}         # optioneel · { lb: "..." }
+
+  L2:                         # twenty_seconds / Activate · ~40 woorden · 11 posities
+    keeper: []
+    lcv: []
+    rcv: []
+    lb: []
+    rb: []
+    l6: []
+    r6: []
+    "10": []
+    lw: []
+    rw: []
+    spits: []
+
+  L3:                         # apply · checklist + cue · wedstrijd-context
+    keeper:
+      checklist: [null, null, null]
+      cue: null
+    lcv:
+      checklist: [null, null, null]
+      cue: null
+    rcv:
+      checklist: [null, null, null]
+      cue: null
+    lb:
+      checklist: [null, null, null]
+      cue: null
+    rb:
+      checklist: [null, null, null]
+      cue: null
+    l6:
+      checklist: [null, null, null]
+      cue: null
+    r6:
+      checklist: [null, null, null]
+      cue: null
+    "10":
+      checklist: [null, null, null]
+      cue: null
+    lw:
+      checklist: [null, null, null]
+      cue: null
+    rw:
+      checklist: [null, null, null]
+      cue: null
+    spits:
+      checklist: [null, null, null]
+      cue: null
+
+  L4:                         # two_minutes / Remember · 3+3+3 per positie
+    keeper:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    lcv:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    rcv:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    lb:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    rb:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    l6:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    r6:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    "10":
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    lw:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    rw:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+    spits:
+      fouten: [null, null, null]
+      afspraken: [null, null, null]
+      gedragingen: [null, null, null]
+
+# ── Retrofit QA ───────────────────────────────────────────────────────────────
+completeness:
+  L0: empty                 # empty | draft | approved
+  L2: empty
+  L3: empty
+  L4: empty
+
+retrofit:
+  wave: null                # 0–8
+  extract_path: null        # manual | semi_auto | auto
+  reviewed_by: null
+  reviewed_at: null
+
+# L5 = module-2/playbook-{NN}-*-content.md — NOOIT in dit bestand

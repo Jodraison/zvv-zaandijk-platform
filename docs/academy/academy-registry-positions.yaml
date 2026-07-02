@@ -1,0 +1,224 @@
+# Academy Registry — Positions (11 × 4-2-3-1)
+# Phase B · ACADEMY-ARCH-v1.1
+
+registry:
+  id: academy-registry-positions
+  version: "1.1.0"
+  architecture_ref: ACADEMY-ARCH-v1.1
+  formation_default: "4-2-3-1"
+  count: 11
+
+positions:
+
+  - id: pos.keeper
+    slug: keeper
+    name_nl: Keeper
+    abbrev: K
+    line: keeper
+    sort_order: 1
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.keeper
+    core_pb_refs: [pb.7, pb.19, pb.30, pb.33]
+    situatie_shortcuts: [sit.opbouwen-keeper, sit.balverlies-achterin, sit.dode-spelmoment, sit.lijnen-samen]
+
+  - id: pos.lcv
+    slug: lcv
+    name_nl: Links centrale verdediger
+    abbrev: LCV
+    line: defence
+    sort_order: 2
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.lcv
+    core_pb_refs: [pb.7, pb.20, pb.33]
+    situatie_shortcuts: [sit.opbouwen-keeper, sit.verdedigingsblok, sit.laag-blok, sit.lijnen-samen]
+
+  - id: pos.rcv
+    slug: rcv
+    name_nl: Rechts centrale verdediger
+    abbrev: RCV
+    line: defence
+    sort_order: 3
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.rcv
+    core_pb_refs: [pb.19, pb.20, pb.33]
+    situatie_shortcuts: [sit.balverlies-achterin, sit.verdedigingsblok, sit.tussen-linies-verdedigen, sit.lijnen-samen]
+
+  - id: pos.lb
+    slug: lb
+    name_nl: Linksback
+    abbrev: LB
+    line: defence
+    sort_order: 4
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.lb
+    core_pb_refs: [pb.7, pb.17, pb.32, pb.33]
+    situatie_shortcuts: [sit.opbouwen-keeper, sit.balverlies-flank, sit.ingooi, sit.lijnen-samen]
+
+  - id: pos.rb
+    slug: rb
+    name_nl: Rechtsback
+    abbrev: RB
+    line: defence
+    sort_order: 5
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.rb
+    core_pb_refs: [pb.17, pb.33]
+    situatie_shortcuts: [sit.balverlies-flank, sit.verdedigingsblok, sit.breedte-diepte, sit.lijnen-samen]
+
+  - id: pos.l6
+    slug: l6
+    name_nl: Links centrale middenvelder
+    abbrev: L6
+    line: midfield
+    sort_order: 6
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.l6
+    core_pb_refs: [pb.8, pb.26, pb.33]
+    situatie_shortcuts: [sit.tussen-linies-aanvallend, sit.balverovering, sit.balverlies-centraal, sit.lijnen-samen]
+
+  - id: pos.r6
+    slug: r6
+    name_nl: Rechts centrale middenvelder
+    abbrev: R6
+    line: midfield
+    sort_order: 7
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.r6
+    core_pb_refs: [pb.8, pb.33]
+    situatie_shortcuts: [sit.tussen-linies-aanvallend, sit.balverlies-centraal, sit.bezit-onder-druk, sit.lijnen-samen]
+
+  - id: pos.10
+    slug: "10"
+    name_nl: Nummer 10
+    abbrev: "10"
+    line: midfield
+    sort_order: 8
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.10
+    core_pb_refs: [pb.8, pb.27, pb.34]
+    situatie_shortcuts: [sit.tussen-linies-aanvallend, sit.eerste-pass, sit.bezit-onder-druk, sit.wedstrijd-90-min]
+
+  - id: pos.lw
+    slug: lw
+    name_nl: Linksbuiten
+    abbrev: LW
+    line: attack
+    sort_order: 9
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.lw
+    core_pb_refs: [pb.9, pb.28, pb.33]
+    situatie_shortcuts: [sit.breedte-diepte, sit.counter, sit.balverlies-flank, sit.lijnen-samen]
+
+  - id: pos.rw
+    slug: rw
+    name_nl: Rechtsbuiten
+    abbrev: RW
+    line: attack
+    sort_order: 10
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.rw
+    core_pb_refs: [pb.9, pb.33, pb.34]
+    situatie_shortcuts: [sit.breedte-diepte, sit.counter, sit.dreigen-laatste-derde, sit.wedstrijd-90-min]
+
+  - id: pos.spits
+    slug: spits
+    name_nl: Spits
+    abbrev: S
+    line: attack
+    sort_order: 11
+    dashboard_route: /positie
+    default_widgets: [vandaag, quick_actions, positie_ankers, apply_checklist, leerpunt, deze_week, situatie_shortcuts]
+    anchor_ref: anker.spits
+    core_pb_refs: [pb.11, pb.25, pb.34]
+    situatie_shortcuts: [sit.dreigen-laatste-derde, sit.duel-1v1, sit.counter, sit.wedstrijd-90-min]
+
+# PositieAnkers — 3 vaste taken per positie (§4.1 v1.1)
+
+anchors:
+
+  - id: anker.keeper
+    position_id: pos.keeper
+    tasks:
+      - { label: "Organiseer · roep · stuur lijn", pb_ref: pb.7 }
+      - { label: "Rest/terug bij balverlies", pb_ref: pb.19 }
+      - { label: "Standaards organiseren", pb_ref: pb.30 }
+
+  - id: anker.lcv
+    position_id: pos.lcv
+    tasks:
+      - { label: "Schuif · diepte · open/terug", pb_ref: pb.7 }
+      - { label: "Blok mee · niet solo", pb_ref: pb.20 }
+      - { label: "Lijn houden met team", pb_ref: pb.33 }
+
+  - id: anker.rcv
+    position_id: pos.rcv
+    tasks:
+      - { label: "Anker · rest · schuif", pb_ref: pb.19 }
+      - { label: "Blok organiseren", pb_ref: pb.20 }
+      - { label: "Communicatie achterin", pb_ref: pb.33 }
+
+  - id: anker.lb
+    position_id: pos.lb
+    tasks:
+      - { label: "Schuif vroeg met team", pb_ref: pb.7 }
+      - { label: "Overlap · help L6", pb_ref: pb.17 }
+      - { label: "Ingooi · niet crowd", pb_ref: pb.32 }
+
+  - id: anker.rb
+    position_id: pos.rb
+    tasks:
+      - { label: "Spiegel LB · breed/compact", pb_ref: pb.17 }
+      - { label: "Schuif met lijn", pb_ref: pb.33 }
+      - { label: "Counter dekken", pb_ref: pb.28 }
+
+  - id: anker.l6
+    position_id: pos.l6
+    tasks:
+      - { label: "Lijm · omschakeling · tempo", pb_ref: pb.8 }
+      - { label: "Eerste pass ondersteunen", pb_ref: pb.26 }
+      - { label: "Lijn met verdediging", pb_ref: pb.33 }
+
+  - id: anker.r6
+    position_id: pos.r6
+    tasks:
+      - { label: "Balance · dek 10 · schuif", pb_ref: pb.8 }
+      - { label: "Compact houden", pb_ref: pb.33 }
+      - { label: "Press trigger", pb_ref: pb.23 }
+
+  - id: anker.10
+    position_id: pos.10
+    tasks:
+      - { label: "Hub · risico/rust · verbind", pb_ref: pb.8 }
+      - { label: "Eerste pass na winst", pb_ref: pb.27 }
+      - { label: "Wedstrijd fase lezen", pb_ref: pb.34 }
+
+  - id: anker.lw
+    position_id: pos.lw
+    tasks:
+      - { label: "Compact terug · diepte", pb_ref: pb.9 }
+      - { label: "Counter loopt", pb_ref: pb.28 }
+      - { label: "Breed houden", pb_ref: pb.33 }
+
+  - id: anker.rw
+    position_id: pos.rw
+    tasks:
+      - { label: "Spiegel LW · momentum", pb_ref: pb.9 }
+      - { label: "Linie mee", pb_ref: pb.33 }
+      - { label: "Fase lezen · slot", pb_ref: pb.34 }
+
+  - id: anker.spits
+    position_id: pos.spits
+    tasks:
+      - { label: "Diepte · druk/spaar", pb_ref: pb.11 }
+      - { label: "Duels · uitstappen", pb_ref: pb.25 }
+      - { label: "Compact · fase", pb_ref: pb.34 }

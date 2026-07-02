@@ -344,7 +344,9 @@ Elke Playbook begint met:
 
 ```
 ┌─────────────────────────────────────────┐
-│  WORLD CLASS PERFORMANCE ENGINE         │  ← GEDRAG · CERTIFICERING (WPE)
+│  FINAL DEVELOPMENT PHASE (FDPS v1.0)    │  ← SCHRIJFEN PB13+ · 4e KLAS
+├─────────────────────────────────────────┤
+│  WORLD CLASS PERFORMANCE ENGINE         │  ← WPE v1–v4 · CERTIFICERING
 ├─────────────────────────────────────────┤
 │  ACADEMY CURRICULUM ENGINE (ACE)        │  ← WAT · WANNEER · VOORKENNIS
 ├─────────────────────────────────────────┤
@@ -361,6 +363,6 @@ Elke Playbook begint met:
 ---
 
 **Document:** `platform/docs/academy/academy-curriculum-engine.md`  
-**Volgende Playbook (automatisch):** **PB13 — S1.7 — Bezit onder druk** *(na PB12 PASS)*
+**Volgende Playbook (automatisch):** **PB13 — S1.7 — Bezit onder druk** *(eerste **FDPS v1.0** Playbook · ondergrens PB11/PB12)*
 
 **Geen code geïmplementeerd.**
