@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAdmin } from "@/lib/auth/is-admin";
+import { isAcademyEnabled, isAcademyPath } from "@/lib/academy/feature-flag";
 import {
   isMaintenanceAdminBypass,
   isMaintenanceExemptPath,
@@ -67,6 +68,28 @@ export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
 
   if (isPublicPath(pathname)) {
+    return response;
+  }
+
+  // T-01-01: Football Academy MVP mount — flag OFF hides routes; flag ON requires session.
+  if (isAcademyPath(pathname)) {
+    if (!isAcademyEnabled()) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("error", "config");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const academyUser = await getUser(request);
+    if (!academyUser) {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
     return response;
   }
 

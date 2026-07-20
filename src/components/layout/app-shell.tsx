@@ -6,6 +6,7 @@ import { CLUB_NAME, TEAM_DISPLAY_LABEL } from "@/constants/club";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
 import { SeasonSwitcher } from "@/components/layout/season-switcher";
+import { academyRoutes } from "@/lib/academy/routes";
 import type { Season } from "@/types";
 
 const baseNav = [
@@ -22,18 +23,24 @@ const baseNav = [
 
 const beheerNav = { href: "/beheer", label: "Beheer" } as const;
 
+const academyNav = { href: academyRoutes.root, label: "Academy" } as const;
+
 export function AppShell({
   children,
   seasons,
   currentSeasonId,
   isAdmin,
+  academyEnabled = false,
 }: {
   children: React.ReactNode;
   seasons: Season[];
   currentSeasonId: string;
   isAdmin: boolean;
+  /** T-01-01: show Football Academy mount link only when ACADEMY_ENABLED. */
+  academyEnabled?: boolean;
 }) {
-  const nav = isAdmin ? [...baseNav, beheerNav] : [...baseNav];
+  const withAcademy = academyEnabled ? [...baseNav, academyNav] : [...baseNav];
+  const nav = isAdmin ? [...withAcademy, beheerNav] : [...withAcademy];
   const pathname = usePathname();
   const { mobileNavOpen, setMobileNavOpen } = useUiStore();
 
