@@ -590,7 +590,8 @@ playbooks:
     moment_id: moment.s4
     content_path: module-2/playbook-27-S41-content.md
     content_status: published
-    sidecar_status: pending
+    sidecar_status: in_progress
+    sidecar_path: sidecars/pb-27-meta.yaml
     type: tactical
     flagship: true
     prerequisites: [pb.26]

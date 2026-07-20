@@ -1,0 +1,185 @@
+# Academy Sidecar — pb.27 (T-C-01 · Pilot week A draft)
+# Human title lives in playbook registry: "Eerste pass na balverovering" (no PB#)
+# L5 = module-2/playbook-27-S41-content.md — never in this file
+# Trainer sign-off: see pb-27-trainer-review-checklist.md
+
+schema_version: "1.1.0"
+architecture_ref: ACADEMY-ARCH-v1.1
+
+pb: 27
+slug: eerste-pass-na-balverovering
+
+moment_ids: [moment.s4]
+situation_ids: [sit.eerste-pass, sit.eerste-pass-na-winst]
+problem_ids: [prob.te-snel-wegspelen]
+visual_primary: vis.t294
+visual_refs: []
+tags: [tag.omschakelen, tag.balbezit]
+search_terms: [eerste pass, balwinst, scan, ketting]
+
+exercise: "Rondje eerste pass · 4 min"
+
+trainer_points:
+  - "Scan vóór touch — weet 2e/3e pass al"
+  - "Minder blind vooruit onder druk"
+  - "Roep optie · beweeg vóór de pass"
+
+captain_points:
+  - "Scan!"
+  - "Vooruit of breed — niet blind"
+  - "Roep je optie"
+  - "Help zonder bal"
+  - "Rustig mag"
+
+layers:
+
+  L0:
+    shared: "Bal gewonnen — waar is NU het voordeel voor de eerste pass?"
+    by_position:
+      lb: "Ben jij de optie of de volgende schakel?"
+      rb: "Breed beschikbaar — of switch?"
+      l6: "Wie is écht vrij voor jouw eerste pass?"
+
+  L2:
+    keeper:
+      - "Word optie direct"
+      - "Roep Links/Rustig"
+      - "Niet vergeten als escape"
+      - "Klaar voor terug"
+    lcv:
+      - "Schuif in als optie"
+      - "Denk 2e pass al"
+      - "Niet stil blijven staan"
+      - "Open lichaam"
+    rcv:
+      - "Houd rest/as"
+      - "Niet beide CV vooruit"
+      - "Bied veilige optie"
+      - "Communiceer lijn"
+    lb:
+      - "Loop vóór de pass"
+      - "Niet vragen als je dichtzit"
+      - "Klaar in sec 2"
+      - "Roep je beschikbaarheid"
+    rb:
+      - "Blijf breed"
+      - "Switch is een optie"
+      - "Niet naar midden duiken"
+      - "Spiegel de LB-breedte"
+    l6:
+      - "Scan vóór touch"
+      - "10 niet blind — kies"
+      - "2e pass al in beeld"
+      - "Tempo eruit mag"
+    r6:
+      - "Word open optie"
+      - "Niet meteen achteruit"
+      - "Help de winnaar"
+      - "Roep door"
+    "10":
+      - "Open vóór de bal"
+      - "1-touch naar vrije"
+      - "Niet in de val"
+      - "Maak 2e pass makkelijk"
+    lw:
+      - "Maak ruimte"
+      - "Niet eerste bal forceren"
+      - "3e pass klaar"
+      - "Stretch de lijn"
+    rw:
+      - "Blijf breed"
+      - "Stretch diepte"
+      - "Switch maybe"
+      - "Niet crowd midden"
+    spits:
+      - "Bind verdediging"
+      - "Niet eerste pass eisen"
+      - "Ruimte achter open"
+      - "Beweeg voor 2e/3e"
+
+  L3:
+    keeper:
+      checklist: ["Optie tonen", "Roep klaar", "Veilige terug"]
+      cue: "Rustig!"
+    lcv:
+      checklist: ["Inschuiven", "Open", "Volgende pass"]
+      cue: "Ik!"
+    rcv:
+      checklist: ["Rest houden", "As dicht", "Veilige optie"]
+      cue: "As!"
+    lb:
+      checklist: ["Loop vóór", "Beschikbaar", "Roep"]
+      cue: "Voor!"
+    rb:
+      checklist: ["Breed blijven", "Switch check", "Niet midden"]
+      cue: "Breed!"
+    l6:
+      checklist: ["Scan", "Kies pass", "Roep optie"]
+      cue: "Scan!"
+    r6:
+      checklist: ["Open", "Help winnaar", "Doorroepen"]
+      cue: "Door!"
+    "10":
+      checklist: ["Open vóór bal", "1-touch klaar", "Geen val"]
+      cue: "Open!"
+    lw:
+      checklist: ["Ruimte maken", "Niet forceren", "3e klaar"]
+      cue: "Ruimte!"
+    rw:
+      checklist: ["Breed", "Stretch", "Switch check"]
+      cue: "Breed!"
+    spits:
+      checklist: ["Binden", "Niet eisen", "Ruimte achter"]
+      cue: "Bind!"
+
+  L4:
+    keeper:
+      fouten: ["Vergeten als optie", "Te laat roepen", "Paniek terug"]
+      afspraken: ["Altijd beschikbaar", "Duidelijke roep", "Veilig mag"]
+      gedragingen: ["Vroeg tonen", "Korte roep", "Lichaam open"]
+    lcv:
+      fouten: ["Stil blijven", "Beide CV vooruit", "Geen 2e pass"]
+      afspraken: ["Eén schuift", "Andere houdt", "Open lichaam"]
+      gedragingen: ["Inschuiven", "Scan lijn", "Pass voorbereiden"]
+    rcv:
+      fouten: ["Blind meegaan", "As leeg", "Geen communicatie"]
+      afspraken: ["Rest eerst", "As dicht", "Roep lijn"]
+      gedragingen: ["Positie houden", "Optie tonen", "Korte cues"]
+    lb:
+      fouten: ["Blind vragen", "Te laat starten", "Crowd op bal"]
+      afspraken: ["Loop vóór pass", "Alleen als ruimte", "Roep timing"]
+      gedragingen: ["Vroege loop", "Open heup", "Klaar in 2 sec"]
+    rb:
+      fouten: ["Naar midden duiken", "Breed vergeten", "Geen switch-oog"]
+      afspraken: ["Breed houden", "Switch checken", "Spiegel LB"]
+      gedragingen: ["Breed blijven", "Scan switch", "Beschikbaar roepen"]
+    l6:
+      fouten: ["Blind vooruit", "Geen scan", "10 forceren"]
+      afspraken: ["Scan eerst", "2e/3e al weten", "Tempo mag omlaag"]
+      gedragingen: ["Kijken vóór touch", "Kiezen", "Roepen"]
+    r6:
+      fouten: ["Meteen achteruit", "Geen hulp", "Stil"]
+      afspraken: ["Open optie", "Help winnaar", "Doorcommuniceren"]
+      gedragingen: ["Openstaan", "Aansluiten", "Roep door"]
+    "10":
+      fouten: ["In de val", "Te veel touches", "Geen 2e pass"]
+      afspraken: ["Open vóór bal", "1-touch waar kan", "Maak ketting"]
+      gedragingen: ["Vroege open", "Scan door", "Eenvoudige door"]
+    lw:
+      fouten: ["Eerste bal forceren", "Geen ruimte", "Te vroeg naar bal"]
+      afspraken: ["Ruimte maken", "3e pass klaar", "Niet crowd"]
+      gedragingen: ["Wegtrekken", "Diepte tonen", "Geduld"]
+    rw:
+      fouten: ["Crowd midden", "Breed vergeten", "Geen stretch"]
+      afspraken: ["Breed blijven", "Stretch diepte", "Switch overwegen"]
+      gedragingen: ["Breed houden", "Diepte lopen", "Beschikbaar"]
+    spits:
+      fouten: ["Eerste pass eisen", "Geen binden", "Ruimte dicht"]
+      afspraken: ["Bind verdediging", "Ruimte achter", "Wacht 2e/3e"]
+      gedragingen: ["Vastzetten", "Diepte dreigen", "Timing"]
+
+completeness:
+  L0: draft
+  L2: draft
+  L3: draft
+  L4: draft

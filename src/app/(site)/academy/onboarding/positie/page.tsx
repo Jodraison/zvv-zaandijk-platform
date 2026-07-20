@@ -1,11 +1,30 @@
-import { AcademyRouteStub } from "@/components/academy/academy-route-stub";
+import { AcademyOnboardingPositieForm } from "@/components/academy/academy-onboarding-positie-form";
+import { requireAcademyAccess } from "@/lib/academy/require-academy-access";
+import { readAcademyOnboardingDraft } from "@/lib/academy/onboarding-metadata";
+import { loadPositions } from "@/lib/academy/registry/loaders";
 
-/** T-02-01 — Onboarding S-10 entry (UI = later T-04-01 / T-02-03 gate). */
-export default function AcademyOnboardingPositiePage() {
+/**
+ * S-10 Onboarding Positie (T-04-01).
+ * Gate: incomplete only (T-02-03). UI + persist draft → S-11.
+ */
+export default async function AcademyOnboardingPositiePage() {
+  const user = await requireAcademyAccess();
+  const draft = readAcademyOnboardingDraft(user.user_metadata);
+  const positions = loadPositions()
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 99) - (b.sort_order ?? 99))
+    .map((p) => ({
+      id: p.id,
+      slug: p.slug,
+      nameNl: p.name_nl,
+      abbrev: p.abbrev,
+    }));
+
   return (
-    <AcademyRouteStub
-      title="Onboarding — Positie"
-      description="Onboarding-UI volgt later. Route-entry is actief."
+    <AcademyOnboardingPositieForm
+      positions={positions}
+      initialPrimaryId={draft.primaryPosition}
+      initialSecondaryId={draft.secondaryPosition}
     />
   );
 }

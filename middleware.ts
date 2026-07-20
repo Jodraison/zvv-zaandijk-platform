@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAdmin } from "@/lib/auth/is-admin";
 import { isAcademyEnabled, isAcademyPath } from "@/lib/academy/feature-flag";
+import { isAcademyOnboardingComplete } from "@/lib/academy/onboarding-complete";
+import { resolveAcademyOnboardingGate } from "@/lib/academy/onboarding-gate";
 import {
   isMaintenanceAdminBypass,
   isMaintenanceExemptPath,
@@ -65,13 +67,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  const response = NextResponse.next({ request });
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", pathname);
+  const response = NextResponse.next({
+    request: { headers: requestHeaders },
+  });
 
   if (isPublicPath(pathname)) {
     return response;
   }
 
   // T-01-01: Football Academy MVP mount — flag OFF hides routes; flag ON requires session.
+  // T-02-03: after auth, onboarding_complete gate (S-10 first-launch).
   if (isAcademyPath(pathname)) {
     if (!isAcademyEnabled()) {
       return NextResponse.redirect(new URL("/", request.url));
@@ -88,6 +95,16 @@ export async function middleware(request: NextRequest) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
+    }
+
+    const gate = resolveAcademyOnboardingGate({
+      onboardingComplete: isAcademyOnboardingComplete(
+        (academyUser.user_metadata ?? {}) as Record<string, unknown>,
+      ),
+      pathname,
+    });
+    if (gate.action === "redirect") {
+      return NextResponse.redirect(new URL(gate.to, request.url));
     }
 
     return response;
