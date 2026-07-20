@@ -1,6 +1,7 @@
 /**
- * Academy registry loaders + typed getters (T-03-02).
+ * Academy registry loaders + typed getters (T-03-02 / T-03-03).
  * Loads Phase B YAML from docs/academy — no content invention.
+ * Server-only via yaml-io (`server-only`).
  */
 import { readAcademyYamlFile } from "@/lib/academy/registry/yaml-io";
 import {
@@ -15,6 +16,7 @@ import type {
   Moment,
   PlaybookRegistryEntry,
   PositieAnker,
+  PositieAnkerTask,
   PositionRegistryEntry,
   ProblemRegistryEntry,
   SituationRegistryEntry,
@@ -22,6 +24,13 @@ import type {
   VisualRegistryEntry,
 } from "@/lib/academy/schema/registry-entries";
 import type { PositionSlug } from "@/lib/academy/schema/ids";
+
+/** Exactly 3 PositieAnker tasks for S-20 (T-03-03 DoD). */
+export type AnkerTaskTriplet = readonly [
+  PositieAnkerTask,
+  PositieAnkerTask,
+  PositieAnkerTask,
+];
 
 type RegistryCaches = {
   problems: ProblemRegistryEntry[] | null;
@@ -78,7 +87,10 @@ export function loadMoments(): Moment[] {
   if (!cache.moments) {
     loadSituations();
   }
-  return cache.moments ?? [];
+  if (!cache.moments) {
+    throw new Error("Academy moments failed to load from registry");
+  }
+  return cache.moments;
 }
 
 export function loadPlaybooks(): PlaybookRegistryEntry[] {
@@ -102,7 +114,10 @@ export function loadAnchors(): PositieAnker[] {
   if (!cache.anchors) {
     loadPositions();
   }
-  return cache.anchors ?? [];
+  if (!cache.anchors) {
+    throw new Error("Academy PositieAnkers failed to load from registry");
+  }
+  return cache.anchors;
 }
 
 export function loadTags(): TagRegistryEntry[] {
@@ -160,17 +175,39 @@ export function getMoment(idOrSlug: string): Moment | undefined {
 }
 
 /**
- * PositieAnkers for a position slug or id — exactly 3 tasks when registry is valid.
- * Full DoD for accessor samples is also covered by T-03-03; included here per T-03-02 DoD.
+ * PositieAnker tasks for a position (T-03-03).
+ * Unknown position → undefined.
+ * Known position → exactly 3 non-empty tasks, or throw (fail-fast; no empty fallback).
  */
-export function getAnkers(pos: string | PositionSlug): PositieAnker | undefined {
+export function getAnkers(pos: string | PositionSlug): AnkerTaskTriplet | undefined {
   const position = getPosition(pos);
   if (!position) return undefined;
+
   const anchors = loadAnchors();
-  if (position.anchor_ref) {
-    return anchors.find((a) => a.id === position.anchor_ref);
+  const anker = position.anchor_ref
+    ? anchors.find((a) => a.id === position.anchor_ref)
+    : anchors.find((a) => a.position_id === position.id);
+
+  if (!anker) {
+    throw new Error(`PositieAnker missing for position ${position.id} (${String(pos)})`);
   }
-  return anchors.find((a) => a.position_id === position.id);
+  if (anker.tasks.length !== 3) {
+    throw new Error(
+      `getAnkers(${String(pos)}): expected exactly 3 tasks, got ${anker.tasks.length}`,
+    );
+  }
+
+  const [t0, t1, t2] = anker.tasks;
+  for (const [i, task] of [t0, t1, t2].entries()) {
+    if (!task.label.trim()) {
+      throw new Error(`getAnkers(${String(pos)}): task[${i}] label is empty`);
+    }
+    if (!task.pb_ref) {
+      throw new Error(`getAnkers(${String(pos)}): task[${i}] pb_ref is missing`);
+    }
+  }
+
+  return [t0, t1, t2];
 }
 
 export function listMvpProblems(): ProblemRegistryEntry[] {

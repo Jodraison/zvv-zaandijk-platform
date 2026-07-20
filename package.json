@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:academy-foundation": "tsx src/lib/academy/feature-flag.test.ts && tsx src/lib/academy/routes.test.ts && tsx src/lib/academy/route-foundation.test.ts && tsx src/lib/academy/bottom-tab-bar.test.ts && tsx src/lib/academy/schema/schema.test.ts && tsx src/lib/academy/registry/loaders.test.ts",
+    "test:academy-foundation": "tsx src/lib/academy/feature-flag.test.ts && tsx src/lib/academy/routes.test.ts && tsx src/lib/academy/route-foundation.test.ts && tsx src/lib/academy/deep-links.test.ts && tsx src/lib/academy/bottom-tab-bar.test.ts && tsx src/lib/academy/academy-role-grants.test.ts && tsx src/lib/academy/offline-flag.test.ts && tsx src/lib/academy/offline-banner-skeleton.test.ts && tsx src/lib/academy/schema/schema.test.ts && tsx src/lib/academy/registry/loaders.test.ts && tsx src/lib/academy/registry/get-ankers.test.ts && tsx src/lib/academy/registry/registry-server-boundary.test.ts",
     "academy:validate-registries": "tsx src/scripts/validate-academy-registries.ts",
     "migrate:club-atomic": "tsx src/scripts/atomic-club-migration.ts",
     "fix:club-data": "tsx src/scripts/production-club-data-fix.ts",

@@ -30,9 +30,9 @@ assert.equal(uitstappen?.id, "prob.uitstappen-twijfel");
 assert.equal(loadMoments().length, 6, "6 ACE moments");
 assert.equal(loadPositions().length, 11, "11 positions");
 
-const lbAnker = getAnkers("lb");
-assert.ok(lbAnker, "getAnkers lb");
-assert.equal(lbAnker?.tasks.length, 3);
+const lbTasks = getAnkers("lb");
+assert.ok(lbTasks, "getAnkers lb");
+assert.equal(lbTasks?.length, 3);
 
 const pb27 = getPlaybook("pb.27");
 assert.ok(pb27, "getPlaybook pb.27");

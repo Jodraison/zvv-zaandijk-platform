@@ -19,5 +19,6 @@ export {
   loadTags,
   loadVisuals,
 } from "@/lib/academy/registry/loaders";
+export type { AnkerTaskTriplet } from "@/lib/academy/registry/loaders";
 export { validateAcademyRegistries } from "@/lib/academy/registry/validate";
 export type { RegistryValidationIssue } from "@/lib/academy/registry/validate";

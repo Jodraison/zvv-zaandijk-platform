@@ -215,6 +215,7 @@ export type SituationRegistryEntry = z.infer<typeof situationRegistryEntrySchema
 export type ProblemRegistryEntry = z.infer<typeof problemRegistryEntrySchema>;
 export type PositionRegistryEntry = z.infer<typeof positionRegistryEntrySchema>;
 export type PositieAnker = z.infer<typeof positieAnkerSchema>;
+export type PositieAnkerTask = z.infer<typeof positieAnkerTaskSchema>;
 export type TagRegistryEntry = z.infer<typeof tagRegistryEntrySchema>;
 export type VisualRegistryEntry = z.infer<typeof visualRegistryEntrySchema>;
 export type CueRegistryEntry = z.infer<typeof cueRegistryEntrySchema>;

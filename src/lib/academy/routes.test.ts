@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { ACADEMY_MOUNT_PATH } from "@/lib/academy/feature-flag";
 import {
   academyContentPath,
+  academyPositiePath,
   academyProbleemPath,
   academyRoutes,
   academyWedstrijdFasePath,
@@ -18,5 +19,6 @@ assert.equal(academyRoutes.teamCaptain, "/academy/team/captain");
 assert.equal(academyProbleemPath("uitstappen-twijfel"), "/academy/probleem/uitstappen-twijfel");
 assert.equal(academyWedstrijdFasePath("voor"), "/academy/wedstrijd/voor");
 assert.equal(academyContentPath("pb.27", { layer: "L2" }), "/academy/content/pb.27?layer=L2");
+assert.equal(academyPositiePath({ highlight: "week" }), "/academy/positie?highlight=week");
 
 console.log("routes.test.ts: ok");

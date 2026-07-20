@@ -13,9 +13,15 @@ type RequireAcademyAccessOptions = {
  * Does not invent team/speelster roles — any valid Supabase session (platform login).
  * Flag OFF → home (same as middleware).
  */
+export type AcademySessionUser = {
+  userId: string;
+  email: string | null | undefined;
+  user_metadata: Record<string, unknown>;
+};
+
 export async function requireAcademyAccess(
   options?: RequireAcademyAccessOptions,
-): Promise<{ userId: string }> {
+): Promise<AcademySessionUser> {
   if (!isAcademyEnabled()) {
     redirect("/");
   }
@@ -31,5 +37,9 @@ export async function requireAcademyAccess(
     redirect(options?.loginRedirect ?? `/login?next=${next}`);
   }
 
-  return { userId: user.id };
+  return {
+    userId: user.id,
+    email: user.email,
+    user_metadata: (user.user_metadata ?? {}) as Record<string, unknown>,
+  };
 }

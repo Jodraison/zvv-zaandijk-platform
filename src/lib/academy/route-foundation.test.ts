@@ -7,7 +7,9 @@ import { ACADEMY_MOUNT_PATH } from "@/lib/academy/feature-flag";
 import {
   academyContentPath,
   academyOefeningPath,
+  academyPositiePath,
   academyProbleemPath,
+  academyReflectiePath,
   academyRoutes,
   academySeizoenReflectiesPath,
   academySituatieDetailPath,
@@ -35,6 +37,7 @@ const paths = [
   academyRoutes.onboardingProblemen,
   academyRoutes.teamCaptain,
   academyRoutes.teamTrainer,
+  academyPositiePath({ highlight: "week" }).split("?")[0]!,
   academySituatiePoortPath("wij-hebben-bal"),
   academySituatieDetailPath("wij-hebben-bal", "opbouwen"),
   academyProbleemPath("uitstappen-twijfel"),
@@ -42,6 +45,7 @@ const paths = [
   academyContentPath("pb.27", { layer: "L2" }),
   academyWedstrijdFasePath("voor"),
   academyOefeningPath("ex.27"),
+  academyReflectiePath("match.1"),
   academySeizoenReflectiesPath(),
 ];
 
@@ -51,6 +55,7 @@ for (const p of paths) {
 }
 
 assert.equal(academyContentPath("pb.27", { layer: "L2" }), "/academy/content/pb.27?layer=L2");
+assert.equal(academyPositiePath({ highlight: "week" }), "/academy/positie?highlight=week");
 assert.ok(isAcademyRoutePath("/academy/positie"));
 assert.equal(isAcademyRoutePath("/academie"), false);
 
