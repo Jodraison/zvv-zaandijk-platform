@@ -45,9 +45,12 @@ export async function saveFitnessBatchFormAction(_prev: AdminFormState, formData
           );
           if (!member) throw new Error("Een of meer speelsters horen niet bij dit seizoen.");
         }
-        db.fitness_tests = db.fitness_tests.filter((f) => !(f.season_id === season_id && f.test_on === test_on));
+        // Upsert per speelster — nooit de hele testdag wissen (voorkomt dataverlies bij partiële her-opslag).
         const recorded = recordedAtForTestOn(test_on);
         for (const row of rows) {
+          db.fitness_tests = db.fitness_tests.filter(
+            (f) => !(f.season_id === season_id && f.test_on === test_on && f.player_id === row.player_id),
+          );
           const total = round2(row.total_time_seconds);
           db.fitness_tests.push({
             id: randomUUID(),

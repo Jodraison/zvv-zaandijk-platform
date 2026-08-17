@@ -1,0 +1,35 @@
+{
+  "order": 16,
+  "sessionId": "FDL-DS-HALFSPACE-RECEIVE-NEXT-ACTION-V1",
+  "slug": "halfspace-volgende-actie",
+  "family": "possession-halfspace",
+  "activeRole": "us.10",
+  "supportRoles": [
+    "us.RW",
+    "us.SP",
+    "us.R6"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "canonical-4-2-3-1-start",
+  "ballHolder": "us.10",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-halfspace-volgende-actie-live",
+    "good": "fdl-ds-halfspace-volgende-actie-good",
+    "bad": "fdl-ds-halfspace-volgende-actie-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

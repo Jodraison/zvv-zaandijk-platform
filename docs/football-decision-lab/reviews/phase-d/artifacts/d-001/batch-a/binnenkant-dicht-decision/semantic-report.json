@@ -1,0 +1,35 @@
+{
+  "order": 3,
+  "sessionId": "FDL-DS-INSIDE-CLOSE-RW-DECISION-V1",
+  "slug": "binnenkant-dicht-decision",
+  "family": "press-stable",
+  "activeRole": "us.RW",
+  "supportRoles": [
+    "us.R6",
+    "us.RB",
+    "us.L6"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+  "ballHolder": "opp.cbL",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-binnenkant-dicht-decision-live",
+    "good": "fdl-ds-binnenkant-dicht-decision-good",
+    "bad": "fdl-ds-binnenkant-dicht-decision-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

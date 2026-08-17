@@ -6,24 +6,8 @@ import { CLUB_NAME, TEAM_DISPLAY_LABEL } from "@/constants/club";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui-store";
 import { SeasonSwitcher } from "@/components/layout/season-switcher";
-import { academyRoutes } from "@/lib/academy/routes";
+import { buildSiteNavItems } from "@/lib/navigation/public-nav";
 import type { Season } from "@/types";
-
-const baseNav = [
-  { href: "/", label: "Home" },
-  { href: "/selectie", label: "Selectie" },
-  { href: "/wedstrijden", label: "Wedstrijden" },
-  { href: "/ranking", label: "Ranking" },
-  { href: "/statistieken", label: "Statistieken" },
-  { href: "/academie", label: "Academie" },
-  { href: "/training", label: "Training" },
-  { href: "/fitheid", label: "Fitheid" },
-  { href: "/seizoenen", label: "Seizoenen" },
-] as const;
-
-const beheerNav = { href: "/beheer", label: "Beheer" } as const;
-
-const academyNav = { href: academyRoutes.root, label: "Academy" } as const;
 
 export function AppShell({
   children,
@@ -31,16 +15,22 @@ export function AppShell({
   currentSeasonId,
   isAdmin,
   academyEnabled = false,
+  academyPublicVisible = false,
 }: {
   children: React.ReactNode;
   seasons: Season[];
   currentSeasonId: string;
   isAdmin: boolean;
-  /** T-01-01: show Football Academy mount link only when ACADEMY_ENABLED. */
+  /** T-01-01: show Football Academy MVP mount link only when ACADEMY_ENABLED. */
   academyEnabled?: boolean;
+  /** WP-1: show `/academie` nav only when ACADEMY_PUBLIC_VISIBLE (fail closed). */
+  academyPublicVisible?: boolean;
 }) {
-  const withAcademy = academyEnabled ? [...baseNav, academyNav] : [...baseNav];
-  const nav = isAdmin ? [...withAcademy, beheerNav] : [...withAcademy];
+  const nav = buildSiteNavItems({
+    academyPublicVisible,
+    academyEnabled,
+    isAdmin,
+  });
   const pathname = usePathname();
   const { mobileNavOpen, setMobileNavOpen } = useUiStore();
 
@@ -143,7 +133,11 @@ export function AppShell({
       <main
         className={cn(
           "relative",
-          pathname === "/" ? "w-full p-0" : "mx-auto max-w-[100rem] px-4 py-12 md:px-8 md:py-16",
+          pathname === "/"
+            ? "w-full p-0"
+            : pathname.startsWith("/academie")
+              ? "mx-auto w-full max-w-[100rem] px-2 py-5 sm:px-4 md:px-5 md:py-7 lg:px-6"
+              : "mx-auto max-w-[100rem] px-4 py-12 md:px-8 md:py-16",
         )}
       >
         {children}

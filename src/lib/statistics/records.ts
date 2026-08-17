@@ -26,6 +26,7 @@ export type PlayerRecords = {
   mostAssists: RecordEntry | null;
   mostMotm: RecordEntry | null;
   mostMatches: RecordEntry | null;
+  mostCleanSheets: RecordEntry | null;
   bestTrainingAttendance: RecordEntry | null;
   fastestSprint: RecordEntry | null;
 };
@@ -146,7 +147,7 @@ function buildTeamRecords(db: ClubDatabase, seasonId: string, teamSummary: TeamS
     result === "L" ? match.goals_against - match.goals_for : null,
   );
 
-  const mostGoalsInMatch = pickBestMatch(matches, db, "Meeste goals in één wedstrijd", (match) => match.goals_for);
+  const mostGoalsInMatch = pickBestMatch(matches, db, "Meeste doelpunten in één wedstrijd", (match) => match.goals_for);
 
   const winStreak = longestStreak(matches, db, (result) => result === "W");
   const unbeatenStreak = longestStreak(matches, db, (result) => result === "W" || result === "D");
@@ -174,7 +175,7 @@ function buildTeamRecords(db: ClubDatabase, seasonId: string, teamSummary: TeamS
     cleanSheets:
       teamSummary.cleanSheets > 0
         ? {
-            label: "Clean sheets",
+            label: "Wedstrijden zonder tegengoals",
             valueLabel: String(teamSummary.cleanSheets),
             detailLabel: "Dit seizoen",
           }
@@ -188,13 +189,19 @@ function buildPlayerRecords(
   ranking: PlayerSeasonRankingRow[],
   training: ReturnType<typeof teamAttendanceSummary>,
 ): PlayerRecords {
-  const mostGoals = pickPlayerRecord(ranking, "Meeste goals", (row) => row.goals_total, (value) => String(value));
+  const mostGoals = pickPlayerRecord(ranking, "Meeste doelpunten", (row) => row.goals_total, (value) => String(value));
   const mostAssists = pickPlayerRecord(ranking, "Meeste assists", (row) => row.assists_total, (value) => String(value));
-  const mostMotm = pickPlayerRecord(ranking, "Meeste MOTM", (row) => row.wotm_total, (value) => String(value));
+  const mostMotm = pickPlayerRecord(ranking, "Meeste MVP’s", (row) => row.wotm_total, (value) => String(value));
   const mostMatches = pickPlayerRecord(
     ranking,
     "Meeste wedstrijden",
     (row) => row.matches_played,
+    (value) => String(value),
+  );
+  const mostCleanSheets = pickPlayerRecord(
+    ranking,
+    "Meeste wedstrijden zonder tegengoals",
+    (row) => row.clean_sheets_total,
     (value) => String(value),
   );
 
@@ -237,6 +244,7 @@ function buildPlayerRecords(
     mostAssists,
     mostMotm,
     mostMatches,
+    mostCleanSheets,
     bestTrainingAttendance,
     fastestSprint,
   };
@@ -275,19 +283,24 @@ export function listTeamRecordItems(team: TeamRecords): RecordListItem[] {
   return [
     { key: "biggestWin", label: "Grootste overwinning", entry: team.biggestWin },
     { key: "biggestLoss", label: "Grootste nederlaag", entry: team.biggestLoss },
-    { key: "mostGoalsInMatch", label: "Meeste goals in één wedstrijd", entry: team.mostGoalsInMatch },
+    { key: "mostGoalsInMatch", label: "Meeste doelpunten in één wedstrijd", entry: team.mostGoalsInMatch },
     { key: "longestWinStreak", label: "Langste winstreeks", entry: team.longestWinStreak },
     { key: "longestUnbeatenStreak", label: "Langste ongeslagen reeks", entry: team.longestUnbeatenStreak },
-    { key: "cleanSheets", label: "Clean sheets", entry: team.cleanSheets },
+    { key: "cleanSheets", label: "Wedstrijden zonder tegengoals", entry: team.cleanSheets },
   ];
 }
 
 export function listPlayerRecordItems(players: PlayerRecords): RecordListItem[] {
   return [
-    { key: "mostGoals", label: "Meeste goals", entry: players.mostGoals },
+    { key: "mostGoals", label: "Meeste doelpunten", entry: players.mostGoals },
     { key: "mostAssists", label: "Meeste assists", entry: players.mostAssists },
-    { key: "mostMotm", label: "Meeste MOTM", entry: players.mostMotm },
+    { key: "mostMotm", label: "Meeste MVP’s", entry: players.mostMotm },
     { key: "mostMatches", label: "Meeste wedstrijden", entry: players.mostMatches },
+    {
+      key: "mostCleanSheets",
+      label: "Meeste wedstrijden zonder tegengoals",
+      entry: players.mostCleanSheets,
+    },
     { key: "bestTrainingAttendance", label: "Beste trainingsopkomst", entry: players.bestTrainingAttendance },
     { key: "fastestSprint", label: "Snelste sprinttest", entry: players.fastestSprint },
   ];

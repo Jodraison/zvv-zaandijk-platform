@@ -31,7 +31,7 @@ export function HomePlayerShowcase({
           Topniveau begint hier
         </h2>
         <p className="mx-auto mt-3 max-w-3xl text-[15px] leading-relaxed text-zvv-muted md:mx-0 md:text-base">
-          Kernspelers met impact in goals, assists en MVP. Samen beter, elke speelronde opnieuw.
+          Kernspeelsters met impact in doelpunten, assists en MVP. Samen beter, elke speelronde opnieuw.
         </p>
       </header>
 

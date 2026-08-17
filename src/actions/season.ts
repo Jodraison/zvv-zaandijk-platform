@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { ClubDatabase } from "@/types";
 import { defaultSeasonId, readDb } from "@/lib/data/repository";
-import { resolveSeasonId, shouldWriteSeasonCookie } from "@/lib/season";
+import { resolveSeasonId } from "@/lib/season";
 
 const COOKIE = "zvv_season_id";
 
@@ -15,21 +15,23 @@ const COOKIE_OPTIONS = {
   sameSite: "lax" as const,
 };
 
+/** Cookie write — only call from Server Actions / Route Handlers, never during RSC render. */
 export async function writeSeasonCookie(seasonId: string): Promise<void> {
   const jar = await cookies();
   jar.set(COOKIE, seasonId, COOKIE_OPTIONS);
 }
 
+/**
+ * Read-only season resolution for layouts and pages.
+ * Does not mutate cookies (Next.js forbids cookie writes during Server Component render).
+ * Preference sync happens via setPreferredSeason / selectSeasonFormAction.
+ */
 export async function readResolvedSeasonId(
   db: ClubDatabase,
   urlSeason?: string | null,
 ): Promise<string> {
   const cookieSeason = (await cookies()).get(COOKIE)?.value;
-  const seasonId = resolveSeasonId(db, cookieSeason, urlSeason);
-  if (shouldWriteSeasonCookie(cookieSeason, seasonId, urlSeason)) {
-    await writeSeasonCookie(seasonId);
-  }
-  return seasonId;
+  return resolveSeasonId(db, cookieSeason, urlSeason);
 }
 
 export async function setPreferredSeason(seasonId: string) {

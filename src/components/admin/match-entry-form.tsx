@@ -148,11 +148,11 @@ export function MatchEntryForm({ seasonId, members }: { seasonId: string; member
           <div className="rounded-xl border border-zvv-border bg-zvv-card-mid/80 px-4 py-3 md:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-zvv-muted">Goals voor (automatisch)</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-zvv-muted">Doelpunten voor (automatisch)</p>
                 <p className="mt-1 text-2xl font-black tabular-nums text-zvv-ink">{goalsFor}</p>
               </div>
               <label className="min-w-[140px] flex-1 space-y-1.5">
-                <span className="text-xs font-bold uppercase tracking-wider text-zvv-muted">Goals tegen</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-zvv-muted">Doelpunten tegen</span>
                 <input
                   type="number"
                   min={0}
@@ -197,7 +197,7 @@ export function MatchEntryForm({ seasonId, members }: { seasonId: string; member
       <GlassCard>
         <div className="mb-6">
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-zvv-muted">Stap 3</p>
-          <h2 className="mt-1 font-[family-name:var(--font-bebas)] text-2xl tracking-wide text-zvv-ink">Goals & assists</h2>
+          <h2 className="mt-1 font-[family-name:var(--font-bebas)] text-2xl tracking-wide text-zvv-ink">Doelpunten & assists</h2>
         </div>
         <GoalInputList squad={squad} disabled={isPending} />
       </GlassCard>
@@ -205,7 +205,7 @@ export function MatchEntryForm({ seasonId, members }: { seasonId: string; member
       <GlassCard className="space-y-4">
         <div>
           <p className="text-[11px] font-bold uppercase tracking-[0.28em] text-zvv-muted">Stap 4</p>
-          <h2 className="mt-1 font-[family-name:var(--font-bebas)] text-2xl tracking-wide text-zvv-ink">Player of the match</h2>
+          <h2 className="mt-1 font-[family-name:var(--font-bebas)] text-2xl tracking-wide text-zvv-ink">Speelster van de wedstrijd</h2>
         </div>
         <label className="block max-w-md space-y-1.5">
           <span className="text-xs font-bold uppercase tracking-wider text-zvv-muted">MVP (verplicht)</span>

@@ -81,7 +81,7 @@ export function LoginForm({ serverErrorKey }: { serverErrorKey?: string }) {
         setBusy(false);
         return;
       }
-      setMessage("Controleer je e-mail voor de magic link.");
+      setMessage("Controleer je e-mail voor de inloglink.");
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Versturen mislukt.");
     } finally {
@@ -159,7 +159,7 @@ export function LoginForm({ serverErrorKey }: { serverErrorKey?: string }) {
         </div>
 
         <form onSubmit={onMagicLink} className="space-y-3">
-          <p className="text-center text-xs text-zvv-muted">Magic link (zonder wachtwoord)</p>
+          <p className="text-center text-xs text-zvv-muted">Inloglink (zonder wachtwoord)</p>
           <button
             type="submit"
             disabled={busy || !email.trim()}

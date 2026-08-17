@@ -1,0 +1,185 @@
+{
+  "base": "http://localhost:3003",
+  "gsCompletedPersisted": true,
+  "consoleErrors": [],
+  "shots": [
+    {
+      "file": "01-academy-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "academy-untouched",
+      "viewport": "1440x900",
+      "state": "untouched",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": null
+    },
+    {
+      "file": "02-formation-base.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "formation-base",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": null
+    },
+    {
+      "file": "03-formation-context.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "formation-context",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": null
+    },
+    {
+      "file": "04-formation-decision.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "formation-decision",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": null
+    },
+    {
+      "file": "05-golden-view.png",
+      "cta": "▶ Naar scan Stap 2 van 6",
+      "stage": "lesson-view",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": null
+    },
+    {
+      "file": "06-golden-scan.png",
+      "cta": "▶ Naar beslismoment",
+      "stage": "lesson-scan",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":1,\"updatedAt\":\"2026-07-23T07:13:16.559Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\"}}"
+    },
+    {
+      "file": "07-decision-freeze.png",
+      "cta": "",
+      "stage": "lesson-decide",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":2,\"updatedAt\":\"2026-07-23T07:13:16.815Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\"}}"
+    },
+    {
+      "file": "08-consequence.png",
+      "cta": "▶ Begrijp waarom",
+      "stage": "lesson-consequence",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":3,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:13:47.960Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\"}}"
+    },
+    {
+      "file": "09-understand-compare.png",
+      "cta": "→ Rond sessie af",
+      "stage": "lesson-understand",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":4,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:13:49.046Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\"}}"
+    },
+    {
+      "file": "10-completion.png",
+      "cta": "→ Start volgende sessie 3–4 min",
+      "stage": "lesson-complete",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:13:50.472Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\",\"completedAt\":\"2026-07-23T07:13:50.472Z\"}}"
+    },
+    {
+      "file": "11-academy-after-complete.png",
+      "cta": "▶ Start volgende sessie 3–4 min",
+      "stage": "academy-after",
+      "viewport": "1440x900",
+      "gsCompleted": true,
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:13:50.472Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\",\"completedAt\":\"2026-07-23T07:13:50.472Z\"}}"
+    },
+    {
+      "file": "12-next-session-started.png",
+      "cta": "▶ Naar scan Stap 2 van 6",
+      "stage": "next-session",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:13:50.472Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\",\"completedAt\":\"2026-07-23T07:13:50.472Z\"}}"
+    },
+    {
+      "file": "13-decision-lab-hub.png",
+      "cta": "→ Start volgende sessie 3–4 min",
+      "stage": "hub",
+      "viewport": "1440x900",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "progress": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:13:50.472Z\",\"openedAt\":\"2026-07-23T07:13:16.559Z\",\"completedAt\":\"2026-07-23T07:13:50.472Z\"}}"
+    },
+    {
+      "file": "14-mobile-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "mobile-untouched",
+      "viewport": "390x844",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "progress": null
+    },
+    {
+      "file": "15-mobile-expanded-pitch.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "mobile-expand",
+      "viewport": "390x844",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "progress": null
+    },
+    {
+      "file": "16-mobile-lesson.png",
+      "cta": "▶ Naar scan Stap 2 van 6",
+      "stage": "mobile-lesson",
+      "viewport": "390x844",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "progress": null
+    },
+    {
+      "file": "17-mobile-360.png",
+      "cta": "▶ Start eerste beslissessie 3–4 minuten · Druk herkennen",
+      "stage": "mobile-360",
+      "viewport": "360x800",
+      "overflow": false,
+      "w": 360,
+      "h": 800,
+      "progress": null
+    }
+  ],
+  "gates": {
+    "untouchedStart": true,
+    "completionPersisted": true,
+    "noOverflowDesktop": true,
+    "noOverflowMobile": true
+  }
+}

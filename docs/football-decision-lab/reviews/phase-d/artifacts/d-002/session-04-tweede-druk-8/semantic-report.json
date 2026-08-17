@@ -1,0 +1,26 @@
+{
+  "order": 4,
+  "sessionId": "FDL-DS-SECOND-PRESS-8-V1",
+  "slug": "tweede-druk-8",
+  "activeRole": "us.R6",
+  "freezeMs": 8200,
+  "previewMs": 7000,
+  "liveDurationMs": 11400,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-freeze"
+  ],
+  "mobileFocusIds": [
+    "us.R6",
+    "us.RW",
+    "us.L6",
+    "us.RB"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

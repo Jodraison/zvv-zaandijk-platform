@@ -12,6 +12,9 @@ import { resolveMatchScore } from "@/lib/domain/match-score";
 import { displayTeamLabel } from "@/constants/club";
 import { matchTypeLabel } from "@/lib/match-type";
 import { formatKickoffLongNl } from "@/lib/utils/format-date";
+import { getMatchShapeAtMinute } from "@/lib/match/match-shape";
+import { MatchCountdownLabel } from "@/components/match/match-countdown-label";
+import { PublicMatchLineup } from "@/components/matches/public-match-lineup";
 
 type Props = {
   params: Promise<{ matchId: string }>;
@@ -36,10 +39,40 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
 
   const timeline = buildMatchTimeline(db, matchId);
   const lineup = buildMatchLineupDisplay(db, matchId, m.season_id);
-  const hasLineup = lineup.starters.length > 0 || lineup.bench.length > 0;
+  const startShape = getMatchShapeAtMinute(db, matchId, 0);
+  const endShape = getMatchShapeAtMinute(db, matchId, 90);
+  const hasFormationSlots = Object.values(startShape.slots).some(Boolean);
+  const hasLineup = lineup.starters.length > 0 || lineup.bench.length > 0 || hasFormationSlots;
+  const playersById = Object.fromEntries(
+    db.players.map((p) => {
+      const mem = db.player_season_memberships.find((x) => x.player_id === p.id && x.season_id === m.season_id);
+      return [
+        p.id,
+        {
+          player_id: p.id,
+          name: p.full_name,
+          shirt_number: mem?.shirt_number ?? null,
+          photo_url: p.photo_url,
+          is_captain: !!mem?.is_captain,
+          is_vice_captain: !!mem?.is_vice_captain,
+        },
+      ];
+    }),
+  );
+
+  const statusNl =
+    m.status === "played"
+      ? "Gespeeld"
+      : m.status === "scheduled"
+        ? "Gepland"
+        : m.status === "postponed"
+          ? "Uitgesteld"
+          : m.status === "cancelled"
+            ? "Afgelast"
+            : m.status;
 
   return (
-    <div className="space-y-8 md:space-y-12">
+    <div className="space-y-8 md:space-y-10">
       <Link
         href={`/wedstrijden?season=${encodeURIComponent(seasonId)}`}
         className="inline-flex min-h-[44px] items-center text-sm font-semibold text-zvv-primary hover:text-zvv-primary-hover"
@@ -47,19 +80,17 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
         ← Alle wedstrijden
       </Link>
 
-      <section className="relative overflow-hidden rounded-2xl border-2 border-zvv-primary/15 bg-white px-4 py-10 shadow-[0_24px_64px_rgba(29,78,216,0.12)] sm:rounded-3xl sm:px-8 sm:py-12 md:px-14 md:py-16">
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-zvv-primary/[0.07] via-transparent to-zvv-card-mid/40" />
-        <div className="pointer-events-none absolute -right-20 top-1/2 h-[min(80%,420px)] w-[min(100%,480px)] -translate-y-1/2 rounded-full bg-zvv-primary/[0.06] blur-2xl" />
-        <div className="relative">
-          <div className="flex flex-wrap items-center justify-center gap-3 md:justify-between">
-            <span className="rounded-full border border-zvv-border bg-zvv-card px-4 py-2 text-[10px] font-black uppercase tracking-wider text-zvv-ink">
-              {matchTypeLabel(m.match_type)}
-              {m.status === "played" ? " · Live board" : m.status === "scheduled" ? " · Gepland" : m.status === "postponed" ? " · Uitgesteld" : m.status === "cancelled" ? " · Afgelast" : ""}
+      <section className="relative overflow-hidden rounded-2xl border border-zvv-primary/20 bg-gradient-to-br from-[#020817] via-[#0b1f5f] to-[#1d4ed8] px-5 py-10 text-white shadow-[0_24px_64px_rgba(15,23,42,0.28)] sm:rounded-3xl sm:px-10 sm:py-12 md:px-14">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_0%,rgba(147,197,253,0.22),transparent_70%)]" />
+        <div className="relative space-y-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <span className="rounded-full border border-white/25 bg-white/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-wider">
+              {matchTypeLabel(m.match_type)} · {statusNl}
             </span>
             {m.status === "played" && result ? (
               <span
                 className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold leading-none text-white",
+                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white",
                   result === "W" && "bg-green-500",
                   result === "L" && "bg-red-500",
                   result === "D" && "bg-gray-400",
@@ -71,35 +102,57 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
             ) : null}
           </div>
 
-          <p className="mt-8 text-center text-sm font-medium text-zvv-muted md:mt-10">
-            {formatKickoffLongNl(m.kickoff_at)}
-            {" · "}
-            {m.is_home ? "Thuis" : "Uit"}
-            {m.location ? ` · ${m.location}` : ""}
-            {m.referee ? ` · Scheidsrechter: ${m.referee}` : ""}
-          </p>
+          <div className="text-center">
+            <p className="text-sm font-medium text-blue-100/85">
+              {formatKickoffLongNl(m.kickoff_at)}
+              {" · "}
+              {m.is_home ? "Thuis" : "Uit"}
+              {m.location ? ` · ${m.location}` : ""}
+            </p>
+            <p className="mt-4 font-[family-name:var(--font-display)] text-[clamp(1.6rem,4.5vw,2.8rem)] leading-tight tracking-wide">
+              {displayTeamLabel(score.homeTeam)}
+              {m.status === "played" ? (
+                <span className="mx-3 tabular-nums text-blue-100">
+                  {score.homeScore}–{score.awayScore}
+                </span>
+              ) : (
+                <span className="mx-3 text-blue-200/70">—</span>
+              )}
+              {displayTeamLabel(score.awayTeam)}
+            </p>
+            <p className="mt-4 text-lg font-semibold text-white md:text-xl">
+              <MatchCountdownLabel
+                startsAt={m.kickoff_at}
+                status={m.status}
+                className="text-blue-50"
+                secondaryClassName="mt-1 block text-sm font-normal text-blue-100/75"
+              />
+            </p>
+          </div>
 
-          <div className="mt-8 grid grid-cols-[1fr_auto_1fr] items-end gap-2 md:mt-12 md:gap-8">
-            <div className="min-w-0 pb-2 text-center md:text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zvv-muted">{m.is_home ? "Zaandijk" : "Tegenstander"}</p>
-              <p className="mt-2 break-words font-[family-name:var(--font-display)] text-[clamp(1.25rem,3.8vw,2.35rem)] leading-tight tracking-wide text-zvv-ink">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2 md:gap-8">
+            <div className="min-w-0 pb-1 text-center md:text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100/60">
+                {m.is_home ? "Zaandijk" : "Tegenstander"}
+              </p>
+              <p className="mt-2 break-words font-[family-name:var(--font-display)] text-[clamp(1.1rem,3vw,1.8rem)] leading-tight">
                 {displayTeamLabel(score.homeTeam)}
               </p>
             </div>
-            <div className="flex shrink-0 items-baseline justify-center gap-1 px-0 sm:gap-3">
-              <span className="font-[family-name:var(--font-display)] text-[clamp(2.8rem,14vw,9rem)] leading-none tabular-nums tracking-tight text-zvv-primary drop-shadow-sm">
+            <div className="flex shrink-0 items-baseline justify-center gap-2 px-1">
+              <span className="font-[family-name:var(--font-display)] text-[clamp(2.6rem,12vw,5.5rem)] leading-none tabular-nums">
                 {m.status === "played" ? score.homeScore : "—"}
               </span>
-              <span className="font-[family-name:var(--font-display)] text-[clamp(1.25rem,5vw,3.5rem)] leading-none pb-1 text-zvv-border-bright md:pb-2">
-                :
-              </span>
-              <span className="font-[family-name:var(--font-display)] text-[clamp(2.8rem,14vw,9rem)] leading-none tabular-nums tracking-tight text-zvv-ink drop-shadow-sm">
+              <span className="pb-1 text-2xl text-blue-200/50">:</span>
+              <span className="font-[family-name:var(--font-display)] text-[clamp(2.6rem,12vw,5.5rem)] leading-none tabular-nums">
                 {m.status === "played" ? score.awayScore : "—"}
               </span>
             </div>
-            <div className="min-w-0 pb-2 text-center md:text-left">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zvv-muted">{m.is_home ? "Tegenstander" : "Zaandijk"}</p>
-              <p className="mt-2 break-words font-[family-name:var(--font-display)] text-[clamp(1.25rem,3.8vw,2.35rem)] leading-tight tracking-wide text-zvv-ink">
+            <div className="min-w-0 pb-1 text-center md:text-left">
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-100/60">
+                {m.is_home ? "Tegenstander" : "Zaandijk"}
+              </p>
+              <p className="mt-2 break-words font-[family-name:var(--font-display)] text-[clamp(1.1rem,3vw,1.8rem)] leading-tight">
                 {displayTeamLabel(score.awayTeam)}
               </p>
             </div>
@@ -109,114 +162,63 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
 
       {wotm && m.status === "played" ? (
         <WotmSpotlight name={wotm.full_name} shirt={wotmShirt} isGuest={wotmIsGuest} photoUrl={wotm.photo_url} />
-      ) : m.status === "played" ? (
-        <div className="rounded-2xl border border-zvv-border bg-zvv-card-mid/50 px-6 py-8 text-center text-[15px] text-zvv-muted">
-          Nog geen MVP gekozen voor deze wedstrijd.
-        </div>
       ) : null}
 
       {hasLineup ? (
-        <section className="rounded-2xl border border-zvv-border bg-zvv-card px-6 py-9 shadow-[var(--shadow-zvv-card)] md:px-10 md:py-11">
-          <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,4vw,2.5rem)] tracking-wide text-zvv-ink">
-            Opstelling
-          </h2>
-          <div className="mt-8 grid gap-8 md:grid-cols-2">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-zvv-muted">Basis</h3>
-              {lineup.starters.length === 0 ? (
-                <p className="mt-3 text-sm text-zvv-muted">Nog geen basisopstelling vastgelegd.</p>
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {lineup.starters.map((row) => (
-                    <li key={row.player_id} className="flex items-center gap-3 text-sm text-zvv-ink">
-                      <span className="w-8 shrink-0 font-[family-name:var(--font-display)] text-lg text-zvv-primary">
-                        {row.shirt_number ?? "—"}
-                      </span>
-                      <span className="font-medium">{row.name}</span>
-                      {row.position_label ? (
-                        <span className="text-xs uppercase tracking-wide text-zvv-muted">{row.position_label}</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-[0.18em] text-zvv-muted">Bank</h3>
-              {lineup.bench.length === 0 ? (
-                <p className="mt-3 text-sm text-zvv-muted">Geen bankspelers vastgelegd.</p>
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {lineup.bench.map((row) => (
-                    <li key={row.player_id} className="flex items-center gap-3 text-sm text-zvv-ink">
-                      <span className="w-8 shrink-0 font-[family-name:var(--font-display)] text-lg text-zvv-muted">
-                        {row.shirt_number ?? "—"}
-                      </span>
-                      <span className="font-medium">{row.name}</span>
-                      {row.position_label ? (
-                        <span className="text-xs uppercase tracking-wide text-zvv-muted">{row.position_label}</span>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </div>
-        </section>
+        <PublicMatchLineup
+          played={m.status === "played"}
+          confirmed={m.lineup_status === "confirmed"}
+          startSlots={startShape.slots}
+          endSlots={endShape.slots}
+          playersById={playersById}
+          starters={lineup.starters}
+          bench={lineup.bench}
+        />
       ) : null}
 
-      <section className="rounded-2xl border border-zvv-border bg-zvv-card px-6 py-9 shadow-[var(--shadow-zvv-card)] md:px-10 md:py-11">
-        <h2 className="font-[family-name:var(--font-display)] text-[clamp(1.75rem,4vw,2.5rem)] tracking-wide text-zvv-ink">
+      <section className="rounded-2xl border border-zvv-border bg-white px-5 py-6 shadow-sm md:px-8 md:py-7">
+        <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink md:text-3xl">
           Wedstrijdgebeurtenissen
         </h2>
-        <p className="mt-2 text-[15px] text-zvv-muted">Chronologisch op minuut — doelpunten, assists, kaarten en wissels.</p>
         {timeline.length === 0 ? (
-          <p className="mt-8 text-[15px] text-zvv-muted">Geen gebeurtenissen geregistreerd voor deze wedstrijd.</p>
+          <p className="mt-3 text-sm text-zvv-muted">Nog geen wedstrijdgebeurtenissen.</p>
         ) : (
-          <ul className="mt-10 space-y-4">
+          <ul className="mt-6 space-y-3">
             {timeline.map((row, i) => (
-              <li key={`${row.kind}-${row.minute}-${i}`}>
-                <div className="flex flex-col gap-3 rounded-xl border border-zvv-border/90 bg-zvv-card-mid/50 px-4 py-4 transition-[border-color,box-shadow] duration-300 hover:border-zvv-primary/25 hover:shadow-md sm:flex-row sm:items-center sm:gap-6 sm:px-6 sm:py-5">
-                  <div className="flex shrink-0 items-baseline gap-2 sm:w-[5.5rem] sm:justify-end sm:text-right">
-                    <span className="font-[family-name:var(--font-display)] text-2xl tabular-nums tracking-tight text-zvv-primary md:text-3xl">
-                      {row.minute}&apos;
-                    </span>
-                    <span className="text-xl" aria-hidden>
-                      {row.kind === "goal"
-                        ? "⚽"
-                        : row.kind === "yellow_card"
-                          ? "🟨"
-                          : row.kind === "red_card"
-                            ? "🟥"
-                            : "🔄"}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1 text-[17px] font-medium leading-snug text-zvv-ink md:text-lg">
-                    {row.kind === "goal" ? (
-                      <>
-                        <span className="font-[family-name:var(--font-display)] text-xl tracking-wide md:text-2xl">
-                          {row.scorerName}
-                        </span>
-                        {row.assistName ? (
-                          <span className="mt-1 block text-[15px] font-normal text-zvv-muted sm:mt-0 sm:inline">
-                            {" "}
-                            (🅰 assist {row.assistName})
-                          </span>
-                        ) : null}
-                      </>
-                    ) : row.kind === "substitution" ? (
-                      <span className="font-[family-name:var(--font-display)] text-xl tracking-wide md:text-2xl">
-                        {row.playerOutName} → {row.playerInName}
+              <li
+                key={`${row.kind}-${row.minute}-${i}`}
+                className="flex flex-col gap-2 rounded-xl border border-zvv-border/80 bg-zvv-card-mid/40 px-4 py-3 sm:flex-row sm:items-center sm:gap-5"
+              >
+                <div className="flex shrink-0 items-baseline gap-2 sm:w-16 sm:justify-end">
+                  <span className="font-[family-name:var(--font-display)] text-xl tabular-nums text-zvv-primary">
+                    {row.minute}&apos;
+                  </span>
+                </div>
+                <div className="min-w-0 flex-1 text-[15px] font-medium text-zvv-ink">
+                  {row.kind === "goal" ? (
+                    <>
+                      <span className="font-[family-name:var(--font-display)] text-lg tracking-wide">
+                        {row.scorerName}
                       </span>
-                    ) : (
-                      <span className="font-[family-name:var(--font-display)] text-xl tracking-wide md:text-2xl">
-                        {row.playerName}
-                        <span className="ml-2 text-sm font-normal text-zvv-muted">
-                          {row.kind === "yellow_card" ? "Gele kaart" : "Rode kaart"}
+                      {row.assistName ? (
+                        <span className="mt-0.5 block text-sm font-normal text-zvv-muted sm:mt-0 sm:inline">
+                          {" "}
+                          · Assist {row.assistName}
                         </span>
+                      ) : null}
+                    </>
+                  ) : row.kind === "substitution" ? (
+                    <span>
+                      Wissel: {row.playerOutName} → {row.playerInName}
+                    </span>
+                  ) : (
+                    <span>
+                      {row.playerName}
+                      <span className="ml-2 text-sm font-normal text-zvv-muted">
+                        {row.kind === "yellow_card" ? "Gele kaart" : "Rode kaart"}
                       </span>
-                    )}
-                  </div>
+                    </span>
+                  )}
                 </div>
               </li>
             ))}

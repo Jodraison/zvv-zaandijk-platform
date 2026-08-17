@@ -1,39 +1,25 @@
 import { readDb } from "@/lib/data/repository";
 import { readResolvedSeasonId } from "@/actions/season";
 import { MatchAdminForm } from "@/components/admin/match-admin-form";
+import { buildMatchSelectablePlayers } from "@/lib/queries/match-selectable-players";
 
-/** Snelle invoer na een gespeelde wedstrijd — standaard status &apos;gespeeld&apos;. */
+/** Snelle invoer na een gespeelde wedstrijd — standaard status 'gespeeld'. */
 type Props = { searchParams: Promise<{ season?: string }> };
 
 export default async function WedstrijdToevoegenPage({ searchParams }: Props) {
   const sp = await searchParams;
   const db = await readDb();
   const seasonId = await readResolvedSeasonId(db, sp.season);
-  const seasonPlayers = db.player_season_memberships
-    .filter((m) => m.season_id === seasonId)
-    .filter((m) => !db.players.find((p) => p.id === m.player_id)?.is_guest)
-    .map((mem) => ({
-      player_id: mem.player_id,
-      shirt_number: mem.shirt_number,
-      name: db.players.find((p) => p.id === mem.player_id)?.full_name ?? "—",
-      is_guest: false,
-      position_label: mem.display_position || mem.position,
-    }))
-    .sort((a, b) => a.shirt_number - b.shirt_number);
-  const guestPlayers = db.players
-    .filter((p) => p.is_guest)
-    .map((p) => ({
-      player_id: p.id,
-      shirt_number: null,
-      name: p.full_name,
-      is_guest: true,
-      position_label: null,
-    }));
-  const seen = new Set(seasonPlayers.map((p) => p.player_id));
-  const members = [
-    ...seasonPlayers,
-    ...guestPlayers.filter((p) => !seen.has(p.player_id)),
-  ];
+  const members = buildMatchSelectablePlayers(db, seasonId).map((row) => ({
+    player_id: row.playerId,
+    shirt_number: row.shirtNumber,
+    name: row.fullName,
+    is_guest: row.isGuest,
+    position_label: row.positionLabel,
+    has_season_membership: row.hasSeasonMembership,
+    is_already_in_match: row.isAlreadyInMatch,
+    source_tags: row.sourceTags,
+  }));
 
   const initialMatch = {
     id: "new",
@@ -54,14 +40,17 @@ export default async function WedstrijdToevoegenPage({ searchParams }: Props) {
     <div className="space-y-8">
       <header className="border-b border-zvv-border pb-8">
         <p className="club-page-eyebrow">Beheer · Wedstrijdresultaat</p>
-        <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-wide text-zvv-ink md:text-5xl">Uitslag invoeren</h1>
+        <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-wide text-zvv-ink md:text-5xl">
+          Uitslag invoeren
+        </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zvv-muted">
-          Selectie, doelpunten met assists, MVP en automatische goals voor. Bedoeld voor direct na de wedstrijd (2–3 minuten).
+          Alleen vaste selectie. Gastspeelsters pas na opslaan via Opstelling / Selectie toevoegen. Na opslaan → opstelling.
         </p>
       </header>
       <MatchAdminForm
         seasonId={seasonId}
         members={members}
+        availableGuests={[]}
         mode="create"
         defaultStatus="played"
         initialMatch={initialMatch}

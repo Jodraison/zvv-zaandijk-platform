@@ -47,19 +47,19 @@ export function PlayerCreateForm({ seasonId }: { seasonId: string }) {
         ) : null}
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-        Linie (enum)
+        Positiegroep
         <select name="position" className={inputCls}>
-          <option value="GK">GK — keeper</option>
-          <option value="DEF">DEF — verdediging</option>
-          <option value="MID">MID — middenveld</option>
-          <option value="ATT">ATT — aanval</option>
+          <option value="GK">Keeper</option>
+          <option value="DEF">Verdediging</option>
+          <option value="MID">Middenveld</option>
+          <option value="ATT">Aanval</option>
         </select>
         {fieldMessage(fe, "position") ? (
           <span className="block text-xs font-normal text-red-300">{fieldMessage(fe, "position")}</span>
         ) : null}
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
-        Positie (tekst op site)
+        Positie
         <textarea
           name="display_position"
           required
@@ -87,12 +87,12 @@ export function PlayerCreateForm({ seasonId }: { seasonId: string }) {
         <input name="preferred_foot" className={inputCls} placeholder="Links / Rechts / Tweebenig" />
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-        Rol label
+        Rol binnen het team
         <input name="role_label" className={inputCls} placeholder="Bijv. Box-to-box" />
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-        Tagline
-        <input name="tagline" className={inputCls} placeholder="Korte spelers-tagline" />
+        Korte profieltekst
+        <input name="tagline" className={inputCls} placeholder="Korte spelersregel" />
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
         Sterktes
@@ -103,18 +103,25 @@ export function PlayerCreateForm({ seasonId }: { seasonId: string }) {
         <textarea name="bio" rows={2} className={`${inputCls} min-h-[4.5rem] resize-y py-3`} />
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
-        Card note
+        Interne spelersnotitie
         <input name="card_note" className={inputCls} />
+      </label>
+      <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
+        Geboortedatum
+        <input name="birth_date" type="date" className={inputCls} />
+        <span className="block text-xs font-normal normal-case tracking-normal text-zvv-muted">
+          Wordt gebruikt om verjaardagen te tonen. De volledige geboortedatum is niet openbaar zichtbaar.
+        </span>
       </label>
       <div className="flex flex-col gap-3 md:col-span-2">
         <p className="text-[10px] font-bold uppercase tracking-wider text-zvv-muted">Gasten voeg je toe via Beheer → Wedstrijd (gespeeld).</p>
         <label className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border border-zvv-border bg-zvv-card-mid px-4 py-2">
           <input type="checkbox" name="is_captain" className="h-4 w-4 rounded border-zvv-border text-zvv-primary" />
-          <span className="text-sm text-zvv-ink">Captain (C)</span>
+          <span className="text-sm text-zvv-ink">Aanvoerder (C)</span>
         </label>
         <label className="flex min-h-[44px] cursor-pointer items-center gap-3 rounded-xl border border-zvv-border bg-zvv-card-mid px-4 py-2">
           <input type="checkbox" name="is_vice_captain" className="h-4 w-4 rounded border-zvv-border text-zvv-primary" />
-          <span className="text-sm text-zvv-ink">Vice-captain (VC)</span>
+          <span className="text-sm text-zvv-ink">Vice-aanvoerder (VC)</span>
         </label>
       </div>
       <div className="md:col-span-2">

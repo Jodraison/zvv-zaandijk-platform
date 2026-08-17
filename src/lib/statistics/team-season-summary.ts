@@ -2,7 +2,7 @@ import type { ClubDatabase, Match } from "@/types";
 import { matchResult } from "@/lib/queries/matches";
 
 /**
- * Canonieke teamseizoensaggregatie voor Statistics Center.
+ * Canonieke teamseizoensaggregatie voor het Statistiekcentrum.
  * Gebruikt dezelfde geverifieerde gespeelde wedstrijden als `aggregateSeasonMatchStats`.
  */
 export type TeamSeasonSummary = {

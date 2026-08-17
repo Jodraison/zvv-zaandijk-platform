@@ -1,0 +1,26 @@
+{
+  "route": "http://127.0.0.1:3000/academie",
+  "shots": [
+    {
+      "vp": "desktop-1440",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-004\\desktop-1440-home.png",
+      "decisionLabPathVisible": true,
+      "structureExplainerRemoved": true,
+      "dualProductBannerRemoved": true
+    },
+    {
+      "vp": "tablet-1024",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-004\\tablet-1024-home.png",
+      "decisionLabPathVisible": true,
+      "structureExplainerRemoved": true,
+      "dualProductBannerRemoved": true
+    },
+    {
+      "vp": "mobile-390",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-004\\mobile-390-home.png",
+      "decisionLabPathVisible": true,
+      "structureExplainerRemoved": true,
+      "dualProductBannerRemoved": true
+    }
+  ]
+}

@@ -8,7 +8,7 @@ import { Badge } from "@/components/layout/badge";
 type Props = { searchParams: Promise<{ season?: string }> };
 
 const quickNav = [
-  { href: "/ranking", title: "Ranking", subtitle: "Goals, assists en WOTM", icon: "🏆" },
+  { href: "/ranking", title: "Ranglijst", subtitle: "Doelpunten, assists en MVP", icon: "🏆" },
   { href: "/training", title: "Training", subtitle: "Opkomst en ritme", icon: "📈" },
   { href: "/fitheid", title: "Fitheid", subtitle: "Sprintdata en progressie", icon: "⚡" },
   { href: "/wedstrijden", title: "Wedstrijden", subtitle: "Programma en uitslagen", icon: "⚽" },
@@ -49,9 +49,9 @@ export default async function StatistiekenPage({ searchParams }: Props) {
   ] as const;
 
   const rankingPreviewLists = [
-    { key: "topScorers", title: "Goals", entries: home.rankingPreview.topScorers },
+    { key: "topScorers", title: "Doelpunten", entries: home.rankingPreview.topScorers },
     { key: "topAssists", title: "Assists", entries: home.rankingPreview.topAssists },
-    { key: "topMotm", title: "WOTM", entries: home.rankingPreview.topMotm },
+    { key: "topMotm", title: "MVP", entries: home.rankingPreview.topMotm },
     { key: "mostMatches", title: "Wedstrijden", entries: home.rankingPreview.mostMatches },
   ] as const;
 
@@ -78,7 +78,7 @@ export default async function StatistiekenPage({ searchParams }: Props) {
           <div className="min-w-0 flex-1">
             <p className="club-page-eyebrow-strong">Statistieken</p>
             <h1 className="mt-4 font-[family-name:var(--font-display)] text-[clamp(2.85rem,7vw,4.65rem)] leading-[0.93] tracking-[0.02em] text-zvv-ink">
-              Statistics Center
+              Statistiekcentrum
             </h1>
             <p className="mt-6 max-w-2xl text-[16px] leading-[1.7] text-zvv-muted md:text-lg">
               Centraal overzicht van teamprestaties, ranglijsten en ontwikkeling voor Zaandijk VRZ1.
@@ -138,7 +138,7 @@ export default async function StatistiekenPage({ searchParams }: Props) {
       {/* Topprestaties */}
       <section aria-labelledby="top-performers-heading" className="space-y-6">
         <div>
-          <p className="club-page-eyebrow">Spotlight</p>
+          <p className="club-page-eyebrow">Uitblinkers</p>
           <h2
             id="top-performers-heading"
             className="mt-2 font-[family-name:var(--font-display)] text-[clamp(1.85rem,4vw,2.75rem)] tracking-wide text-zvv-ink"
@@ -173,15 +173,15 @@ export default async function StatistiekenPage({ searchParams }: Props) {
               >
                 Ranglijsten
               </h2>
-              <p className="mt-2 text-sm text-zvv-muted">Goals, assists en WOTM in één overzicht.</p>
+              <p className="mt-2 text-sm text-zvv-muted">Doelpunten, assists en MVP in één overzicht.</p>
             </div>
-            <Badge tone="muted">Preview</Badge>
+            <Badge tone="muted">Voorbeeld</Badge>
           </div>
           {!hasAnyRankingPreview ? (
             <div className="club-empty-state mt-8">
               <p className="text-lg font-semibold text-zvv-ink">Nog geen ranglijstdata</p>
               <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed">
-                Voor dit seizoen zijn er nog geen geverifieerde statistieken om in de preview te tonen.
+                Voor dit seizoen zijn er nog geen geverifieerde statistieken om in het voorbeeld te tonen.
               </p>
             </div>
           ) : (

@@ -50,7 +50,7 @@ export function PlayerProfilePowerStats({
 }) {
   const items = [
     {
-      label: "Goals",
+      label: "Doelpunten",
       value: goals,
       icon: IconGoal,
       glow: "from-sky-400/20 to-transparent",
@@ -62,7 +62,7 @@ export function PlayerProfilePowerStats({
       glow: "from-cyan-400/15 to-transparent",
     },
     {
-      label: "WOTM",
+      label: "MVP",
       value: wotm,
       icon: IconStar,
       glow: "from-amber-400/20 to-transparent",

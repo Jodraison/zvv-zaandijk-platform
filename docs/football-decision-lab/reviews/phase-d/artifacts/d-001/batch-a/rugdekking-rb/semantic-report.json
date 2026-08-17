@@ -1,0 +1,35 @@
+{
+  "order": 5,
+  "sessionId": "FDL-DS-DEPTH-COVER-RB-V1",
+  "slug": "rugdekking-rb",
+  "family": "press-depth",
+  "activeRole": "us.RB",
+  "supportRoles": [
+    "us.RW",
+    "us.R6",
+    "us.RCV"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+  "ballHolder": "opp.cbL",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-rugdekking-rb-live",
+    "good": "fdl-ds-rugdekking-rb-good",
+    "bad": "fdl-ds-rugdekking-rb-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

@@ -6,45 +6,82 @@ import { displayTeamLabel } from "@/constants/club";
 import { matchTypeLabel } from "@/lib/match-type";
 import { cn } from "@/lib/utils";
 import { formatKickoffLongNl } from "@/lib/utils/format-date";
+import { MatchCountdownLabel } from "@/components/match/match-countdown-label";
+import { resolveMatchDataScope } from "@/lib/match/match-data-scope";
 
-export function MatchCard({ db, m, seasonId }: { db: ClubDatabase; m: Match; seasonId: string }) {
+export function MatchCard({
+  db,
+  m,
+  seasonId,
+  featured = false,
+}: {
+  db: ClubDatabase;
+  m: Match;
+  seasonId: string;
+  /** Volgende wedstrijd — volle breedte, meer gewicht */
+  featured?: boolean;
+}) {
   const r = matchResult(db, m);
   const score = resolveMatchScore(m);
   const played = m.status === "played";
-  const tone = !played ? "muted" : r === "W" ? "win" : r === "L" ? "loss" : "draw";
   const href = `/wedstrijden/${m.id}?season=${encodeURIComponent(seasonId)}`;
   const whenLabel = formatKickoffLongNl(m.kickoff_at);
-
+  const scope = resolveMatchDataScope(m);
   const resultNl =
-    !played || !r ? null : r === "W" ? "Winst" : r === "L" ? "Verlies" : "Gelijk";
+    !played || !r ? null : r === "W" ? "Winst" : r === "L" ? "Verlies" : "Gelijkspel";
 
   return (
     <Link
       href={href}
       prefetch
       className={cn(
-        "group relative block overflow-hidden rounded-2xl border border-zvv-border bg-gradient-to-br from-white to-zvv-card-mid/35 p-5 shadow-sm transition-[border-color,transform] duration-200 motion-safe:hover:-translate-y-0.5 motion-safe:hover:border-zvv-primary/25 md:p-8",
+        "group relative block overflow-hidden rounded-[1.35rem] border transition-[transform,box-shadow,border-color] duration-200",
+        featured ? "md:col-span-2" : "",
+        played && r === "W"
+          ? "border-emerald-200/80 bg-gradient-to-br from-emerald-50 via-white to-zvv-primary-muted/40 shadow-[0_12px_40px_rgba(21,128,61,0.12)]"
+          : played && r === "L"
+            ? "border-zvv-border bg-gradient-to-br from-slate-50 to-white shadow-sm"
+            : "border-zvv-border bg-gradient-to-br from-zvv-night/[0.04] via-white to-zvv-primary-muted/30 shadow-[0_10px_36px_rgba(12,25,41,0.08)]",
+        "motion-safe:hover:-translate-y-1 motion-safe:hover:shadow-[0_18px_48px_rgba(29,78,216,0.16)]",
+        featured ? "p-6 md:p-10" : "p-5 md:p-7",
       )}
     >
-      <span className="absolute left-0 top-0 h-full w-1 bg-gradient-to-b from-zvv-primary via-zvv-primary/40 to-transparent opacity-80" aria-hidden />
-      <div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-zvv-border/90 pb-5">
-        <span
-          className={cn(
-            "rounded-full px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.16em]",
-            played ? "bg-zvv-card-mid text-zvv-ink" : "border border-zvv-primary/20 bg-zvv-primary-muted text-zvv-primary",
-          )}
-        >
-          {matchTypeLabel(m.match_type)}
-          {played ? " · Gespeeld" : m.status === "scheduled" ? " · Gepland" : m.status === "postponed" ? " · Uitgesteld" : m.status === "cancelled" ? " · Afgelast" : ""}
-        </span>
-        {!played ? <span className="h-2 w-2 rounded-full bg-rose-400/90" aria-hidden /> : null}
+      <span
+        className={cn(
+          "absolute inset-x-0 top-0 h-1",
+          played && r === "W"
+            ? "bg-gradient-to-r from-emerald-500 via-zvv-primary to-emerald-400"
+            : played && r === "L"
+              ? "bg-slate-300"
+              : "bg-gradient-to-r from-zvv-primary via-sky-400 to-zvv-primary",
+        )}
+        aria-hidden
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            className={cn(
+              "rounded-full px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em]",
+              played ? "bg-zvv-night text-white" : "bg-zvv-primary text-white",
+            )}
+          >
+            {matchTypeLabel(m.match_type)}
+            {played ? " · Gespeeld" : " · Gepland"}
+          </span>
+          {scope !== "production" ? (
+            <span className="rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.16em] text-amber-900">
+              DEMO
+            </span>
+          ) : null}
+        </div>
         {r && played ? (
           <span
             className={cn(
-              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold leading-none text-white",
-              r === "W" && "bg-green-500",
-              r === "L" && "bg-red-500",
-              r === "D" && "bg-gray-400",
+              "flex h-10 w-10 items-center justify-center rounded-full text-sm font-black text-white shadow-md",
+              r === "W" && "bg-emerald-500 shadow-emerald-500/30",
+              r === "L" && "bg-rose-500/90",
+              r === "D" && "bg-slate-400",
             )}
             aria-label={resultNl ?? undefined}
           >
@@ -53,37 +90,77 @@ export function MatchCard({ db, m, seasonId }: { db: ClubDatabase; m: Match; sea
         ) : null}
       </div>
 
-      <div className="mt-7 rounded-2xl border border-zvv-border/80 bg-white/75 px-3 py-4 sm:px-4 sm:py-5">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
+      {featured && !played ? (
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-zvv-primary">Volgende wedstrijd</p>
+      ) : null}
+      {played && r === "W" ? (
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-emerald-700">Overwinning</p>
+      ) : null}
+
+      <div className={cn("mt-4 grid items-center gap-3", featured ? "md:grid-cols-[1fr_auto_1fr] md:gap-8" : "grid-cols-[1fr_auto_1fr] gap-3")}>
         <div className="min-w-0 text-center sm:text-right">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zvv-muted">{m.is_home ? "Thuis" : "Uit"}</p>
-          <p className="mt-2 break-words font-[family-name:var(--font-display)] text-[clamp(1.15rem,3.5vw,1.85rem)] leading-tight tracking-wide text-zvv-ink">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zvv-muted">
+            {m.is_home ? "Thuis" : "Uit"}
+          </p>
+          <p
+            className={cn(
+              "mt-2 break-words font-[family-name:var(--font-display)] leading-tight tracking-wide text-zvv-ink",
+              featured ? "text-[clamp(1.4rem,3.5vw,2.4rem)]" : "text-[clamp(1.15rem,3vw,1.75rem)]",
+            )}
+          >
             {displayTeamLabel(score.homeTeam)}
           </p>
         </div>
-        <div className="flex shrink-0 items-baseline justify-center gap-2 px-1 sm:gap-3">
-          <span className="font-[family-name:var(--font-display)] text-[clamp(3.2rem,10vw,5.2rem)] leading-none tabular-nums tracking-tight text-zvv-ink">
-            {played ? score.homeScore : "—"}
-          </span>
-          <span className="font-[family-name:var(--font-display)] text-[clamp(1.35rem,4vw,2.1rem)] text-zvv-primary/65">VS</span>
-          <span className="font-[family-name:var(--font-display)] text-[clamp(3.2rem,10vw,5.2rem)] leading-none tabular-nums tracking-tight text-zvv-ink">
-            {played ? score.awayScore : "—"}
-          </span>
+        <div className="flex shrink-0 flex-col items-center px-1">
+          <div className="flex items-baseline gap-2 sm:gap-3">
+            <span
+              className={cn(
+                "font-[family-name:var(--font-display)] leading-none tabular-nums tracking-tight text-zvv-ink",
+                featured ? "text-[clamp(3.5rem,9vw,5.5rem)]" : "text-[clamp(2.8rem,8vw,4.5rem)]",
+                played && r === "W" && "text-emerald-800",
+              )}
+            >
+              {played ? score.homeScore : "—"}
+            </span>
+            <span className="font-[family-name:var(--font-display)] text-2xl text-zvv-primary/50 sm:text-3xl">–</span>
+            <span
+              className={cn(
+                "font-[family-name:var(--font-display)] leading-none tabular-nums tracking-tight text-zvv-ink",
+                featured ? "text-[clamp(3.5rem,9vw,5.5rem)]" : "text-[clamp(2.8rem,8vw,4.5rem)]",
+              )}
+            >
+              {played ? score.awayScore : "—"}
+            </span>
+          </div>
+          {!played ? (
+            <p className="mt-2 text-center text-sm font-semibold text-zvv-primary">
+              <MatchCountdownLabel startsAt={m.kickoff_at} status={m.status} showSecondary={false} />
+            </p>
+          ) : null}
         </div>
         <div className="min-w-0 text-center sm:text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zvv-muted">{m.is_home ? "Uit" : "Thuis"}</p>
-          <p className="mt-2 break-words font-[family-name:var(--font-display)] text-[clamp(1.15rem,3.5vw,1.85rem)] leading-tight tracking-wide text-zvv-ink">
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-zvv-muted">
+            {m.is_home ? "Uit" : "Thuis"}
+          </p>
+          <p
+            className={cn(
+              "mt-2 break-words font-[family-name:var(--font-display)] leading-tight tracking-wide text-zvv-ink",
+              featured ? "text-[clamp(1.4rem,3.5vw,2.4rem)]" : "text-[clamp(1.15rem,3vw,1.75rem)]",
+            )}
+          >
             {displayTeamLabel(score.awayTeam)}
           </p>
         </div>
-        </div>
       </div>
 
-      <div className="mt-7 flex items-center justify-between gap-3 text-sm">
-        <p className="font-medium text-zvv-muted">
-        {whenLabel}
-        </p>
-        <span className="text-xs font-bold uppercase tracking-[0.16em] text-zvv-primary transition-colors group-hover:text-zvv-primary-hover">Matchcenter →</span>
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-3 border-t border-zvv-border/70 pt-4">
+        <div>
+          <p className="text-sm font-medium text-zvv-muted">{whenLabel}</p>
+          {m.location ? <p className="mt-0.5 text-sm text-zvv-ink">{m.location}</p> : null}
+        </div>
+        <span className="text-xs font-bold uppercase tracking-[0.16em] text-zvv-primary transition-transform group-hover:translate-x-0.5">
+          Bekijk wedstrijd →
+        </span>
       </div>
     </Link>
   );

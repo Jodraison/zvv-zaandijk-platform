@@ -47,7 +47,7 @@ function buildPreview(db: ClubDatabase, m: Match): RecentMatchPreview | null {
 }
 
 /**
- * Meest recente geverifieerde gespeelde wedstrijden voor Statistics Center.
+ * Meest recente geverifieerde gespeelde wedstrijden voor het Statistiekcentrum.
  * Gebruikt `seasonMatches` + bestaande score-/resultaathelpers — geen eigen aggregatie.
  */
 export function getRecentMatches(

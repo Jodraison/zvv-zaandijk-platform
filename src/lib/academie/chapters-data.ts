@@ -14,14 +14,14 @@ export const ACADEMY_CHAPTER_DEFINITIONS: AcademyChapter[] = [
     chapterNumber: 1,
     title: "Onze Voetbalvisie",
     intro:
-      "Chapter 1 vormt de fundering van de Football Academy. In zes opeenvolgende lessen leer je wie ZVV Zaandijk VRZ1 is, hoe wij voetballen en welke mentaliteit wij verwachten — de basis voor alles wat daarna volgt.",
+      "Zes lessen, één speelwijze: wie wij zijn → hoe wij kiezen → hoe wij samen uitvoeren → hoe wij ons gedragen → wanneer wij tempo maken → hoe wij onder druk blijven kiezen.",
     lessons: [
-      { topicId: "topic.voetbalvisie.identiteit", lessonNumber: 1, estimatedReadingTime: 3, lessonLevel: "intro" },
-      { topicId: "topic.voetbalvisie.kernwaarden", lessonNumber: 2, estimatedReadingTime: 3, lessonLevel: "intro" },
-      { topicId: "topic.voetbalvisie.teamafspraken", lessonNumber: 3, estimatedReadingTime: 3, lessonLevel: "intro" },
-      { topicId: "topic.voetbalvisie.gedragsregels", lessonNumber: 4, estimatedReadingTime: 3, lessonLevel: "core" },
-      { topicId: "topic.voetbalvisie.intensiteit", lessonNumber: 5, estimatedReadingTime: 3, lessonLevel: "core" },
-      { topicId: "topic.voetbalvisie.mentaliteit", lessonNumber: 6, estimatedReadingTime: 3, lessonLevel: "core" },
+      { topicId: "topic.voetbalvisie.identiteit", lessonNumber: 1, estimatedReadingTime: 2, lessonLevel: "intro" },
+      { topicId: "topic.voetbalvisie.kernwaarden", lessonNumber: 2, estimatedReadingTime: 2, lessonLevel: "intro" },
+      { topicId: "topic.voetbalvisie.teamafspraken", lessonNumber: 3, estimatedReadingTime: 2, lessonLevel: "intro" },
+      { topicId: "topic.voetbalvisie.gedragsregels", lessonNumber: 4, estimatedReadingTime: 2, lessonLevel: "intro" },
+      { topicId: "topic.voetbalvisie.intensiteit", lessonNumber: 5, estimatedReadingTime: 2, lessonLevel: "intro" },
+      { topicId: "topic.voetbalvisie.mentaliteit", lessonNumber: 6, estimatedReadingTime: 2, lessonLevel: "intro" },
     ],
   },
 ];

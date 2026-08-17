@@ -1,50 +1,48 @@
-import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { isAdmin } from "@/lib/auth/is-admin";
+import {
+  assertCapability,
+  resolveAuthContext,
+  roleHasCapability,
+  type Capability,
+} from "@/lib/auth/capabilities";
 
-type RequireAdminOptions = {
-  /** Geen sessie: standaard `/login`. */
+type RequireAccessOptions = {
   loginRedirect?: string;
-  /** Wel ingelogd maar niet admin-e-mail: standaard `/`. */
   forbiddenRedirect?: string;
+  /** Default: access_beheer (owner + teambeheer). */
+  capability?: Capability;
 };
 
 /**
- * Server-side layout/pages: alleen vaste eigenaar-e-mail (`isAdmin`).
- * Geen sessie → login; verkeerde gebruiker → home (niet de admin-login).
+ * Server-side layout/pages: owner of teambeheer met voldoende capability.
  */
-export async function requireAdmin(options?: RequireAdminOptions): Promise<{ userId: string }> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
+export async function requireAdmin(options?: RequireAccessOptions): Promise<{ userId: string }> {
+  const cap = options?.capability ?? "access_beheer";
+  const ctx = await resolveAuthContext();
 
-  if (userErr || !user) {
+  if (!ctx) {
     redirect(options?.loginRedirect ?? "/login");
   }
 
-  if (!isAdmin(user)) {
+  if (!roleHasCapability(ctx.role, cap)) {
     redirect(options?.forbiddenRedirect ?? "/");
   }
 
-  return { userId: user.id };
+  return { userId: ctx.userId };
 }
 
 /**
- * Server actions / mutateDb:zelfde regel als `requireAdmin`, maar `redirect()` is hier ongewenst;
- * fout moet de actie laten falen zodat er geen writes plaatsvinden.
+ * Server actions: teamwrites (default manage_squad).
+ * Voor systeemacties: assertSystemAdminAction / assertCapability("system_admin").
  */
 export async function assertAdminServerAction(): Promise<{ userId: string }> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error: userErr,
-  } = await supabase.auth.getUser();
+  return assertCapability("manage_squad");
+}
 
-  if (userErr || !user || !isAdmin(user)) {
-    throw new Error("UNAUTHORIZED");
-  }
+export async function assertTeamWrite(cap: Capability): Promise<{ userId: string }> {
+  return assertCapability(cap);
+}
 
-  return { userId: user.id };
+export async function assertSystemAdminAction(): Promise<{ userId: string }> {
+  return assertCapability("system_admin");
 }

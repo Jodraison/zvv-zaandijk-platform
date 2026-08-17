@@ -20,7 +20,7 @@ export default async function TrainingPage({ searchParams }: Props) {
       <header className="club-section-surface club-reveal">
         <p className="club-page-eyebrow">Training</p>
         <h1 className="mt-2 font-[family-name:var(--font-display)] text-[clamp(2.5rem,6vw,3.9rem)] tracking-wide text-zvv-ink">Aanwezigheid</h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zvv-muted">Een helder performance-overzicht per sessie en per speelster, met focus op ritme en betrouwbaarheid.</p>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-zvv-muted">Een helder overzicht van de prestaties per sessie en per speelster, met focus op ritme en betrouwbaarheid.</p>
       </header>
 
       <GlassCard glow className="club-card-lift bg-gradient-to-br from-white to-zvv-card-mid/35">

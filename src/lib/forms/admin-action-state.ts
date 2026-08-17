@@ -4,7 +4,7 @@ import type { z } from "zod";
 export type AdminFormState =
   | { status: "idle" }
   | { status: "error"; error: string; fieldErrors?: Record<string, string[]> }
-  | { status: "success"; message: string };
+  | { status: "success"; message: string; redirectTo?: string };
 
 export const initialAdminFormState: AdminFormState = { status: "idle" };
 

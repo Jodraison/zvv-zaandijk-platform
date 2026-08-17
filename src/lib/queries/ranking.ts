@@ -40,6 +40,7 @@ export function computeRanking(db: ClubDatabase, seasonId: string): PlayerSeason
       assists_total: t.assists_total,
       wotm_total: t.wotm_total,
       matches_played: t.matches_played,
+      clean_sheets_total: t.clean_sheets_total,
     };
   });
 

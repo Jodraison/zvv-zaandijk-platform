@@ -11,6 +11,7 @@ import {
 import { normalizePlayerPhotoUrlForStorage } from "@/lib/media/safe-player-image-url";
 import { mutateDb } from "@/lib/data/mutate";
 import { assertSeasonLeadershipValid } from "@/lib/season-leadership";
+import { parseOptionalBirthDateInput } from "@/lib/players/birthdays";
 import { flattenZodIssues, normalizeMutationError, type AdminFormState } from "@/lib/forms/admin-action-state";
 
 export type PlayerActionResult =
@@ -59,7 +60,7 @@ function applyCaptainFlags(
 ) {
   const pl = db.players.find((p) => p.id === playerId);
   if (pl?.is_guest && (is_captain || is_vice_captain)) {
-    throw new Error("Een gast-speelster kan geen aanvoerder of assistent zijn.");
+    throw new Error("Een gastspeelster kan geen aanvoerder of vice-aanvoerder zijn.");
   }
 
   const mem = db.player_season_memberships.find((m) => m.player_id === playerId && m.season_id === seasonId);
@@ -131,7 +132,12 @@ export async function createPlayerWithResult(formData: FormData): Promise<Player
   });
   if (!flags.success) return { ok: false, error: "Ongeldige vlaggen" };
   if (flags.data.is_captain && flags.data.is_vice_captain) {
-    return { ok: false, error: "Eén persoon kan niet tegelijk aanvoerder en assistent zijn." };
+    return { ok: false, error: "Eén persoon kan niet tegelijk aanvoerder en vice-aanvoerder zijn." };
+  }
+
+  const birthParsed = parseOptionalBirthDateInput(String(formData.get("birth_date") ?? ""));
+  if (!birthParsed.ok) {
+    return { ok: false, error: birthParsed.error, fieldErrors: { birth_date: [birthParsed.error] } };
   }
 
   const seasonId = String(formData.get("season_id") ?? "");
@@ -149,6 +155,7 @@ export async function createPlayerWithResult(formData: FormData): Promise<Player
           full_name: parsed.data.full_name,
           photo_url: normalizePlayerPhotoUrlForStorage(parsed.data.photo_url || undefined),
           is_guest: false,
+          birth_date: birthParsed.value,
           initials: toNull(profileParsed.data.initials),
           bio: toNull(profileParsed.data.bio),
           preferred_foot: toNull(profileParsed.data.preferred_foot),
@@ -298,7 +305,12 @@ export async function updatePlayerWithResult(formData: FormData): Promise<Player
   });
   if (!flags.success) return { ok: false, error: "Ongeldige vlaggen" };
   if (flags.data.is_captain && flags.data.is_vice_captain) {
-    return { ok: false, error: "Eén persoon kan niet tegelijk aanvoerder en assistent zijn." };
+    return { ok: false, error: "Eén persoon kan niet tegelijk aanvoerder en vice-aanvoerder zijn." };
+  }
+
+  const birthParsed = parseOptionalBirthDateInput(String(formData.get("birth_date") ?? ""));
+  if (!birthParsed.ok) {
+    return { ok: false, error: birthParsed.error, fieldErrors: { birth_date: [birthParsed.error] } };
   }
 
   const seasonId = String(formData.get("season_id") ?? "");
@@ -312,6 +324,7 @@ export async function updatePlayerWithResult(formData: FormData): Promise<Player
         if (!pl) throw new Error("Speelster niet gevonden.");
         pl.full_name = parsed.data.full_name;
         pl.photo_url = normalizePlayerPhotoUrlForStorage(parsed.data.photo_url || undefined);
+        pl.birth_date = birthParsed.value;
         pl.initials = toNull(profileParsed.data.initials);
         pl.bio = toNull(profileParsed.data.bio);
         pl.preferred_foot = toNull(profileParsed.data.preferred_foot);
@@ -339,35 +352,109 @@ export async function updatePlayerWithResult(formData: FormData): Promise<Player
   return { ok: true };
 }
 
+/**
+ * @deprecated Gebruik removePlayerFromSeasonWithResult — hard delete van personen is verboden.
+ * Behoudt persoon- en historiedata; verwijdert alleen het seizoenslidmaatschap.
+ */
 export async function deletePlayer(playerId: string, seasonId: string): Promise<void> {
-  await mutateDb(
-    (db) => {
-      db.player_season_memberships = db.player_season_memberships.filter(
-        (m) => !(m.player_id === playerId && m.season_id === seasonId),
-      );
-      const stillMember = db.player_season_memberships.some((m) => m.player_id === playerId);
-      if (!stillMember) {
-        db.match_matchday_roster = db.match_matchday_roster.filter((r) => r.player_id !== playerId);
-        db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.player_id !== playerId);
-        db.players = db.players.filter((p) => p.id !== playerId);
-        db.match_player_stats = db.match_player_stats.filter((s) => s.player_id !== playerId);
-        db.match_goal_events = db.match_goal_events.filter(
-          (e) => e.scorer_player_id !== playerId && e.assist_player_id !== playerId,
+  const r = await removePlayerFromSeasonWithResult({
+    player_id: playerId,
+    season_id: seasonId,
+    reason: "via_legacy_deletePlayer",
+  });
+  if (!r.ok) throw new Error(r.error);
+}
+
+/** Speelster uit actuele selectie halen — historie blijft behouden. */
+export async function removePlayerFromSeasonWithResult(input: {
+  player_id: string;
+  season_id: string;
+  reason?: string;
+}): Promise<PlayerActionResult & { membership_snapshot?: unknown }> {
+  const playerId = String(input.player_id ?? "").trim();
+  const seasonId = String(input.season_id ?? "").trim();
+  if (!playerId || !seasonId) return { ok: false, error: "Speelster of seizoen ontbreekt." };
+
+  let membership_snapshot: unknown = null;
+  try {
+    await mutateDb(
+      (db) => {
+        const mem = db.player_season_memberships.find(
+          (m) => m.player_id === playerId && m.season_id === seasonId,
         );
-        db.match_card_events = db.match_card_events.filter((e) => e.player_id !== playerId);
-        db.match_substitutions = db.match_substitutions.filter(
-          (e) => e.player_in_id !== playerId && e.player_out_id !== playerId,
+        if (!mem) throw new Error("Deze speelster zit niet in de actuele selectie.");
+        membership_snapshot = { ...mem, reason: input.reason ?? null };
+        db.player_season_memberships = db.player_season_memberships.filter(
+          (m) => !(m.player_id === playerId && m.season_id === seasonId),
         );
-        db.training_attendance = db.training_attendance.filter((a) => a.player_id !== playerId);
-        db.fitness_tests = db.fitness_tests.filter((f) => f.player_id !== playerId);
-        db.matches.forEach((m) => {
-          if (m.wotm_player_id === playerId) m.wotm_player_id = null;
-        });
-      }
-      assertSeasonLeadershipValid(db, seasonId);
-    },
-    { action: "player_delete", entity: "player", entity_id: playerId },
-  );
+        assertSeasonLeadershipValid(db, seasonId);
+      },
+      {
+        action: "player_remove_from_season",
+        entity: "player_season_membership",
+        entity_id: playerId,
+        capability: "manage_squad",
+        after_snapshot: () => membership_snapshot,
+      },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Uit selectie halen mislukt.";
+    return { ok: false, error: normalizeMutationError(msg) };
+  }
+  return { ok: true, membership_snapshot };
+}
+
+/** Herstel seizoenslidmaatschap (undo) wanneer snapshot beschikbaar is. */
+export async function restorePlayerToSeasonWithResult(input: {
+  player_id: string;
+  season_id: string;
+  shirt_number: number;
+  position: string;
+  display_position: string;
+}): Promise<PlayerActionResult> {
+  const fd = new FormData();
+  fd.set("player_id", input.player_id);
+  fd.set("season_id", input.season_id);
+  fd.set("shirt_number", String(input.shirt_number));
+  fd.set("position", input.position);
+  fd.set("display_position", input.display_position);
+  return addPlayerToSeasonWithResult(fd);
+}
+
+export async function changeShirtNumberWithResult(input: {
+  player_id: string;
+  season_id: string;
+  shirt_number: number;
+}): Promise<PlayerActionResult> {
+  const playerId = String(input.player_id ?? "").trim();
+  const seasonId = String(input.season_id ?? "").trim();
+  const shirt = Number(input.shirt_number);
+  if (!playerId || !seasonId) return { ok: false, error: "Speelster of seizoen ontbreekt." };
+  if (!Number.isInteger(shirt) || shirt < 1 || shirt > 99) {
+    return { ok: false, error: "Kies een rugnummer tussen 1 en 99." };
+  }
+  try {
+    await mutateDb(
+      (db) => {
+        const mem = db.player_season_memberships.find(
+          (m) => m.player_id === playerId && m.season_id === seasonId,
+        );
+        if (!mem) throw new Error("Deze speelster zit niet in de actuele selectie.");
+        assertShirtAvailable(db, seasonId, shirt, playerId);
+        mem.shirt_number = shirt;
+      },
+      {
+        action: "player_change_shirt",
+        entity: "player_season_membership",
+        entity_id: playerId,
+        capability: "manage_squad",
+      },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Rugnummer wijzigen mislukt.";
+    return { ok: false, error: normalizeMutationError(msg) };
+  }
+  return { ok: true };
 }
 
 const addToSeasonSchema = z.object({
@@ -406,7 +493,7 @@ export async function addPlayerToSeasonWithResult(formData: FormData): Promise<P
         assertShirtAvailable(db, parsed.data.season_id, parsed.data.shirt_number);
         const clubPl = db.players.find((p) => p.id === parsed.data.player_id);
         if (clubPl?.is_guest) {
-          throw new Error("Een gast-speelster hoort niet aan het vaste seizoen te worden gekoppeld.");
+          throw new Error("Een gastspeelster hoort niet aan het vaste seizoen te worden gekoppeld.");
         }
         db.player_season_memberships.push({
           id: randomUUID(),

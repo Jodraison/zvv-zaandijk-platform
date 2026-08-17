@@ -1,17 +1,28 @@
 import { readDb } from "@/lib/data/repository";
 import { readResolvedSeasonId } from "@/actions/season";
 import { TrainingAttendanceDashboard } from "@/components/admin/training-attendance-dashboard";
+import { AdminPageHeader } from "@/components/admin/shell/admin-ui";
+import { resolveAuthContext, roleHasCapability } from "@/lib/auth/capabilities";
 
-type Props = { searchParams: Promise<{ season?: string }> };
+type Props = { searchParams: Promise<{ season?: string; session?: string; sid?: string }> };
 
 export default async function BeheerTrainingPage({ searchParams }: Props) {
   const sp = await searchParams;
   const db = await readDb();
   const seasonId = await readResolvedSeasonId(db, sp.season);
+  const auth = await resolveAuthContext();
+  const canDeleteSessions = !!auth && roleHasCapability(auth.role, "system_admin");
+
   const sessions = db.training_sessions
     .filter((s) => s.season_id === seasonId)
     .sort((a, b) => b.session_at.localeCompare(a.session_at))
-    .map((s) => ({ id: s.id, session_at: s.session_at, title: s.title, status: s.status }));
+    .map((s) => ({
+      id: s.id,
+      session_at: s.session_at,
+      title: s.title,
+      status: s.status,
+      location: s.location,
+    }));
   const players = db.player_season_memberships
     .filter((m) => m.season_id === seasonId)
     .map((mem) => {
@@ -33,14 +44,18 @@ export default async function BeheerTrainingPage({ searchParams }: Props) {
 
   return (
     <div className="space-y-10">
-      <header className="border-b border-zvv-border pb-10">
-        <p className="club-page-eyebrow">Beheer · Training</p>
-        <h1 className="mt-3 font-[family-name:var(--font-display)] text-4xl tracking-wide text-zvv-ink md:text-5xl">Training aanwezigheid</h1>
-        <p className="mt-3 max-w-2xl text-sm text-zvv-muted">
-          Premium bulk workflow voor maandag/woensdag: snel terugwerken, direct togglen en in batch opslaan.
-        </p>
-      </header>
-      <TrainingAttendanceDashboard seasonId={seasonId} players={players} sessions={sessions} attendance={attendance} />
+      <AdminPageHeader
+        eyebrow="Beheer · Training"
+        title="Training aanwezigheid"
+        description="Voeg trainingen handmatig toe, verplaats of afgelast, en registreer aanwezigheid eerlijk — zonder automatische aanwezigheid."
+      />
+      <TrainingAttendanceDashboard
+        seasonId={seasonId}
+        players={players}
+        sessions={sessions}
+        attendance={attendance}
+        canDeleteSessions={canDeleteSessions}
+      />
     </div>
   );
 }

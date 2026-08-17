@@ -2,8 +2,14 @@
 
 import Link from "next/link";
 import type { Match } from "@/types";
-import { TEAM_DISPLAY_LABEL, TEAM_DISPLAY_LABEL_UPPER } from "@/constants/club";
-import { formatKickoffLongNl, formatKickoffShortNl } from "@/lib/utils/format-date";
+import { TEAM_DISPLAY_LABEL_UPPER } from "@/constants/club";
+import {
+  HomeBirthdaySpotlight,
+  type HomeBirthdayPlayer,
+} from "@/components/home/home-birthday-spotlight";
+import { HomeTeamSpotlight } from "@/components/home/home-team-spotlight";
+import type { HomeTeamSpotlightModel } from "@/lib/home/team-spotlight";
+import { cn } from "@/lib/utils";
 
 const TAGLINE = "Een team. Een standaard.";
 
@@ -11,60 +17,50 @@ function seasonQuery(seasonId: string) {
   return `?season=${encodeURIComponent(seasonId)}`;
 }
 
-/** Alleen context — wedstrijd-actie zit in MatchCountdown (één primaire flow). */
-function HomeMatchTeaser({ nextM, seasonId, className }: { nextM: Match | null; seasonId: string; className?: string }) {
+export function ClubHomeHero({
+  seasonId,
+  nextM,
+  birthdayPlayers = [],
+  teamSpotlight,
+}: {
+  seasonId: string;
+  nextM: Match | null;
+  birthdayPlayers?: HomeBirthdayPlayer[];
+  teamSpotlight: HomeTeamSpotlightModel;
+}) {
   const q = seasonQuery(seasonId);
-  if (!nextM) {
-    return (
-      <div
-        className={`rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-4 backdrop-blur-sm md:px-5 md:py-5 ${className ?? ""}`}
-      >
-        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-100/60">Volgende wedstrijd</p>
-        <p className="mt-2 text-[15px] font-medium leading-snug text-white/88">Nog geen wedstrijd gepland.</p>
-        <Link
-          href={`/wedstrijden${q}`}
-          className="mt-4 inline-flex min-h-[44px] items-center text-sm font-semibold text-white underline-offset-4 hover:underline"
-        >
-          Naar programma →
-        </Link>
-      </div>
-    );
-  }
+  const hasBirthday = birthdayPlayers.length > 0;
 
-  const when = formatKickoffShortNl(nextM.kickoff_at);
-
-  return (
-    <div
-      className={`rounded-2xl border border-white/10 bg-white/[0.05] px-4 py-4 backdrop-blur-sm md:px-5 md:py-5 ${className ?? ""}`}
-    >
-      <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-100/60">Volgende wedstrijd</p>
-      <p className="mt-2 font-[family-name:var(--font-display)] text-base font-bold leading-snug tracking-wide text-white md:text-lg">
-        {TEAM_DISPLAY_LABEL} <span className="font-medium text-blue-200/75">vs</span> {nextM.opponent}
-      </p>
-      <p className="mt-1.5 text-sm text-blue-100/80">{when}</p>
-      <p className="mt-4 text-xs leading-relaxed text-blue-100/50">
-        <a href="#wedstrijd-focus" className="font-semibold text-blue-100/70 underline-offset-4 transition-colors hover:text-white hover:underline">
-          Aftelling en detail hieronder ↓
-        </a>
-      </p>
-    </div>
+  const spotlight = hasBirthday ? (
+    <HomeBirthdaySpotlight players={birthdayPlayers} />
+  ) : (
+    <HomeTeamSpotlight model={teamSpotlight} />
   );
-}
-
-export function ClubHomeHero({ seasonId, nextM }: { seasonId: string; nextM: Match | null }) {
-  const q = seasonQuery(seasonId);
 
   return (
     <section
       className="relative w-full overflow-hidden bg-gradient-to-br from-[#020817] via-[#0b1f5f] to-[#1d4ed8]"
       aria-label="Club"
+      data-hero-birthday={hasBirthday ? "true" : "false"}
+      data-hero-spotlight={hasBirthday ? "birthday" : "team"}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_18%_12%,rgba(147,197,253,0.28),transparent_70%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,rgba(255,255,255,0.08),transparent_32%,rgba(2,6,23,0.26)_100%)]" />
       <div className="pointer-events-none absolute inset-0 opacity-[0.08] [background-image:linear-gradient(rgba(255,255,255,0.45)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.45)_1px,transparent_1px)] [background-size:34px_34px]" />
       <div className="pointer-events-none absolute -right-28 top-16 h-72 w-72 rounded-full bg-blue-300/20 blur-[90px]" />
+      {hasBirthday ? (
+        <div
+          className="pointer-events-none absolute right-0 top-1/3 h-80 w-80 rounded-full bg-amber-300/15 blur-[100px]"
+          aria-hidden="true"
+        />
+      ) : null}
 
-      <div className="relative z-10 mx-auto flex min-h-[min(100dvh,800px)] max-w-[114rem] flex-col px-5 pb-16 pt-[4.5rem] md:px-8 md:pb-20 md:pt-24 xl:grid xl:min-h-[88vh] xl:grid-cols-[1.05fr_0.95fr] xl:items-end xl:gap-12 xl:px-16 xl:pb-24 xl:pt-28">
+      <div
+        className={cn(
+          "relative z-10 mx-auto flex min-h-[min(100dvh,800px)] max-w-[114rem] flex-col px-5 pb-16 pt-[4.5rem] md:px-8 md:pb-20 md:pt-24 xl:min-h-[88vh] xl:items-end xl:gap-10 xl:px-16 xl:pb-24 xl:pt-28",
+          "xl:grid xl:grid-cols-[minmax(0,1.12fr)_minmax(520px,0.95fr)]",
+        )}
+      >
         <div className="max-w-3xl text-white">
           <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-white/72 md:text-[11px] md:tracking-[0.32em]">
             ZVV Zaandijk · vrouwen 1
@@ -96,29 +92,22 @@ export function ClubHomeHero({ seasonId, nextM }: { seasonId: string; nextM: Mat
             </Link>
           </div>
 
-          <div className="mt-10 xl:hidden">
-            <HomeMatchTeaser nextM={nextM} seasonId={seasonId} />
-          </div>
+          <div className="mt-10 xl:hidden">{spotlight}</div>
         </div>
 
-        <aside className="mt-14 hidden w-full max-w-lg justify-self-end xl:mt-0 xl:block xl:max-w-md">
-          <div className="rounded-2xl border border-blue-200/18 bg-gradient-to-br from-white/12 via-white/6 to-white/4 p-6 text-white shadow-[0_22px_50px_rgba(2,6,23,0.38)] backdrop-blur-md md:p-8">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-100/75">Matchday</p>
-            <p className="mt-3 font-[family-name:var(--font-display)] text-[clamp(1.45rem,2.2vw,2rem)] leading-tight tracking-wide">
-              {nextM ? `${TEAM_DISPLAY_LABEL} vs ${nextM.opponent}` : `${TEAM_DISPLAY_LABEL} in focus`}
-            </p>
-            {nextM ? (
-              <p className="mt-3 text-sm leading-relaxed text-blue-100/85">
-                {formatKickoffLongNl(nextM.kickoff_at)}
+        <aside className="mt-14 hidden w-full max-w-none justify-self-end translate-y-[-8px] xl:mt-0 xl:block xl:max-w-[min(46vw,620px)]">
+          <div className="space-y-3">
+            {spotlight}
+            {hasBirthday && nextM ? (
+              <p className="px-1 text-xs leading-relaxed text-blue-100/55">
+                <a
+                  href="#wedstrijd-focus"
+                  className="font-semibold text-blue-100/70 underline-offset-4 transition-colors hover:text-white hover:underline"
+                >
+                  Wedstrijddetail hieronder ↓
+                </a>
               </p>
-            ) : (
-              <p className="mt-3 text-sm text-blue-100/78">Topniveau begint bij standaard.</p>
-            )}
-            <p className="mt-5 text-xs leading-relaxed text-blue-100/48">
-              <a href="#wedstrijd-focus" className="font-semibold text-blue-100/70 underline-offset-4 transition-colors hover:text-white hover:underline">
-                Aftelling en wedstrijddetail hieronder ↓
-              </a>
-            </p>
+            ) : null}
           </div>
         </aside>
       </div>

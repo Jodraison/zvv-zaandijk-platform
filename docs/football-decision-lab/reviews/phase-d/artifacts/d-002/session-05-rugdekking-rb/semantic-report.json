@@ -1,0 +1,26 @@
+{
+  "order": 5,
+  "sessionId": "FDL-DS-DEPTH-COVER-RB-V1",
+  "slug": "rugdekking-rb",
+  "activeRole": "us.RB",
+  "freezeMs": 7800,
+  "previewMs": 6600,
+  "liveDurationMs": 11200,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-freeze"
+  ],
+  "mobileFocusIds": [
+    "us.RB",
+    "us.RW",
+    "us.R6",
+    "us.RCV"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

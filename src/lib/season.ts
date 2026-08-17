@@ -24,7 +24,11 @@ export function resolveSeasonId(
   return cookieSeason;
 }
 
-/** Cookie bijwerken wanneer ontbreekt, ongeldig, of naar een gearchiveerd seizoen wijst. */
+/**
+ * When an explicit season preference should be persisted to the cookie.
+ * Used by selection Server Actions only — never during Server Component render.
+ * (Missing/invalid cookie → render with active-season fallback; write on user select.)
+ */
 export function shouldWriteSeasonCookie(
   cookieSeason: string | undefined,
   resolvedSeasonId: string,

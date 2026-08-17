@@ -1,0 +1,35 @@
+{
+  "order": 15,
+  "sessionId": "FDL-DS-WIDE-1V1-FORCE-OUTSIDE-V1",
+  "slug": "flank-1v1-stuur-buiten",
+  "family": "flank-1v1",
+  "activeRole": "us.RB",
+  "supportRoles": [
+    "us.RCV",
+    "us.R6",
+    "us.RW"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "canonical-4-2-3-1-start",
+  "ballHolder": "opp.lw",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-flank-1v1-stuur-buiten-live",
+    "good": "fdl-ds-flank-1v1-stuur-buiten-good",
+    "bad": "fdl-ds-flank-1v1-stuur-buiten-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

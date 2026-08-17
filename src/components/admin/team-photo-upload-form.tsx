@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { refreshAfterAdminSave } from "@/lib/admin-refresh";
-import { uploadTeamPhoto, type TeamPhotoUploadState } from "@/actions/club-settings";
+import { clearTeamPhoto, uploadTeamPhoto, type TeamPhotoUploadState } from "@/actions/club-settings";
 import { isSafePlayerImageUrl } from "@/lib/media/safe-player-image-url";
 
 const initial: TeamPhotoUploadState = { status: "idle" };
@@ -12,6 +12,7 @@ const initial: TeamPhotoUploadState = { status: "idle" };
 export function TeamPhotoUploadForm({ currentUrl }: { currentUrl: string | null }) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(uploadTeamPhoto, initial);
+  const [clearState, clearAction, clearPending] = useActionState(clearTeamPhoto, initial);
   const [preview, setPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -22,14 +23,14 @@ export function TeamPhotoUploadForm({ currentUrl }: { currentUrl: string | null 
   }, [preview]);
 
   useEffect(() => {
-    if (state.status !== "success") return;
+    if (state.status !== "success" && clearState.status !== "success") return;
     setPreview((p) => {
       if (p) URL.revokeObjectURL(p);
       return null;
     });
     if (inputRef.current) inputRef.current.value = "";
     refreshAfterAdminSave(router);
-  }, [state.status, router]);
+  }, [state.status, clearState.status, router]);
 
   function onFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -93,7 +94,11 @@ export function TeamPhotoUploadForm({ currentUrl }: { currentUrl: string | null 
             disabled={pending}
           />
         </label>
-        <button type="submit" disabled={pending} className="club-btn-primary min-h-[44px] disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={pending || clearPending}
+          className="club-btn-primary min-h-[44px] disabled:opacity-50"
+        >
           {pending ? "Bezig met uploaden…" : "Uploaden en opslaan"}
         </button>
       </div>
@@ -107,6 +112,32 @@ export function TeamPhotoUploadForm({ currentUrl }: { currentUrl: string | null 
         <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
           {state.message}
         </p>
+      ) : null}
+      {clearState.status === "error" ? (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+          {clearState.message}
+        </p>
+      ) : null}
+      {clearState.status === "success" ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900" role="status">
+          {clearState.message}
+        </p>
+      ) : null}
+
+      {safeCurrent || showInvalidStoredUrl ? (
+        <div className="border-t border-zvv-border pt-4">
+          <button
+            type="submit"
+            formAction={clearAction}
+            disabled={pending || clearPending}
+            className="min-h-[44px] rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-800 transition hover:bg-red-100 disabled:opacity-50"
+          >
+            {clearPending ? "Verwijderen…" : "Teamfoto van website verwijderen"}
+          </button>
+          <p className="mt-2 text-xs text-zvv-muted">
+            De homepage toont dan de placeholder tot er een nieuwe foto is geüpload. Archiefbestanden blijven behouden.
+          </p>
+        </div>
       ) : null}
     </form>
   );

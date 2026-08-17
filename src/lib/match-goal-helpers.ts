@@ -22,7 +22,7 @@ export function goalRowsFromPlayerCounts(
     for (let i = 0; i < g; i++) slots.push({ scorer_player_id: pid });
   }
   if (totalAssists > slots.length) {
-    return { ok: false, error: "Goals komen niet overeen met totaal" };
+    return { ok: false, error: "Doelpunten komen niet overeen met het totaal" };
   }
   const assistQueue: string[] = [];
   for (const pid of selectedPlayerIds) {
@@ -35,7 +35,7 @@ export function goalRowsFromPlayerCounts(
     if (idx === -1) {
       return {
         ok: false,
-        error: "Goals komen niet overeen met totaal",
+        error: "Doelpunten komen niet overeen met het totaal",
       };
     }
     goals[idx] = { ...goals[idx], assist_player_id: assistPid };

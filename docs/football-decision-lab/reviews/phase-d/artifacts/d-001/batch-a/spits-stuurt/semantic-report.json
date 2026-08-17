@@ -1,0 +1,35 @@
+{
+  "order": 6,
+  "sessionId": "FDL-DS-ST-STEER-PIN-V1",
+  "slug": "spits-stuurt",
+  "family": "press-steer",
+  "activeRole": "us.SP",
+  "supportRoles": [
+    "us.RW",
+    "us.10",
+    "us.R6"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+  "ballHolder": "opp.cbL",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-spits-stuurt-live",
+    "good": "fdl-ds-spits-stuurt-good",
+    "bad": "fdl-ds-spits-stuurt-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

@@ -1,0 +1,26 @@
+{
+  "order": 2,
+  "sessionId": "FDL-DS-INSIDE-CLOSE-LW-PRESS-V1",
+  "slug": "binnenkant-dicht-lw",
+  "activeRole": "us.LW",
+  "freezeMs": 7200,
+  "previewMs": 5800,
+  "liveDurationMs": 10800,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-freeze"
+  ],
+  "mobileFocusIds": [
+    "us.LW",
+    "us.L6",
+    "us.LB",
+    "us.10"
+  ],
+  "ballHolderOpening": "opp.cbR",
+  "freezeEvaluates": true,
+  "authored": true
+}

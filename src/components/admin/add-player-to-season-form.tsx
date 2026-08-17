@@ -65,25 +65,25 @@ export function AddPlayerToSeasonForm({
         ) : null}
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-        Linie (enum)
+        Positiegroep
         <select name="position" className={inputCls}>
-          <option value="GK">GK — keeper</option>
-          <option value="DEF">DEF — verdediging</option>
-          <option value="MID">MID — middenveld</option>
-          <option value="ATT">ATT — aanval</option>
+          <option value="GK">Keeper</option>
+          <option value="DEF">Verdediging</option>
+          <option value="MID">Middenveld</option>
+          <option value="ATT">Aanval</option>
         </select>
         {fieldMessage(fe, "position") ? (
           <span className="block text-xs font-normal text-red-300">{fieldMessage(fe, "position")}</span>
         ) : null}
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
-        Positie (tekst op site)
+        Positie
         <textarea
           name="display_position"
           required
           rows={2}
           className={`${inputCls} min-h-[4.5rem] resize-y py-3`}
-          placeholder="Exacte rol op het veld"
+          placeholder="Bijv. Centrale verdediger"
         />
         {fieldMessage(fe, "display_position") ? (
           <span className="block text-xs font-normal text-red-300">{fieldMessage(fe, "display_position")}</span>

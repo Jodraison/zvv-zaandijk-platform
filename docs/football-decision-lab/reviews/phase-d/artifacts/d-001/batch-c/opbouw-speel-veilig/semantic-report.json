@@ -1,0 +1,35 @@
+{
+  "order": 13,
+  "sessionId": "FDL-DS-BUILD-UNDER-PRESS-SAFE-V1",
+  "slug": "opbouw-speel-veilig",
+  "family": "build-safe",
+  "activeRole": "us.RCV",
+  "supportRoles": [
+    "us.LCV",
+    "us.R6",
+    "us.RB"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "canonical-4-2-3-1-start",
+  "ballHolder": "us.RCV",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-opbouw-speel-veilig-live",
+    "good": "fdl-ds-opbouw-speel-veilig-good",
+    "bad": "fdl-ds-opbouw-speel-veilig-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

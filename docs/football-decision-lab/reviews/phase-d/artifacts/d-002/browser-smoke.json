@@ -1,0 +1,9 @@
+{
+  "consoleErrors": [],
+  "overflow": {
+    "390x844": false,
+    "360x800": false,
+    "320x568": false
+  },
+  "base": "http://localhost:3003"
+}

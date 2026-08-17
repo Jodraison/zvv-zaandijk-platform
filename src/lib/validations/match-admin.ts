@@ -4,17 +4,19 @@ import { matchLineupPayloadSchema } from "@/lib/validations/match-lineup";
 import { matchCardEventsPayloadSchema, matchMinuteSchema } from "@/lib/validations/match-events";
 import { matchSubstitutionsPayloadSchema } from "@/lib/validations/match-substitutions";
 
-const optionalMatchText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max)
-    .optional()
-    .or(z.literal(""))
-    .transform((s) => {
-      const t = (s ?? "").trim();
-      return t || null;
-    });
+/**
+ * Optionele tekstvelden: string | "" | null | undefined → trim of null.
+ * Belangrijk: null mag niet falen (formulier stuurt lege optionals als null).
+ */
+const optionalMatchText = (max: number, label: string) =>
+  z.preprocess(
+    (raw) => (raw == null ? "" : String(raw)),
+    z
+      .string()
+      .trim()
+      .max(max, `${label}: maximaal ${max} tekens.`)
+      .transform((t) => t || null),
+  );
 
 export const matchAdminGoalRowSchema = z.object({
   scorer_player_id: z.string().min(1),
@@ -26,22 +28,24 @@ export const matchAdminPayloadSchema = z
   .object({
     match_id: z.string().optional().or(z.literal("")),
     season_id: z.string().min(1, "Seizoen ontbreekt"),
-    opponent: z.string().trim().min(1, "Tegenstander is verplicht"),
-    kickoff_at: z.string().min(1, "Datum en tijd zijn verplicht"),
+    opponent: z.string().trim().min(1, "Vul een tegenstander in."),
+    kickoff_at: z.string().min(1, "Kies een geldige wedstrijddatum en aanvangstijd."),
     is_home: z.boolean(),
     match_type: matchTypeSchema,
-    location: optionalMatchText(200),
-    referee: optionalMatchText(120),
-    notes: optionalMatchText(2000),
+    location: optionalMatchText(200, "Locatie"),
+    referee: optionalMatchText(120, "Scheidsrechter"),
+    notes: optionalMatchText(2000, "Notities"),
     status: matchStatusSchema,
-    goals_for: z.coerce.number().int().min(0).max(99),
-    goals_against: z.coerce.number().int().min(0).max(99),
+    goals_for: z.coerce.number().int().min(0, "Doelpunten voor kunnen niet negatief zijn.").max(99),
+    goals_against: z.coerce.number().int().min(0, "Doelpunten tegen kunnen niet negatief zijn.").max(99),
     selected_player_ids: z.array(z.string().min(1)),
     goals: z.array(matchAdminGoalRowSchema),
     wotm_player_id: z.string().optional().or(z.literal("")),
     lineup: matchLineupPayloadSchema,
     cards: matchCardEventsPayloadSchema,
     substitutions: matchSubstitutionsPayloadSchema,
+    /** Wanneer true: wissels/positiewijzigingen worden via MatchShapeEventsEditor beheerd. */
+    preserve_shape_events: z.boolean().optional().default(false),
   })
   .superRefine((data, ctx) => {
     const assistNorm = (a: string | null | undefined) => (typeof a === "string" && a.trim() ? a.trim() : undefined);
@@ -73,14 +77,21 @@ export const matchAdminPayloadSchema = z
       if (data.goals_for !== 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Goals voor moet 0 zijn als wedstrijd niet gespeeld is",
+          message: "Een geplande wedstrijd hoeft nog geen uitslag te hebben.",
           path: ["goals_for"],
+        });
+      }
+      if (data.goals_against !== 0) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Een geplande wedstrijd hoeft nog geen uitslag te hebben.",
+          path: ["goals_against"],
         });
       }
       if (data.goals.length > 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Alleen bij status ‘gespeeld’ kun je doelpunten invoeren",
+          message: "Doelpunten pas na de wedstrijd — kies eerst ‘Wedstrijd afronden’.",
           path: ["goals"],
         });
       }
@@ -129,7 +140,7 @@ export const matchAdminPayloadSchema = z
       if (ast && !sel.has(ast)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Assistent moet in de wedstrijdselectie zitten",
+          message: "Assistgever moet in de wedstrijdselectie zitten",
           path: ["goals", i, "assist_player_id"],
         });
       }

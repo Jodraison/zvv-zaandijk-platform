@@ -4,8 +4,10 @@ import { Badge } from "@/components/layout/badge";
 import { AddPlayerToSeasonForm } from "@/components/admin/add-player-to-season-form";
 import { SeasonCreateForm } from "@/components/admin/season-create-form";
 import { SetActiveSeasonForm } from "@/components/admin/set-active-season-form";
+import { requireAdmin } from "@/lib/auth/require-admin";
 
 export default async function BeheerSeizoenenPage() {
+  await requireAdmin({ capability: "manage_seasons", forbiddenRedirect: "/beheer" });
   const db = await readDb();
 
   return (

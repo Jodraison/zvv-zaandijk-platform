@@ -1,0 +1,131 @@
+{
+  "overflow": {
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "overflow": false,
+    "fieldW": 698,
+    "bodyText": "Z\nZVV Zaandijk\nZAANDIJK VRZ1\nHome\nSelectie\nWedstrijden\nRanking\nStatistieken\nAcademie\nTraining\nFitheid\nSeizoenen\nSEIZOEN\n2026/27 Competitie · actief\n2025/26 Competitie\n\nFOOTBALL ACADEMY\n\nJe eerste beslissessie\n\nTrain je keuzes. Begrijp je rol. Speel als team.\n\nZ\n\nWIJ\n\nZVV Zaandijk · Blauw\n\n→\n\nSPEELRICHTING\n\nWij vallen aan →\n\nRW\n\nJOUW ROL\n\nRechtsbuiten · RW\n\nEERSTE BESLISSING\n\nHun back krijgt de bal.\nWat sluit jij eerst?\nJOUW ROL\nRW\nDUUR\n3–4 min\nNIVEAU\nBasis\n▶\nStart eerste beslissessie\n\nDruk herkennen · Decision Lab\n\nOnze basis: 4-2-3-1\n\nOnze basis\nTegenstander\nSituatie\nBekijk opstelling\n\nSITUATIE\n\nOnze basis: 4-2-3-1\n\nZVV Zaandijk — wij vallen naar rechts aan\n\nWIJ — ZVV ZAANDIJK\nTEGENSTANDER\nAanval →\nWij bouwen op\nJouw rol: RW\nOnze basis: 4-2-3-1\n\nSITUATIE\n\nWij houden het veld groot in 4-2-3-1.\n\nAANVAL →\n10\nGK\nLB\nLCB\nRCB\nRB\n6\n8\nLW\nRW\nST\nWat gebeurt er in een sessie?\n1. Bekijk\n\nZie de situatie op het veld.\n\n2. Beslis\n\nKies wat jij eerst doet.\n\n3. Zie het gevolg\n\nGoed of fout — en waarom.\n\nLEERPAD\n\nDecision Lab\n\n18 sessies · actief\n\nOpen Decision Lab\n\nDaarna in de route\n\nSpiegel · Linksbuiten · Zelfde wet\n3–4 min · Basis\nLP-003 · Stabiele wedstrijdkeuze\n3–5 min · Midden\n\nLater in de Academy\n\nSpeelwijze\nPosities\nTeamprincipes"
+  },
+  "consoleErrors": [],
+  "shots": [
+    {
+      "viewport": "1440x900",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "teach sequence starts at 4-2-3-1",
+      "attackDirection": "right (→)",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "01-untouched-1440x900.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "1280x720",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "base/teach frames",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "02-untouched-1280x720.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "390x844",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "stacked + vergroot veld",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "notes": "mobile first-use stack",
+      "file": "03-untouched-390x844.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "1440x900",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "Onze basis: 4-2-3-1 (blue only)",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "07-formation-frame-4231.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "1440x900",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "4231 + red context",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "08-opponent-context-frame.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "1440x900",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "press occupation from 4231",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "09-golden-session-opening.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "390x844",
+      "progressState": "untouched",
+      "ourTeamColor": "blue",
+      "formationVisibility": "expanded modal field",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "10-mobile-expanded-pitch.png",
+      "ctaText": "▶ Start eerste beslissessie"
+    },
+    {
+      "viewport": "1440x900",
+      "progressState": "opened",
+      "ourTeamColor": "blue",
+      "formationVisibility": "returning preview",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "04-opened-desktop.png",
+      "ctaText": "▶ Ga verder met je sessie"
+    },
+    {
+      "viewport": "1440x900",
+      "progressState": "in_progress",
+      "ourTeamColor": "blue",
+      "formationVisibility": "returning preview",
+      "attackDirection": "right",
+      "activeRole": "RW",
+      "essentialLabelsReadable": true,
+      "file": "05-in-progress-desktop.png",
+      "ctaText": "▶ Ga verder met je sessie"
+    },
+    {
+      "viewport": "1440x900",
+      "progressState": "opened (first completed → next)",
+      "ourTeamColor": "blue",
+      "formationVisibility": "next session preview",
+      "attackDirection": "right",
+      "activeRole": "varies by next session",
+      "essentialLabelsReadable": true,
+      "file": "06-completed-first-desktop.png",
+      "ctaText": "▶ Start volgende sessie"
+    }
+  ],
+  "gates": {
+    "untouchedStartCta": true,
+    "untouchedNoGaVerder": true,
+    "fieldMinDesktop": true,
+    "noHorizontalOverflow": true,
+    "noHervatten": true,
+    "noRecentUntouched": true
+  }
+}

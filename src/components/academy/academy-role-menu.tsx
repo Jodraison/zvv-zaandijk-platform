@@ -77,8 +77,8 @@ export function AcademyRoleMenu({ grants }: { grants: AcademyRoleGrants }) {
 
           <RoleLink
             href={academyRoutes.teamCaptain}
-            label="Captain"
-            badge="Captain"
+            label="Aanvoerder"
+            badge="Aanvoerder"
             enabled={grants.canCaptain}
             lockedHint={ACADEMY_CAPTAIN_LOCKED_HINT}
             onNavigate={() => setOpen(false)}

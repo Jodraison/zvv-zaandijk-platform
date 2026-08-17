@@ -1,0 +1,26 @@
+{
+  "order": 6,
+  "sessionId": "FDL-DS-ST-STEER-PIN-V1",
+  "slug": "spits-stuurt",
+  "activeRole": "us.SP",
+  "freezeMs": 7400,
+  "previewMs": 6000,
+  "liveDurationMs": 10600,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-freeze"
+  ],
+  "mobileFocusIds": [
+    "us.SP",
+    "us.RW",
+    "us.10",
+    "us.R6"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

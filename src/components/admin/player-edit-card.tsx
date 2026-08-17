@@ -9,6 +9,11 @@ import { DeletePlayerButton } from "@/components/admin/delete-player-button";
 import { initialAdminFormState, fieldMessage } from "@/lib/forms/admin-action-state";
 import { AdminFormBanner } from "@/components/admin/admin-form-message";
 import { PlayerPhotoUploadForm } from "@/components/admin/player-photo-upload-form";
+import {
+  birthDateToPreviewDatum,
+  buildBirthdayAdminPreviewHref,
+  formatBirthDateFullNL,
+} from "@/lib/players/birthdays";
 
 const inputCls =
   "min-h-[44px] w-full rounded-xl border border-zvv-border bg-white px-4 py-2.5 text-sm text-zvv-ink outline-none focus:border-zvv-primary/50 focus:ring-2 focus:ring-zvv-primary/15";
@@ -30,6 +35,7 @@ export function PlayerEditCard({
   strengths,
   bio,
   cardNote,
+  birthDate = null,
   isGuest = false,
 }: {
   seasonId: string;
@@ -48,6 +54,7 @@ export function PlayerEditCard({
   strengths?: string | null;
   bio?: string | null;
   cardNote?: string | null;
+  birthDate?: string | null;
   isGuest?: boolean;
 }) {
   const router = useRouter();
@@ -86,8 +93,22 @@ export function PlayerEditCard({
           href={`/beheer/disputes?season=${encodeURIComponent(seasonId)}&player=${encodeURIComponent(playerId)}`}
           className="rounded-full border border-zvv-border bg-white px-2.5 py-1 text-[10px] font-black tracking-wider text-zvv-muted hover:text-zvv-primary"
         >
-          DISPUTE BREAKDOWN
+          Correcties
         </Link>
+        {birthDate ? (
+          <a
+            href={buildBirthdayAdminPreviewHref({
+              seasonId,
+              datum: birthDateToPreviewDatum(birthDate) ?? birthDate,
+            })}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-full border border-zvv-primary/30 bg-zvv-primary-muted px-2.5 py-1 text-[10px] font-black tracking-wider text-zvv-primary hover:opacity-90"
+            data-testid="player-birthday-preview-link"
+          >
+            Bekijk verjaardag op homepage
+          </a>
+        ) : null}
       </div>
       {state.status !== "idle" ? (
         <div className="mb-4">
@@ -113,11 +134,11 @@ export function PlayerEditCard({
           <input name="preferred_foot" defaultValue={preferredFoot ?? ""} className={inputCls} />
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-          Rol label
+          Rol binnen het team
           <input name="role_label" defaultValue={roleLabel ?? ""} className={inputCls} />
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2 lg:col-span-full">
-          Tagline
+          Korte profieltekst
           <input name="tagline" defaultValue={tagline ?? ""} className={inputCls} />
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2 lg:col-span-full">
@@ -129,8 +150,32 @@ export function PlayerEditCard({
           <textarea name="bio" rows={2} defaultValue={bio ?? ""} className={`${inputCls} min-h-[4.5rem] resize-y py-3`} />
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2 lg:col-span-full">
-          Card note
+          Interne spelersnotitie
           <input name="card_note" defaultValue={cardNote ?? ""} className={inputCls} />
+        </label>
+        <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2 lg:col-span-full">
+          Geboortedatum
+          <input
+            name="birth_date"
+            type="date"
+            defaultValue={birthDate ?? ""}
+            className={inputCls}
+          />
+          <span className="block text-xs font-normal normal-case tracking-normal text-zvv-muted">
+            Wordt gebruikt om verjaardagen te tonen. De volledige geboortedatum is niet openbaar zichtbaar.
+          </span>
+          {fieldMessage(fe, "birth_date") ? (
+            <span className="block text-xs font-normal text-rose-700">{fieldMessage(fe, "birth_date")}</span>
+          ) : null}
+          {!birthDate ? (
+            <span className="mt-1 block text-xs font-normal normal-case tracking-normal text-amber-800/90">
+              Geboortedatum ontbreekt
+            </span>
+          ) : (
+            <span className="mt-1 block text-xs font-normal normal-case tracking-normal text-zvv-muted">
+              Geboortedatum: {formatBirthDateFullNL(birthDate)}
+            </span>
+          )}
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
           #
@@ -140,19 +185,19 @@ export function PlayerEditCard({
           ) : null}
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-          Linie (enum)
+          Positiegroep
           <select name="position" defaultValue={position} className={inputCls}>
-            <option value="GK">GK — keeper</option>
-            <option value="DEF">DEF — verdediging</option>
-            <option value="MID">MID — middenveld</option>
-            <option value="ATT">ATT — aanval</option>
+            <option value="GK">Keeper</option>
+            <option value="DEF">Verdediging</option>
+            <option value="MID">Middenveld</option>
+            <option value="ATT">Aanval</option>
           </select>
           {fieldMessage(fe, "position") ? (
             <span className="block text-xs font-normal text-red-300">{fieldMessage(fe, "position")}</span>
           ) : null}
         </label>
         <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2 lg:col-span-full">
-          Positie (tekst op site)
+          Positie
           <textarea
             name="display_position"
             required
@@ -188,7 +233,7 @@ export function PlayerEditCard({
           <p className="text-[10px] font-bold uppercase tracking-wider text-zvv-muted">Aanvoering (één C en één VC per seizoen)</p>
           <label className="flex min-h-[44px] cursor-pointer items-center gap-3">
             <input type="checkbox" name="is_captain" defaultChecked={isCaptain} className="h-4 w-4 rounded border-zvv-border text-zvv-primary" />
-            <span className="text-sm text-zvv-ink">Captain (C) — zet bij anderen uit</span>
+            <span className="text-sm text-zvv-ink">Aanvoerder (C) — zet bij anderen uit</span>
           </label>
           <label className="flex min-h-[44px] cursor-pointer items-center gap-3">
             <input
@@ -197,7 +242,7 @@ export function PlayerEditCard({
               defaultChecked={isViceCaptain}
               className="h-4 w-4 rounded border-zvv-border text-zvv-primary"
             />
-            <span className="text-sm text-zvv-ink">Vice-captain (VC) — zet bij anderen uit</span>
+            <span className="text-sm text-zvv-ink">Vice-aanvoerder (VC) — zet bij anderen uit</span>
           </label>
         </div>
       </form>

@@ -1,4 +1,5 @@
 import type { ClubDatabase } from "@/types";
+import { sessionsCountingForAttendance } from "@/lib/training/training-status";
 
 export type TrainingWindow = "4w" | "8w" | "season";
 
@@ -31,20 +32,30 @@ function windowFromDate(window: TrainingWindow): Date | null {
   return d;
 }
 
+function expectedSquadCount(db: ClubDatabase, seasonId: string): number {
+  return db.player_season_memberships.filter((m) => {
+    if (m.season_id !== seasonId) return false;
+    return !db.players.find((p) => p.id === m.player_id)?.is_guest && !m.is_guest;
+  }).length;
+}
+
 export function computeTrainingAttendanceStats(
   db: ClubDatabase,
   seasonId: string,
   window: TrainingWindow = "season",
+  now = new Date(),
 ): TrainingAttendanceStatRow[] {
   const from = windowFromDate(window);
+  const expected = expectedSquadCount(db, seasonId);
 
-  const sessions = db.training_sessions.filter((s) => {
-    if (s.season_id !== seasonId) return false;
-    if (s.status !== "completed") return false;
-    if (!from) return true;
-    return new Date(s.session_at) >= from;
-  });
-  const sessionIds = new Set(sessions.map((s) => s.id));
+  const eligible = sessionsCountingForAttendance(
+    db.training_sessions.filter((s) => s.season_id === seasonId),
+    db.training_attendance,
+    expected,
+    now,
+  ).filter((s) => (!from ? true : new Date(s.session_at) >= from));
+
+  const sessionIds = new Set(eligible.map((s) => s.id));
 
   const members = db.player_season_memberships
     .filter((m) => m.season_id === seasonId)
@@ -77,13 +88,19 @@ export function computeTrainingSessionStats(
   db: ClubDatabase,
   seasonId: string,
   window: TrainingWindow = "season",
+  now = new Date(),
 ): TrainingSessionAttendanceStat[] {
   const from = windowFromDate(window);
   const members = db.player_season_memberships
     .filter((m) => m.season_id === seasonId)
     .filter((m) => !db.players.find((p) => p.id === m.player_id)?.is_guest);
-  const sessions = db.training_sessions
-    .filter((s) => s.season_id === seasonId && s.status === "completed")
+  const expected = members.length;
+  const sessions = sessionsCountingForAttendance(
+    db.training_sessions.filter((s) => s.season_id === seasonId),
+    db.training_attendance,
+    expected,
+    now,
+  )
     .filter((s) => (!from ? true : new Date(s.session_at) >= from))
     .sort((a, b) => a.session_at.localeCompare(b.session_at));
   return sessions.map((s) => {

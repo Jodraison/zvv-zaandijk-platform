@@ -14,6 +14,9 @@ import { normalizeMutationError } from "@/lib/forms/admin-action-state";
 import type { MatchAdminActionResult, MatchAdminFormState } from "@/lib/admin/match-admin-types";
 import type { MatchVerificationPayload } from "@/lib/admin/verification-types";
 import { membershipPositionLabel, validateMatchLineup } from "@/lib/match-lineup";
+import { assignStableGoalEventIds, collectMatchIntegrityIssues } from "@/lib/admin/match-save-contract";
+import { isFormationSlotCode } from "@/lib/match/formation-4231";
+import { shouldPreserveExistingLineup } from "@/lib/match/match-planning";
 
 type MatchVerificationCore = {
   match_id: string;
@@ -55,46 +58,82 @@ function rebuildStatsFromPersistedEvents(
   };
 }
 
+const FIELD_ERROR_NL: Record<string, string> = {
+  opponent: "Vul een tegenstander in.",
+  kickoff_at: "Kies een geldige wedstrijddatum en aanvangstijd.",
+  match_type: "Kies een wedstrijdtype.",
+  status: "Kies een geldige status.",
+  location: "Controleer de locatie.",
+  referee: "Controleer de scheidsrechter.",
+  notes: "Controleer de notities.",
+  goals_for: "Controleer goals voor.",
+  goals_against: "Controleer goals tegen.",
+  selected_player_ids: "Controleer de wedstrijdselectie.",
+  goals: "Controleer de doelpunten.",
+  wotm_player_id: "Kies een MVP.",
+  lineup: "Controleer de opstelling.",
+};
+
+function humanizeZodMessage(path: string, message: string): string {
+  if (message && message !== "Invalid input" && message !== "Required" && !message.startsWith("Invalid ")) {
+    return message;
+  }
+  const root = path.split(".")[0] ?? path;
+  return FIELD_ERROR_NL[root] ?? FIELD_ERROR_NL[path] ?? "Controleer dit veld.";
+}
+
 function flattenZodErrors(err: z.ZodError): Record<string, string[]> {
   const out: Record<string, string[]> = {};
   for (const issue of err.issues) {
     const path = issue.path.length ? issue.path.join(".") : "_root";
     if (!out[path]) out[path] = [];
-    out[path].push(issue.message);
+    out[path].push(humanizeZodMessage(path, issue.message));
   }
   return out;
 }
 
 function verifyMatchIntegrity(db: import("@/types").ClubDatabase, matchId: string): MatchVerificationCore {
   const match = db.matches.find((m) => m.id === matchId);
-  if (!match) throw new Error("Post-validatie: wedstrijd niet gevonden.");
+  if (!match) throw new Error("Controle mislukt: wedstrijd niet gevonden na opslaan.");
   const events = db.match_goal_events.filter((e) => e.match_id === matchId);
   const stats = db.match_player_stats.filter((s) => s.match_id === matchId);
-  if (match.status !== "played") {
-    if (events.length > 0 || stats.some((s) => s.goals > 0 || s.assists > 0)) {
-      throw new Error("Post-validatie: niet-gespeelde wedstrijd bevat events/stats.");
-    }
-    if (match.goals_for !== 0 || match.wotm_player_id) {
-      throw new Error("Post-validatie: niet-gespeelde wedstrijd heeft goals_for/MVP.");
-    }
-    return {
-      match_id: matchId,
-      persisted_goal_events_count: 0,
-      persisted_derived_goals_count: 0,
-      persisted_assist_events_count: 0,
-      persisted_derived_assists_count: 0,
-      persisted_mvp_player_id: "",
-    };
-  }
-  if (match.goals_for !== events.length) throw new Error("Post-validatie: goals_for mismatch met events.");
   const goalsFromStats = stats.reduce((a, s) => a + s.goals, 0);
   const assistsFromStats = stats.reduce((a, s) => a + s.assists, 0);
   const assistsFromEvents = events.filter((e) => !!e.assist_player_id).length;
-  if (goalsFromStats !== events.length) throw new Error("Post-validatie: stat-goals mismatch met events.");
-  if (assistsFromStats !== assistsFromEvents) throw new Error("Post-validatie: stat-assists mismatch met events.");
-  if (!match.wotm_player_id) throw new Error("Post-validatie: MVP ontbreekt.");
-  if (!db.players.some((p) => p.id === match.wotm_player_id)) {
-    throw new Error("Post-validatie: MVP verwijst naar onbekende speler.");
+  const lineupPlayerIds = new Set(
+    db.match_lineup_entries.filter((e) => e.match_id === matchId && e.role !== "absent").map((e) => e.player_id),
+  );
+  const eventPlayerIds = new Set<string>();
+  for (const e of events) {
+    eventPlayerIds.add(e.scorer_player_id);
+    if (e.assist_player_id) eventPlayerIds.add(e.assist_player_id);
+  }
+  const mvpOk =
+    !match.wotm_player_id ||
+    lineupPlayerIds.has(match.wotm_player_id) ||
+    eventPlayerIds.has(match.wotm_player_id) ||
+    stats.some((s) => s.player_id === match.wotm_player_id) ||
+    db.players.some((p) => p.id === match.wotm_player_id);
+  const issues = collectMatchIntegrityIssues({
+    status: match.status,
+    goalsFor: match.goals_for,
+    goalEventCount: events.length,
+    assistEventCount: assistsFromEvents,
+    statsGoalSum: goalsFromStats,
+    statsAssistSum: assistsFromStats,
+    mvpPlayerId: match.wotm_player_id,
+    mvpInSelection: match.wotm_player_id
+      ? lineupPlayerIds.has(match.wotm_player_id) ||
+        eventPlayerIds.has(match.wotm_player_id) ||
+        stats.some((s) => s.player_id === match.wotm_player_id) ||
+        db.players.some((p) => p.id === match.wotm_player_id)
+      : false,
+  });
+  if (issues.length > 0) {
+    throw new Error(issues[0]!.message);
+  }
+  if (match.status === "played" && match.wotm_player_id && !mvpOk) {
+    throw new Error("MVP verwijst naar een onbekende speelster.");
   }
   return {
     match_id: matchId,
@@ -102,7 +141,7 @@ function verifyMatchIntegrity(db: import("@/types").ClubDatabase, matchId: strin
     persisted_derived_goals_count: goalsFromStats,
     persisted_assist_events_count: assistsFromEvents,
     persisted_derived_assists_count: assistsFromStats,
-    persisted_mvp_player_id: match.wotm_player_id,
+    persisted_mvp_player_id: match.wotm_player_id ?? "",
   };
 }
 
@@ -110,7 +149,45 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
   const parsed = matchAdminPayloadSchema.safeParse(raw);
   if (!parsed.success) {
     const fieldErrors = flattenZodErrors(parsed.error);
-    const first = parsed.error.issues[0]?.message ?? "Controleer het formulier.";
+    const firstPath = parsed.error.issues[0]?.path?.join(".") ?? "_root";
+    const firstRaw = parsed.error.issues[0]?.message ?? "Controleer het formulier.";
+    const first = humanizeZodMessage(firstPath, firstRaw);
+    // Ontwikkelartifact zonder secrets — helpt veldspecifieke debugging.
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const fs = await import("fs/promises");
+        const path = await import("path");
+        const dir = path.join(process.cwd(), ".review-backups", "functional-chain-recovery");
+        await fs.mkdir(dir, { recursive: true });
+        await fs.writeFile(
+          path.join(dir, "last-match-validation-error.json"),
+          JSON.stringify(
+            {
+              at: new Date().toISOString(),
+              first,
+              fieldErrors,
+              issues: parsed.error.issues.map((i) => ({ path: i.path, code: i.code, message: i.message })),
+              payloadKeys: raw && typeof raw === "object" ? Object.keys(raw as object) : [],
+              payloadPreview: {
+                opponent: (raw as { opponent?: unknown })?.opponent,
+                status: (raw as { status?: unknown })?.status,
+                location: (raw as { location?: unknown })?.location,
+                referee: (raw as { referee?: unknown })?.referee,
+                notes: (raw as { notes?: unknown })?.notes,
+                goals_for: (raw as { goals_for?: unknown })?.goals_for,
+                goals_against: (raw as { goals_against?: unknown })?.goals_against,
+                kickoff_at: (raw as { kickoff_at?: unknown })?.kickoff_at,
+              },
+            },
+            null,
+            2,
+          ),
+          "utf8",
+        );
+      } catch {
+        /* ignore artifact write failures */
+      }
+    }
     return { ok: false, error: first, fieldErrors };
   }
 
@@ -150,14 +227,16 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
     if (!cardCheck.ok) {
       return { ok: false, error: cardCheck.error, fieldErrors: cardCheck.fieldErrors };
     }
-    const subCheck = validateMatchSubstitutions(
-      dbForLineup,
-      data.selected_player_ids,
-      data.lineup,
-      data.substitutions,
-    );
-    if (!subCheck.ok) {
-      return { ok: false, error: subCheck.error, fieldErrors: subCheck.fieldErrors };
+    if (!data.preserve_shape_events) {
+      const subCheck = validateMatchSubstitutions(
+        dbForLineup,
+        data.selected_player_ids,
+        data.lineup,
+        data.substitutions,
+      );
+      if (!subCheck.ok) {
+        return { ok: false, error: subCheck.error, fieldErrors: subCheck.fieldErrors };
+      }
     }
   }
 
@@ -207,19 +286,37 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
 
       const beforeEvents = db.match_goal_events
         .filter((e) => e.match_id === matchId)
-        .map((e) => ({ scorer_player_id: e.scorer_player_id, assist_player_id: e.assist_player_id ?? null, sort_order: e.sort_order }));
+        .map((e) => ({
+          id: e.id,
+          scorer_player_id: e.scorer_player_id,
+          assist_player_id: e.assist_player_id ?? null,
+          minute: e.minute,
+          sort_order: e.sort_order,
+        }));
       const beforeStats = db.match_player_stats.filter((s) => s.match_id === matchId);
       const beforeMatch = db.matches.find((m) => m.id === matchId) ?? null;
       beforeSnapshot = {
         match_id: matchId,
-        events: beforeEvents,
+        events: beforeEvents.map((e) => ({
+          scorer_player_id: e.scorer_player_id,
+          assist_player_id: e.assist_player_id,
+          sort_order: e.sort_order,
+        })),
         stats: beforeStats,
         mvp_player_id: beforeMatch?.wotm_player_id ?? null,
       };
       db.match_player_stats = db.match_player_stats.filter((s) => s.match_id !== matchId);
       db.match_goal_events = db.match_goal_events.filter((e) => e.match_id !== matchId);
       db.match_card_events = db.match_card_events.filter((e) => e.match_id !== matchId);
-      db.match_substitutions = db.match_substitutions.filter((e) => e.match_id !== matchId);
+      const existingLineupCount = db.match_lineup_entries.filter((e) => e.match_id === matchId).length;
+      const preservedFormationSlots = new Map(
+        db.match_lineup_entries
+          .filter((e) => e.match_id === matchId && e.role === "starter" && isFormationSlotCode(e.position))
+          .map((e) => [e.player_id, e.position as string]),
+      );
+      if (!data.preserve_shape_events) {
+        db.match_substitutions = db.match_substitutions.filter((e) => e.match_id !== matchId);
+      }
 
       let goals_for = 0;
       let wotm: string | null = null;
@@ -227,23 +324,27 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       if (played) {
         const { goals_for: gf, events } = aggregateStatsFromGoals(matchId, data.selected_player_ids, goalsPayload);
         if (gf !== goalsPayload.length) {
-          throw new Error("Goals komen niet overeen met totaal");
+          throw new Error("Doelpunten komen niet overeen met de eindstand.");
         }
         goals_for = gf;
         if (goals_for !== data.goals_for) {
-          throw new Error("Goals voor komt niet overeen met aantal doelpunten.");
+          throw new Error("Eindstand (voor) komt niet overeen met het aantal doelpunten.");
         }
         wotm = data.wotm_player_id?.trim() || null;
         if (!wotm) {
           throw new Error("Kies een MVP (speelster van de wedstrijd).");
         }
         if (!data.selected_player_ids.includes(wotm)) {
-          throw new Error("MVP niet in selectie");
+          throw new Error("De MVP moet in de wedstrijdselectie staan.");
         }
-        const withIds: MatchGoalEvent[] = events.map((e) => ({
-          ...e,
-          id: randomUUID(),
-        }));
+        const withIds = assignStableGoalEventIds(
+          events.map((e, index) => ({
+            ...e,
+            sort_order: e.sort_order ?? index,
+          })),
+          beforeEvents,
+          () => randomUUID(),
+        );
         db.match_goal_events.push(...withIds);
         const rebuilt = rebuildStatsFromPersistedEvents(db, matchId);
         for (const id of rebuilt.affectedPlayerIds) affectedPlayerIds.add(id);
@@ -253,6 +354,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         rebuildStatsFromPersistedEvents(db, matchId);
       }
 
+      const existing = db.matches.find((m) => m.id === matchId);
       const row = {
         id: matchId,
         season_id: data.season_id,
@@ -268,25 +370,47 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         status: data.status,
         wotm_player_id: wotm,
         integrity_state: "invalid" as const,
+        lineup_status: existing?.lineup_status ?? "draft",
+        lineup_confirmed_at: existing?.lineup_confirmed_at ?? null,
       };
 
-      const existing = db.matches.find((m) => m.id === matchId);
       auditAction = existing ? "update" : "create";
       if (existing) Object.assign(existing, row);
-      else db.matches.push(row);
+      else db.matches.push({ ...row, data_scope: "production" });
 
-      db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.match_id !== matchId);
-      const lineupSeasonId = existing?.season_id ?? data.season_id;
-      const lineupRows: MatchLineupEntry[] = data.lineup.map((entry, index) => ({
-        id: randomUUID(),
-        match_id: matchId,
-        player_id: entry.player_id,
-        role: entry.role,
-        position: entry.position ?? membershipPositionLabel(db, lineupSeasonId, entry.player_id),
-        absence_reason: entry.role === "absent" ? entry.absence_reason : null,
-        sort_order: entry.sort_order ?? index,
-      }));
-      db.match_lineup_entries.push(...lineupRows);
+      // Afrond/controle met preserve_shape_events: behoud bevestigde 1-4-2-3-1-slots.
+      // Het admin-formulier stuurt membership-labels i.p.v. slotcodes; herschrijven
+      // zou publieke leegtes op het veld veroorzaken.
+      const keepConfirmedFormation =
+        data.preserve_shape_events && preservedFormationSlots.size === 11;
+      const preserveExistingLineup = shouldPreserveExistingLineup({
+        status: data.status,
+        incomingLineupCount: data.lineup.length,
+        existingLineupCount,
+      });
+      if (!keepConfirmedFormation && !preserveExistingLineup) {
+        db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.match_id !== matchId);
+        const lineupSeasonId = existing?.season_id ?? data.season_id;
+        const lineupRows: MatchLineupEntry[] = data.lineup.map((entry, index) => {
+          const preserved =
+            entry.role === "starter" ? preservedFormationSlots.get(entry.player_id) : undefined;
+          const incoming = entry.position && isFormationSlotCode(entry.position) ? entry.position : null;
+          return {
+            id: randomUUID(),
+            match_id: matchId,
+            player_id: entry.player_id,
+            role: entry.role,
+            position:
+              incoming ??
+              preserved ??
+              entry.position ??
+              membershipPositionLabel(db, lineupSeasonId, entry.player_id),
+            absence_reason: entry.role === "absent" ? entry.absence_reason : null,
+            sort_order: entry.sort_order ?? index,
+          };
+        });
+        db.match_lineup_entries.push(...lineupRows);
+      }
 
       if (played) {
         const cardRows: MatchCardEvent[] = data.cards.map((c) => ({
@@ -298,14 +422,21 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         }));
         db.match_card_events.push(...cardRows);
 
-        const subRows: MatchSubstitution[] = data.substitutions.map((s) => ({
-          id: randomUUID(),
-          match_id: matchId,
-          player_in_id: s.player_in_id,
-          player_out_id: s.player_out_id,
-          minute: s.minute,
-        }));
-        db.match_substitutions.push(...subRows);
+        if (!data.preserve_shape_events) {
+          const subRows: MatchSubstitution[] = data.substitutions.map((s, i) => ({
+            id: randomUUID(),
+            match_id: matchId,
+            player_in_id: s.player_in_id,
+            player_out_id: s.player_out_id,
+            minute: s.minute,
+            to_slot: s.to_slot ?? null,
+            stoppage_time: s.stoppage_time ?? 0,
+            sort_order: s.sort_order ?? i,
+            change_group_id: s.change_group_id ?? null,
+            notes: s.notes ?? null,
+          }));
+          db.match_substitutions.push(...subRows);
+        }
       }
 
       verification = verifyMatchIntegrity(db, matchId);
@@ -380,16 +511,20 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
     verified.affected_player_ids = [...affectedIds];
     return { ok: true, matchId, verification: verified };
   } catch (e) {
-    try {
-      await mutateDb(
-        (db) => {
-          const m = db.matches.find((x) => x.id === matchId);
-          if (m) m.integrity_state = "invalid";
-        },
-        { action: "match_mark_invalid", entity: "match", entity_id: matchId },
-      );
-    } catch {
-      // best effort: keep original error response
+    // Alleen bestaande wedstrijden markeren als ongeldig — een mislukte create mag geen half-bestaande "invalid" row forceren.
+    const existedBefore = Boolean(data.match_id?.trim());
+    if (existedBefore) {
+      try {
+        await mutateDb(
+          (db) => {
+            const m = db.matches.find((x) => x.id === matchId);
+            if (m) m.integrity_state = "invalid";
+          },
+          { action: "match_mark_invalid", entity: "match", entity_id: matchId },
+        );
+      } catch {
+        // best effort
+      }
     }
     const msg = e instanceof Error ? e.message : "Opslaan mislukt.";
     return { ok: false, error: normalizeMutationError(msg) };
@@ -405,11 +540,12 @@ export async function deleteMatchAdminAction(matchId: string): Promise<MatchAdmi
         db.match_lineup_entries = db.match_lineup_entries.filter((e) => e.match_id !== matchId);
         db.match_card_events = db.match_card_events.filter((e) => e.match_id !== matchId);
         db.match_substitutions = db.match_substitutions.filter((e) => e.match_id !== matchId);
-        db.matches = db.matches.filter((m) => m.id !== matchId);
+        db.match_position_changes = (db.match_position_changes ?? []).filter((e) => e.match_id !== matchId);
         db.match_player_stats = db.match_player_stats.filter((s) => s.match_id !== matchId);
         db.match_goal_events = db.match_goal_events.filter((e) => e.match_id !== matchId);
+        db.matches = db.matches.filter((m) => m.id !== matchId);
       },
-      { action: "match_delete", entity: "match", entity_id: matchId },
+      { action: "match_delete", entity: "match", entity_id: matchId, capability: "system_admin" },
     );
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Verwijderen mislukt.";
@@ -434,16 +570,29 @@ export async function saveMatchAdminFormStateAction(
   }
   const res = await saveMatchAdminAction(raw);
   if (!res.ok) {
+    const fieldHint = res.fieldErrors
+      ? Object.entries(res.fieldErrors)
+          .flatMap(([k, msgs]) => msgs.map((m) => (k === "_root" ? m : `${m}`)))
+          .find(Boolean)
+      : undefined;
     return {
       status: "error",
-      error: normalizeMutationError(res.error),
+      error: normalizeMutationError(fieldHint || res.error || "Controleer het formulier."),
       fieldErrors: res.fieldErrors,
     };
   }
   if (!res.verification) {
     return { status: "error", error: "Verificatie ontbreekt na opslaan. Er is niets bevestigd." };
   }
-  return { status: "success", message: "Match opgeslagen en geverifieerd.", matchId: res.matchId, verification: res.verification };
+  const planned = (raw as { status?: string })?.status !== "played";
+  return {
+    status: "success",
+    message: planned
+      ? "Wedstrijd gepland. Ga verder met selectie en opstelling."
+      : "Wedstrijd opgeslagen. Doelpunten, assists en MVP zijn bijgewerkt.",
+    matchId: res.matchId,
+    verification: res.verification,
+  };
 }
 
 export async function deleteMatchAdminFormStateAction(

@@ -55,8 +55,8 @@ export const SOCIAL_LINKS = {
 /** Fotoplaceholders — bestaande fallback-logica (`photo-with-fallback.tsx`). */
 export const MEDIA_PLACEHOLDERS = {
   team_photo_db: "club_profile.team_photo_url",
-  team_photo_local_fallback: "/team.jpg",
-  team_photo_empty_copy: "Teamfoto binnenkort",
+  team_photo_local_fallback: null,
+  team_photo_empty_copy: "Nieuwe teamfoto volgt binnenkort",
   player_photo_empty: "Rugnummer-initialen in PlayerCard / SelectieClient",
 } as const;
 

@@ -1,0 +1,27 @@
+{
+  "order": 8,
+  "sessionId": "FDL-DS-PRESS-ABORT-RECOVER-V1",
+  "slug": "niet-doordrukken",
+  "activeRole": "us.RW",
+  "freezeMs": 8600,
+  "previewMs": 7400,
+  "liveDurationMs": 11800,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-window-closing",
+    "t3b-freeze"
+  ],
+  "mobileFocusIds": [
+    "us.RW",
+    "us.R6",
+    "us.RB",
+    "us.RCV"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

@@ -17,7 +17,7 @@ const bebas = Bebas_Neue({
 
 export const metadata: Metadata = {
   title: "ZVV Zaandijk Dames Platform",
-  description: "Teamplatform ZVV Zaandijk — selectie, wedstrijden, ranking, training en fitheid.",
+  description: "Teamplatform ZVV Zaandijk — selectie, wedstrijden, ranglijst, training en fitheid.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

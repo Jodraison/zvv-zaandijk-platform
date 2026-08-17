@@ -1,0 +1,27 @@
+{
+  "order": 3,
+  "sessionId": "FDL-DS-INSIDE-CLOSE-RW-DECISION-V1",
+  "slug": "binnenkant-dicht-decision",
+  "activeRole": "us.RW",
+  "freezeMs": 7600,
+  "previewMs": 5200,
+  "liveDurationMs": 11000,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-adjust",
+    "t3-hold"
+  ],
+  "mobileFocusIds": [
+    "us.RW",
+    "us.R6",
+    "us.RB",
+    "us.L6"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

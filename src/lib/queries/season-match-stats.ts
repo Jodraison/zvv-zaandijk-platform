@@ -1,12 +1,18 @@
 import type { ClubDatabase } from "@/types";
+import { isProductionMatch } from "@/lib/match/match-data-scope";
+import {
+  isPlayerCleanSheetEligibleInMatch,
+  isPlayerCleanSheetSeason,
+} from "@/lib/statistics/clean-sheets";
 
 /**
  * Enige bron voor seizoens-totalen per speelster uit wedstrijddata:
  * - goals / assists: aggregatie van `match_goal_events` over geverifieerde gespeelde wedstrijden
  * - MVP: aantal `matches` met status played en `wotm_player_id` = speelster
  * - matches_played: distinct `match_id` waarin speelster een bijdrage heeft (goal/assist/MVP)
+ * - clean sheets (vanaf 2026/27): keeper/verdediger meegespeeld + goals_against === 0
  *
- * Geen aparte totalen-tabel; altijd hieruit of via `computeRanking` die deze aggregate gebruikt.
+ * Alleen `data_scope=production` (of afgeleide production). Demo/qa tellen nooit mee.
  */
 export type SeasonMatchAggregates = {
   goals: Map<string, number>;
@@ -14,11 +20,17 @@ export type SeasonMatchAggregates = {
   /** per speler: wedstrijden waarin een stats-rij bestaat */
   matchesPlayed: Map<string, Set<string>>;
   mvp: Map<string, number>;
+  /** per speler: wedstrijden zonder tegengoals (GK/DEF, vanaf 2026/27) */
+  cleanSheets: Map<string, number>;
 };
 
 export function aggregateSeasonMatchStats(db: ClubDatabase, seasonId: string): SeasonMatchAggregates {
   const playedMatches = db.matches.filter(
-    (m) => m.season_id === seasonId && m.status === "played" && (m.integrity_state ?? "verified") === "verified",
+    (m) =>
+      m.season_id === seasonId &&
+      m.status === "played" &&
+      (m.integrity_state ?? "verified") === "verified" &&
+      isProductionMatch(m),
   );
   const playedMatchIds = new Set(playedMatches.map((m) => m.id));
 
@@ -67,7 +79,32 @@ export function aggregateSeasonMatchStats(db: ClubDatabase, seasonId: string): S
     set.add(m.id);
   }
 
-  return { goals, assists, matchesPlayed, mvp };
+  const cleanSheets = new Map<string, number>();
+  if (isPlayerCleanSheetSeason(db, seasonId)) {
+    for (const m of playedMatches) {
+      if (m.goals_against !== 0) continue;
+      const credited = new Set<string>();
+      for (const e of db.match_lineup_entries.filter((row) => row.match_id === m.id)) {
+        if (credited.has(e.player_id)) continue;
+        const pl = db.players.find((p) => p.id === e.player_id);
+        if (pl?.is_guest) continue;
+        if (!isPlayerCleanSheetEligibleInMatch(db, seasonId, m.id, e.player_id)) continue;
+        credited.add(e.player_id);
+        cleanSheets.set(e.player_id, (cleanSheets.get(e.player_id) ?? 0) + 1);
+      }
+      // Invallers die niet in lineup_entries staan (zeldzaam) via substituties.
+      for (const s of db.match_substitutions.filter((row) => row.match_id === m.id)) {
+        if (credited.has(s.player_in_id)) continue;
+        const pl = db.players.find((p) => p.id === s.player_in_id);
+        if (pl?.is_guest) continue;
+        if (!isPlayerCleanSheetEligibleInMatch(db, seasonId, m.id, s.player_in_id)) continue;
+        credited.add(s.player_in_id);
+        cleanSheets.set(s.player_in_id, (cleanSheets.get(s.player_in_id) ?? 0) + 1);
+      }
+    }
+  }
+
+  return { goals, assists, matchesPlayed, mvp, cleanSheets };
 }
 
 export function playerTotalsFromAggregate(agg: SeasonMatchAggregates, playerId: string) {
@@ -76,5 +113,6 @@ export function playerTotalsFromAggregate(agg: SeasonMatchAggregates, playerId: 
     assists_total: agg.assists.get(playerId) ?? 0,
     wotm_total: agg.mvp.get(playerId) ?? 0,
     matches_played: agg.matchesPlayed.get(playerId)?.size ?? 0,
+    clean_sheets_total: agg.cleanSheets.get(playerId) ?? 0,
   };
 }

@@ -1,0 +1,147 @@
+{
+  "base": "http://127.0.0.1:3010",
+  "annotations": {
+    "ourTeam": "ZVV Zaandijk (blauw / us)",
+    "formation": "Basis 4-2-3-1; pressfase bezetting afgeleid (leesbare 4-4-2)",
+    "attackingDirection": "Links → rechts (+x)",
+    "ballHolderOpening": "opp.cbL (LCB) → opp.lb (LB) bij trigger",
+    "activeRole": "us.RW (Rechtsbuiten)",
+    "phase": "Zij bouwen op / Wij zetten druk",
+    "reason": "Orientation chrome + PRESS_V2 start + GS film; preview seek = first-touch opening (geen oplossingcurve)."
+  },
+  "shots": [
+    {
+      "name": "academy-desktop-untouched",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\academy-desktop-untouched.png",
+      "overflowX": false,
+      "hasStartCta": true,
+      "hasGaVerderCta": false,
+      "hasHervatten": false,
+      "hasOrientation": true,
+      "hasStartHier": false,
+      "hasReferentie": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-untouched",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\academy-mobile-untouched.png",
+      "overflowX": false,
+      "hasStartCta": true,
+      "hasGaVerderCta": false,
+      "hasHervatten": false,
+      "hasOrientation": true,
+      "hasStartHier": false,
+      "hasReferentie": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-in-progress",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\academy-desktop-in-progress.png",
+      "overflowX": false,
+      "hasStartCta": false,
+      "hasGaVerderCta": true,
+      "hasHervatten": false,
+      "hasOrientation": true,
+      "hasStartHier": false,
+      "hasReferentie": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-completed-first",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\academy-desktop-completed-first.png",
+      "overflowX": false,
+      "hasStartCta": false,
+      "hasGaVerderCta": false,
+      "hasHervatten": false,
+      "hasOrientation": true,
+      "hasStartHier": false,
+      "hasReferentie": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-desktop-first-use",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\dl-desktop-first-use.png",
+      "overflowX": false,
+      "hasStartCta": true,
+      "hasGaVerderCta": false,
+      "hasHervatten": false,
+      "hasOrientation": true,
+      "hasStartHier": true,
+      "hasReferentie": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-mobile-first-use",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\dl-mobile-first-use.png",
+      "overflowX": false,
+      "hasStartCta": true,
+      "hasGaVerderCta": false,
+      "hasHervatten": false,
+      "hasOrientation": true,
+      "hasStartHier": true,
+      "hasReferentie": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "gs-opening",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\gs-opening.png",
+      "seekMs": 400,
+      "annotations": {
+        "ourTeam": "ZVV Zaandijk (blauw / us)",
+        "formation": "Basis 4-2-3-1; pressfase bezetting afgeleid (leesbare 4-4-2)",
+        "attackingDirection": "Links → rechts (+x)",
+        "ballHolderOpening": "opp.cbL (LCB) → opp.lb (LB) bij trigger",
+        "activeRole": "us.RW (Rechtsbuiten)",
+        "phase": "Zij bouwen op / Wij zetten druk",
+        "reason": "Orientation chrome + PRESS_V2 start + GS film; preview seek = first-touch opening (geen oplossingcurve)."
+      },
+      "consoleErrors": []
+    },
+    {
+      "name": "gs-freeze",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\gs-freeze.png",
+      "seekMs": 6800,
+      "annotations": {
+        "ourTeam": "ZVV Zaandijk (blauw / us)",
+        "formation": "Basis 4-2-3-1; pressfase bezetting afgeleid (leesbare 4-4-2)",
+        "attackingDirection": "Links → rechts (+x)",
+        "ballHolderOpening": "opp.cbL (LCB) → opp.lb (LB) bij trigger",
+        "activeRole": "us.RW (Rechtsbuiten)",
+        "phase": "Zij bouwen op / Wij zetten druk",
+        "reason": "Orientation chrome + PRESS_V2 start + GS film; preview seek = first-touch opening (geen oplossingcurve)."
+      },
+      "consoleErrors": []
+    },
+    {
+      "name": "gs-goed",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\gs-goed.png",
+      "seekMs": 12400,
+      "annotations": {
+        "ourTeam": "ZVV Zaandijk (blauw / us)",
+        "formation": "Basis 4-2-3-1; pressfase bezetting afgeleid (leesbare 4-4-2)",
+        "attackingDirection": "Links → rechts (+x)",
+        "ballHolderOpening": "opp.cbL (LCB) → opp.lb (LB) bij trigger",
+        "activeRole": "us.RW (Rechtsbuiten)",
+        "phase": "Zij bouwen op / Wij zetten druk",
+        "reason": "Orientation chrome + PRESS_V2 start + GS film; preview seek = first-touch opening (geen oplossingcurve)."
+      },
+      "consoleErrors": []
+    },
+    {
+      "name": "gs-fout",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-007\\gs-fout.png",
+      "seekMs": 12400,
+      "annotations": {
+        "ourTeam": "ZVV Zaandijk (blauw / us)",
+        "formation": "Basis 4-2-3-1; pressfase bezetting afgeleid (leesbare 4-4-2)",
+        "attackingDirection": "Links → rechts (+x)",
+        "ballHolderOpening": "opp.cbL (LCB) → opp.lb (LB) bij trigger",
+        "activeRole": "us.RW (Rechtsbuiten)",
+        "phase": "Zij bouwen op / Wij zetten druk",
+        "reason": "Orientation chrome + PRESS_V2 start + GS film; preview seek = first-touch opening (geen oplossingcurve)."
+      },
+      "consoleErrors": []
+    }
+  ],
+  "consoleErrors": []
+}

@@ -109,7 +109,9 @@ function main() {
   console.log(`  • Bron: ${CAPTAIN_CONTENT_SOURCE}`);
 
   console.log("\n[season:content] Fotoplaceholders:");
-  console.log(`  • Team:   ${MEDIA_PLACEHOLDERS.team_photo_db} → fallback ${MEDIA_PLACEHOLDERS.team_photo_local_fallback}`);
+  console.log(
+    `  • Team:   ${MEDIA_PLACEHOLDERS.team_photo_db} → geen lokale fallback (placeholder wanneer leeg)`,
+  );
   console.log(`  • Leeg:   "${MEDIA_PLACEHOLDERS.team_photo_empty_copy}"`);
   console.log(`  • Speler: ${MEDIA_PLACEHOLDERS.player_photo_empty}`);
 

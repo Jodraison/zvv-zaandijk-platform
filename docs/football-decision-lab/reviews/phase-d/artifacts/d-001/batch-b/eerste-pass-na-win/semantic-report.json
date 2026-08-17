@@ -1,0 +1,35 @@
+{
+  "order": 12,
+  "sessionId": "FDL-DS-FIRST-PASS-AFTER-WIN-V1",
+  "slug": "eerste-pass-na-win",
+  "family": "transition-firstpass",
+  "activeRole": "us.R6",
+  "supportRoles": [
+    "us.L6",
+    "us.10",
+    "us.RW"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+  "ballHolder": "opp.cbL",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-eerste-pass-na-win-live",
+    "good": "fdl-ds-eerste-pass-na-win-good",
+    "bad": "fdl-ds-eerste-pass-na-win-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

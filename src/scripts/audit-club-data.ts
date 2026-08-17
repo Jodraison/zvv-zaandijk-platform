@@ -384,7 +384,7 @@ async function main(): Promise<void> {
       broken.push("club_profile.schema_version ontbreekt (migratie 003).");
     }
     if (!(profile as Row)?.team_photo_url) {
-      risk.push("club_profile.team_photo_url is leeg (homepage toont fallback / public/team.jpg).");
+      risk.push("club_profile.team_photo_url is leeg (homepage toont placeholder tot upload via Beheer → Club).");
     }
   }
 

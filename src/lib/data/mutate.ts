@@ -1,7 +1,7 @@
 import type { ClubDatabase } from "@/types";
 import { readDbForWrite, writeClubDatabaseDiff } from "./repository";
 import { revalidateClubDataAfterMutation } from "./revalidate-club";
-import { assertAdminServerAction } from "@/lib/auth/require-admin";
+import { assertCapability, type Capability } from "@/lib/auth/capabilities";
 import { logAdminAction } from "@/lib/auth/admin-log";
 
 export type AdminAuditMeta = {
@@ -12,6 +12,8 @@ export type AdminAuditMeta = {
   before_snapshot?: unknown | (() => unknown);
   after_snapshot?: unknown | (() => unknown);
   verification?: unknown | (() => unknown);
+  /** Vereiste capability; default teamtaken. */
+  capability?: Capability;
 };
 
 function resolveEntityId(v: AdminAuditMeta["entity_id"]): string | null {
@@ -30,10 +32,11 @@ function cloneClubDatabase(db: ClubDatabase): ClubDatabase {
 }
 
 /**
- * Admin-only mutatie: snapshot vóór/na, alleen gewijzigde rijen naar Supabase, optimistic lock op schema_version, auditlog.
+ * Geautoriseerde mutatie: capability-check, snapshot vóór/na, diff naar Supabase, auditlog.
+ * Default capability: manage_squad (teambeheerder + owner).
  */
 export async function mutateDb(fn: (draft: ClubDatabase) => void, audit: AdminAuditMeta): Promise<void> {
-  const { userId } = await assertAdminServerAction();
+  const { userId } = await assertCapability(audit.capability ?? "manage_squad");
   const { db, schemaVersion } = await readDbForWrite();
   const before = cloneClubDatabase(db);
   fn(db);

@@ -23,7 +23,7 @@ export function GoalInputList({ squad, disabled }: { squad: SquadOption[]; disab
     <div className="space-y-3">
       {goalRows.map((row, idx) => (
         <div key={row.clientId} className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[1fr_1fr_auto]">
-          <p className="md:col-span-3 text-xs font-bold uppercase tracking-wider text-zvv-muted">Goal #{idx + 1}</p>
+          <p className="md:col-span-3 text-xs font-bold uppercase tracking-wider text-zvv-muted">Doelpunt #{idx + 1}</p>
           <select
             value={row.scorerId}
             onChange={(e) => setGoalRow(row.clientId, { scorerId: e.target.value })}
@@ -64,7 +64,7 @@ export function GoalInputList({ squad, disabled }: { squad: SquadOption[]; disab
       ))}
 
       <button type="button" onClick={addGoalRow} disabled={disabled || squad.length === 0} className="club-btn-secondary">
-        + Goal toevoegen
+        + Doelpunt toevoegen
       </button>
     </div>
   );

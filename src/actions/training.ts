@@ -5,6 +5,13 @@ import { trainingSessionSchema, attendanceRowSchema } from "@/lib/validations/fo
 import { mutateDb } from "@/lib/data/mutate";
 import { flattenZodIssues, normalizeMutationError, type AdminFormState } from "@/lib/forms/admin-action-state";
 import type { TrainingVerificationPayload } from "@/lib/admin/verification-types";
+import {
+  assertTrainingDateAllowed,
+  getSeasonOperations,
+  trainingKickoffIso,
+} from "@/lib/season/season-operations-2026-27";
+import { assertCanPersistCompletedAttendance } from "@/lib/training/training-status";
+import { trainingDateKeyAmsterdam } from "@/lib/training/manual-training";
 import type { z } from "zod";
 
 function parseTrainingSessionForm(formData: FormData) {
@@ -36,11 +43,16 @@ function verifyTrainingIntegrity(
   if (rows.length !== expectedRows) throw new Error("Post-validatie: attendance rijtelling mismatch.");
 }
 
-async function insertTrainingSessionRow(data: z.infer<typeof trainingSessionSchema>) {
+async function insertTrainingSessionRow(data: z.infer<typeof trainingSessionSchema>): Promise<string> {
   const kickoff = new Date(data.session_at);
   if (Number.isNaN(kickoff.getTime())) {
     throw new Error("Kies een geldige datum en tijd voor de trainingssessie.");
   }
+  const { trainingDateKeyAmsterdam } = await import("@/lib/training/manual-training");
+  const dateKey = trainingDateKeyAmsterdam(kickoff.toISOString());
+  const gate = assertTrainingDateAllowed(data.season_id, dateKey);
+  if (!gate.ok) throw new Error(gate.error);
+
   const id = randomUUID();
   await mutateDb(
     (db) => {
@@ -50,23 +62,26 @@ async function insertTrainingSessionRow(data: z.infer<typeof trainingSessionSche
         title: data.title ?? null,
         session_at: kickoff.toISOString(),
         location: data.location ?? null,
-        status: "completed",
+        status: "scheduled",
       });
-      const members = db.player_season_memberships.filter((m) => m.season_id === data.season_id);
-      for (const mem of members) {
-        db.training_attendance.push({ session_id: id, player_id: mem.player_id, present: true, note: null });
-      }
+      // Geen automatische aanwezigheid — sessies starten leeg.
     },
-    { action: "training_session_create", entity: "training_session", entity_id: id },
+    {
+      action: "training_session_create",
+      entity: "training_session",
+      entity_id: id,
+      capability: "manage_training",
+    },
   );
+  return id;
 }
 
-export async function createTrainingSession(formData: FormData): Promise<void> {
+export async function createTrainingSession(formData: FormData): Promise<string> {
   const parsed = parseTrainingSessionForm(formData);
   if (!parsed.success) {
     throw new Error(parsed.error.issues[0]?.message ?? "Ongeldige trainingssessie — controleer datum en velden.");
   }
-  await insertTrainingSessionRow(parsed.data);
+  return insertTrainingSessionRow(parsed.data);
 }
 
 export async function saveAttendance(formData: FormData): Promise<void> {
@@ -115,7 +130,11 @@ export async function saveAttendanceFromForm(formData: FormData): Promise<void> 
       if (sess.status === "cancelled") {
         throw new Error("Training is afgelast. Aanwezigheid opslaan is uitgeschakeld.");
       }
-      const members = db.player_season_memberships.filter((m) => m.season_id === sess.season_id);
+      const members = db.player_season_memberships.filter((m) => {
+        if (m.season_id !== sess.season_id || m.is_guest) return false;
+        const p = db.players.find((x) => x.id === m.player_id);
+        return !!p && !p.is_guest;
+      });
       for (const mem of members) {
         const present = formData.get(`present__${mem.player_id}`) === "on";
         const noteRaw = formData.get(`note__${mem.player_id}`);
@@ -220,9 +239,12 @@ export async function saveTrainingControlCenterAction(raw: {
         if (!members.length) throw new Error("Geen actieve seizoensselectie gevonden.");
         const memberSet = new Set(members.map((m) => m.player_id));
 
-        const wantedAt = `${dateIso}T19:30:00.000Z`;
+        const dateGate = assertTrainingDateAllowed(seasonId, dateIso);
+        if (!dateGate.ok) throw new Error(dateGate.error);
+        const ops = getSeasonOperations(seasonId);
+        const wantedAt = ops ? trainingKickoffIso(dateIso, ops) : `${dateIso}T18:00:00.000Z`;
         const existing = db.training_sessions.find(
-          (s) => s.season_id === seasonId && new Date(s.session_at).toISOString().slice(0, 10) === dateIso,
+          (s) => s.season_id === seasonId && trainingDateKeyAmsterdam(s.session_at) === dateIso,
         );
         if (existing) {
           sessionId = existing.id;
@@ -236,7 +258,7 @@ export async function saveTrainingControlCenterAction(raw: {
             title: "Training",
             session_at: wantedAt,
             location: null,
-            status: "completed",
+            status: "scheduled",
           });
         }
 
@@ -248,7 +270,12 @@ export async function saveTrainingControlCenterAction(raw: {
           session_status: sess.status,
           attendance: beforeRows.map((r) => ({ player_id: r.player_id, present: r.present })),
         };
-        sess.status = status;
+
+        if (status === "completed") {
+          const gate = assertCanPersistCompletedAttendance(sess.session_at);
+          if (!gate.ok) throw new Error(gate.error);
+        }
+        sess.status = status === "cancelled" ? "cancelled" : status === "completed" ? "completed" : "scheduled";
 
         if (status === "cancelled") {
           db.training_attendance = db.training_attendance.filter((a) => a.session_id !== sessionId);
@@ -364,19 +391,178 @@ export async function createTrainingSessionFormAction(
     };
   }
   try {
-    await insertTrainingSessionRow(parsed.data);
+    const id = await insertTrainingSessionRow(parsed.data);
+    const { trainingDateKeyAmsterdam } = await import("@/lib/training/manual-training");
+    const dateKey = trainingDateKeyAmsterdam(parsed.data.session_at);
+    return {
+      status: "success",
+      message: "Training aangemaakt. Nog geen aanwezigheid geregistreerd.",
+      redirectTo: `/beheer/training?season=${encodeURIComponent(parsed.data.season_id)}&session=${encodeURIComponent(dateKey)}&sid=${encodeURIComponent(id)}`,
+    };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Trainingssessie kon niet worden aangemaakt.";
     return {
       status: "error",
       error: normalizeMutationError(msg),
-      fieldErrors: /datum en tijd/i.test(msg) ? { session_at: [msg] } : undefined,
+      fieldErrors: /datum|tijd/i.test(msg) ? { session_at: [msg] } : undefined,
     };
   }
+}
+
+/** Trainer-first: datum + start/eind + titel (+ optionele notitie). */
+export async function createManualTrainingFormAction(
+  _prev: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  try {
+    const { parseManualTrainingInput, trainingDateKeyAmsterdam } = await import("@/lib/training/manual-training");
+    const built = parseManualTrainingInput({
+      season_id: String(formData.get("season_id") ?? ""),
+      date_ymd: String(formData.get("date_ymd") ?? ""),
+      start_hhmm: String(formData.get("start_hhmm") ?? "20:00"),
+      end_hhmm: String(formData.get("end_hhmm") ?? "21:00"),
+      title: String(formData.get("title") ?? "Reguliere training"),
+      note: String(formData.get("note") ?? ""),
+    });
+    const id = await insertTrainingSessionRow({
+      ...built,
+      location: built.location ?? undefined,
+    });
+    const dateKey = trainingDateKeyAmsterdam(built.session_at);
+    return {
+      status: "success",
+      message: "Training aangemaakt. Nog geen aanwezigheid geregistreerd.",
+      redirectTo: `/beheer/training?season=${encodeURIComponent(built.season_id)}&session=${encodeURIComponent(dateKey)}&sid=${encodeURIComponent(id)}`,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Training kon niet worden aangemaakt.";
+    return { status: "error", error: normalizeMutationError(msg) };
+  }
+}
+
+export async function updateManualTrainingFormAction(
+  _prev: AdminFormState,
+  formData: FormData,
+): Promise<AdminFormState> {
+  const sessionId = String(formData.get("session_id") ?? "").trim();
+  if (!sessionId) return { status: "error", error: "Geen trainingssessie geselecteerd." };
+  try {
+    const { parseManualTrainingInput, trainingDateKeyAmsterdam, sessionHasAttendance } = await import(
+      "@/lib/training/manual-training"
+    );
+    const built = parseManualTrainingInput({
+      season_id: String(formData.get("season_id") ?? ""),
+      date_ymd: String(formData.get("date_ymd") ?? ""),
+      start_hhmm: String(formData.get("start_hhmm") ?? "20:00"),
+      end_hhmm: String(formData.get("end_hhmm") ?? "21:00"),
+      title: String(formData.get("title") ?? "Reguliere training"),
+      note: String(formData.get("note") ?? ""),
+    });
+    const dateKeyGate = trainingDateKeyAmsterdam(built.session_at);
+    const gate = assertTrainingDateAllowed(built.season_id, dateKeyGate);
+    if (!gate.ok) throw new Error(gate.error);
+
+    await mutateDb(
+      (db) => {
+        const sess = db.training_sessions.find((s) => s.id === sessionId);
+        if (!sess) throw new Error("Trainingssessie niet gevonden.");
+        if (sess.status === "cancelled") throw new Error("Afgelaste training kan niet worden gewijzigd. Maak een nieuwe sessie.");
+        if (sessionHasAttendance(db.training_attendance, sessionId) && sess.status === "completed") {
+          throw new Error("Geregistreerde training met aanwezigheid kan niet meer worden verplaatst. Maak desnoods een nieuwe sessie.");
+        }
+        sess.title = built.title;
+        sess.session_at = built.session_at;
+        sess.location = built.location;
+        sess.season_id = built.season_id;
+      },
+      {
+        action: "training_session_update",
+        entity: "training_session",
+        entity_id: sessionId,
+        capability: "manage_training",
+      },
+    );
+    const dateKey = trainingDateKeyAmsterdam(built.session_at);
+    return {
+      status: "success",
+      message: "Training bijgewerkt.",
+      redirectTo: `/beheer/training?season=${encodeURIComponent(built.season_id)}&session=${encodeURIComponent(dateKey)}&sid=${encodeURIComponent(sessionId)}`,
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Wijzigen mislukt.";
+    return { status: "error", error: normalizeMutationError(msg) };
+  }
+}
+
+export async function cancelTrainingSessionByIdAction(raw: {
+  session_id: string;
+  reason?: string;
+}): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  const sessionId = String(raw.session_id ?? "").trim();
+  const reason = String(raw.reason ?? "").trim();
+  if (!sessionId) return { ok: false, error: "Geen trainingssessie geselecteerd." };
+  try {
+    await mutateDb(
+      (db) => {
+        const sess = db.training_sessions.find((s) => s.id === sessionId);
+        if (!sess) throw new Error("Trainingssessie niet gevonden.");
+        sess.status = "cancelled";
+        if (reason) sess.title = `Afgelast: ${reason}`;
+        else if (sess.title && !/^Afgelast/i.test(sess.title)) sess.title = `Afgelast: ${sess.title}`;
+        else if (!sess.title) sess.title = "Afgelast";
+        db.training_attendance = db.training_attendance.filter((a) => a.session_id !== sessionId);
+      },
+      {
+        action: "training_cancel",
+        entity: "training_session",
+        entity_id: sessionId,
+        capability: "manage_training",
+      },
+    );
+  } catch (e) {
+    return { ok: false, error: normalizeMutationError(e instanceof Error ? e.message : "Afgelasten mislukt.") };
+  }
   return {
-    status: "success",
-    message: "Trainingssessie aangemaakt. Iedereen staat standaard op aanwezig — pas hieronder aan en sla op.",
+    ok: true,
+    message: "Training is afgelast. Ze blijft zichtbaar; aanwezigheid is niet nodig.",
   };
+}
+
+/** Hard delete — alleen system_admin, voor foutieve/dubbele sessies. */
+export async function deleteTrainingSessionAction(raw: {
+  session_id: string;
+  confirm: string;
+}): Promise<{ ok: true; message: string } | { ok: false; error: string }> {
+  const sessionId = String(raw.session_id ?? "").trim();
+  if (!sessionId) return { ok: false, error: "Geen trainingssessie geselecteerd." };
+  if (String(raw.confirm ?? "").trim().toUpperCase() !== "VERWIJDER") {
+    return { ok: false, error: 'Typ VERWIJDER ter bevestiging.' };
+  }
+  try {
+    await mutateDb(
+      (db) => {
+        const sess = db.training_sessions.find((s) => s.id === sessionId);
+        if (!sess) throw new Error("Trainingssessie niet gevonden.");
+        const att = db.training_attendance.filter((a) => a.session_id === sessionId);
+        if (att.length > 0 && sess.status === "completed") {
+          throw new Error(
+            "Deze sessie heeft geregistreerde aanwezigheid. Gebruik afgelasten of neem contact op met systeembeheer.",
+          );
+        }
+        db.training_attendance = db.training_attendance.filter((a) => a.session_id !== sessionId);
+        db.training_sessions = db.training_sessions.filter((s) => s.id !== sessionId);
+      },
+      {
+        action: "training_session_delete",
+        entity: "training_session",
+        entity_id: sessionId,
+        capability: "system_admin",
+      },
+    );
+  } catch (e) {
+    return { ok: false, error: normalizeMutationError(e instanceof Error ? e.message : "Verwijderen mislukt.") };
+  }
+  return { ok: true, message: "Trainingssessie verwijderd." };
 }
 
 export async function saveTrainingAttendanceFormAction(
@@ -390,4 +576,65 @@ export async function saveTrainingAttendanceFormAction(
     return { status: "error", error: normalizeMutationError(msg) };
   }
   return { status: "success", message: "Aanwezigheid opgeslagen." };
+}
+
+/** Toekomstige training afgelasten (sessie blijft zichtbaar, status cancelled). */
+export async function cancelUpcomingTrainingAction(raw: {
+  season_id: string;
+  session_date_iso: string;
+  reason?: string;
+}): Promise<{ ok: true; session_id: string; message: string } | { ok: false; error: string }> {
+  const seasonId = String(raw.season_id ?? "").trim();
+  const dateIso = String(raw.session_date_iso ?? "").trim();
+  const reason = String(raw.reason ?? "").trim();
+  if (!seasonId) return { ok: false, error: "Seizoen ontbreekt." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateIso)) return { ok: false, error: "Kies een geldige trainingsdatum." };
+
+  let sessionId = "";
+  try {
+    await mutateDb(
+      (db) => {
+        const dateGate = assertTrainingDateAllowed(seasonId, dateIso);
+        if (!dateGate.ok) throw new Error(dateGate.error);
+        const ops = getSeasonOperations(seasonId);
+        const wantedAt = ops ? trainingKickoffIso(dateIso, ops) : `${dateIso}T18:00:00.000Z`;
+        if (new Date(wantedAt).getTime() <= Date.now()) {
+          throw new Error("Alleen toekomstige trainingen kunnen worden afgelast via deze taak.");
+        }
+        const existing = db.training_sessions.find(
+          (s) => s.season_id === seasonId && s.session_at.slice(0, 10) === dateIso,
+        );
+        if (existing) {
+          sessionId = existing.id;
+          existing.status = "cancelled";
+          if (reason) existing.title = `Afgelast${reason ? `: ${reason}` : ""}`;
+        } else {
+          sessionId = randomUUID();
+          db.training_sessions.push({
+            id: sessionId,
+            season_id: seasonId,
+            title: reason ? `Afgelast: ${reason}` : "Afgelast",
+            session_at: wantedAt,
+            location: null,
+            status: "cancelled",
+          });
+        }
+        db.training_attendance = db.training_attendance.filter((a) => a.session_id !== sessionId);
+      },
+      {
+        action: "training_cancel",
+        entity: "training_session",
+        entity_id: () => sessionId || null,
+        capability: "manage_training",
+        after_snapshot: () => ({ date: dateIso, reason }),
+      },
+    );
+  } catch (e) {
+    return { ok: false, error: normalizeMutationError(e instanceof Error ? e.message : "Afgelasten mislukt.") };
+  }
+  return {
+    ok: true,
+    session_id: sessionId,
+    message: "Training is afgelast. Ze blijft zichtbaar in de planning; aanwezigheid is niet nodig.",
+  };
 }

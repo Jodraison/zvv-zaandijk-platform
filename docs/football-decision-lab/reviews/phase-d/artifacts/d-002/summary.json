@@ -1,0 +1,225 @@
+{
+  "generatedAt": "2026-07-23T08:28:37.681Z",
+  "freezeMs": {
+    "binnenkant-dicht-lw": 7200,
+    "binnenkant-dicht-decision": 7600,
+    "tweede-druk-8": 8200,
+    "rugdekking-rb": 7800,
+    "spits-stuurt": 7400,
+    "verre-zijde-knijpt": 6400,
+    "niet-doordrukken": 8600,
+    "binnenkant-onder-druk": 5400
+  },
+  "reports": [
+    {
+      "order": 2,
+      "sessionId": "FDL-DS-INSIDE-CLOSE-LW-PRESS-V1",
+      "slug": "binnenkant-dicht-lw",
+      "activeRole": "us.LW",
+      "freezeMs": 7200,
+      "previewMs": 5800,
+      "liveDurationMs": 10800,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-freeze"
+      ],
+      "mobileFocusIds": [
+        "us.LW",
+        "us.L6",
+        "us.LB",
+        "us.10"
+      ],
+      "ballHolderOpening": "opp.cbR",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 3,
+      "sessionId": "FDL-DS-INSIDE-CLOSE-RW-DECISION-V1",
+      "slug": "binnenkant-dicht-decision",
+      "activeRole": "us.RW",
+      "freezeMs": 7600,
+      "previewMs": 5200,
+      "liveDurationMs": 11000,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-adjust",
+        "t3-hold"
+      ],
+      "mobileFocusIds": [
+        "us.RW",
+        "us.R6",
+        "us.RB",
+        "us.L6"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 4,
+      "sessionId": "FDL-DS-SECOND-PRESS-8-V1",
+      "slug": "tweede-druk-8",
+      "activeRole": "us.R6",
+      "freezeMs": 8200,
+      "previewMs": 7000,
+      "liveDurationMs": 11400,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-freeze"
+      ],
+      "mobileFocusIds": [
+        "us.R6",
+        "us.RW",
+        "us.L6",
+        "us.RB"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 5,
+      "sessionId": "FDL-DS-DEPTH-COVER-RB-V1",
+      "slug": "rugdekking-rb",
+      "activeRole": "us.RB",
+      "freezeMs": 7800,
+      "previewMs": 6600,
+      "liveDurationMs": 11200,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-freeze"
+      ],
+      "mobileFocusIds": [
+        "us.RB",
+        "us.RW",
+        "us.R6",
+        "us.RCV"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 6,
+      "sessionId": "FDL-DS-ST-STEER-PIN-V1",
+      "slug": "spits-stuurt",
+      "activeRole": "us.SP",
+      "freezeMs": 7400,
+      "previewMs": 6000,
+      "liveDurationMs": 10600,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-freeze"
+      ],
+      "mobileFocusIds": [
+        "us.SP",
+        "us.RW",
+        "us.10",
+        "us.R6"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 7,
+      "sessionId": "FDL-DS-FAR-SIDE-SQUEEZE-V1",
+      "slug": "verre-zijde-knijpt",
+      "activeRole": "us.LW",
+      "freezeMs": 6400,
+      "previewMs": 5000,
+      "liveDurationMs": 9000,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-freeze"
+      ],
+      "mobileFocusIds": [
+        "us.LW",
+        "us.L6",
+        "us.LB",
+        "us.SP"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 8,
+      "sessionId": "FDL-DS-PRESS-ABORT-RECOVER-V1",
+      "slug": "niet-doordrukken",
+      "activeRole": "us.RW",
+      "freezeMs": 8600,
+      "previewMs": 7400,
+      "liveDurationMs": 11800,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan",
+        "t2-trigger",
+        "t2b-first-touch",
+        "t3-window-closing",
+        "t3b-freeze"
+      ],
+      "mobileFocusIds": [
+        "us.RW",
+        "us.R6",
+        "us.RB",
+        "us.RCV"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    },
+    {
+      "order": 9,
+      "sessionId": "FDL-DS-INSIDE-CLOSE-RW-PRESSURE-V1",
+      "slug": "binnenkant-onder-druk",
+      "activeRole": "us.RW",
+      "freezeMs": 5400,
+      "previewMs": 4000,
+      "liveDurationMs": 7800,
+      "positioningMode": "authored",
+      "stepIds": [
+        "t0-set",
+        "t1-scan-fast",
+        "t2-fast-pass",
+        "t2b-poor-touch",
+        "t3-freeze-early"
+      ],
+      "mobileFocusIds": [
+        "us.RW",
+        "us.R6",
+        "us.RB",
+        "us.10"
+      ],
+      "ballHolderOpening": "opp.cbL",
+      "freezeEvaluates": true,
+      "authored": true
+    }
+  ]
+}

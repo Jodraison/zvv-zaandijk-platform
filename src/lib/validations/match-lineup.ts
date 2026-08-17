@@ -6,25 +6,19 @@ export const matchLineupEntryInputSchema = z.object({
   player_id: z.string().min(1),
   role: matchLineupRoleSchema,
   position: z
-    .string()
-    .trim()
-    .max(80)
-    .optional()
-    .or(z.literal(""))
+    .union([z.string(), z.null(), z.undefined()])
     .transform((s) => {
-      const t = (s ?? "").trim();
+      const t = (s ?? "").toString().trim();
       return t || null;
-    }),
+    })
+    .pipe(z.string().max(80).nullable()),
   absence_reason: z
-    .string()
-    .trim()
-    .max(200)
-    .optional()
-    .or(z.literal(""))
+    .union([z.string(), z.null(), z.undefined()])
     .transform((s) => {
-      const t = (s ?? "").trim();
+      const t = (s ?? "").toString().trim();
       return t || null;
-    }),
+    })
+    .pipe(z.string().max(200).nullable()),
   sort_order: z.coerce.number().int().min(0).optional().default(0),
 });
 

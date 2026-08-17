@@ -13,7 +13,10 @@ export function buildPlayerDetail(db: ClubDatabase, playerId: string, seasonId: 
   );
 
   const agg = aggregateSeasonMatchStats(db, seasonId);
-  const { goals_total, assists_total, wotm_total } = playerTotalsFromAggregate(agg, playerId);
+  const { goals_total, assists_total, wotm_total, clean_sheets_total } = playerTotalsFromAggregate(
+    agg,
+    playerId,
+  );
 
   const sessions = db.training_sessions.filter((t) => t.season_id === seasonId && t.status === "completed");
   const sessionIds = new Set(sessions.map((s) => s.id));
@@ -67,6 +70,7 @@ export function buildPlayerDetail(db: ClubDatabase, playerId: string, seasonId: 
     goals_total,
     assists_total,
     wotm_total,
+    clean_sheets_total,
     attendance_rate,
     sessions_considered: total,
     attendance_present_count: presentCount,

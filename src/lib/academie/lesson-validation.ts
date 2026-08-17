@@ -37,6 +37,8 @@ export type AcademyLessonValidationResult = {
 };
 
 export function lessonHasVisual(lesson: AcademyLesson): boolean {
+  // Lesstandaard V1: situatiesectie met SVG-veld telt als visual-first.
+  if (lesson.standard?.situation) return true;
   return lessonHasVisualBlock(lesson);
 }
 
@@ -58,6 +60,25 @@ export function lessonMissingKeyTakeaway(lesson: AcademyLesson): boolean {
 
 /** Telt ingevulde les-secties — gebruikt voor min/max-standaard. */
 export function countLessonSections(lesson: AcademyLesson): number {
+  const standard = lesson.standard;
+  if (standard) {
+    let count = 0;
+    if (hasLessonText(lesson.summary)) count += 1;
+    if (standard.learningOutcomes && standard.learningOutcomes.length > 0) count += 1;
+    if (standard.situation) count += 1;
+    if (standard.whyCards && standard.whyCards.length > 0) count += 1;
+    if (standard.recognizeChecklist && standard.recognizeChecklist.length > 0) count += 1;
+    if (standard.recognizeCompare) count += 1;
+    if (standard.decisionBranch) count += 1;
+    else if (standard.decisionTree && standard.decisionTree.length > 0) count += 1;
+    if (standard.positions && standard.positions.length > 0) count += 1;
+    if (standard.mistakes && standard.mistakes.length > 0) count += 1;
+    if (standard.coachingChips && standard.coachingChips.length > 0) count += 1;
+    if (standard.video && standard.video.placeholder !== true) count += 1;
+    if (standard.summaryPoints && standard.summaryPoints.length > 0) count += 1;
+    return count;
+  }
+
   let count = 0;
   if (hasLessonText(lesson.summary)) count += 1;
   if (hasQuickReference(lesson.quickReference)) count += 1;
@@ -125,6 +146,7 @@ export function resolveLessonQualityLevel(lesson: AcademyLesson): AcademyLessonQ
 export function validateAcademyLesson(lesson: AcademyLesson): AcademyLessonValidationResult {
   const standards = ACADEMY_LESSON_STANDARDS;
   const issues: AcademyLessonValidationIssue[] = [];
+  const usesStandardV1 = !!lesson.standard;
 
   if (standards.visualFirstRequired && lessonMissingVisual(lesson)) {
     issues.push({ code: "missing_visual", message: "Visual-first: primair visual-blok ontbreekt." });
@@ -134,15 +156,16 @@ export function validateAcademyLesson(lesson: AcademyLesson): AcademyLessonValid
     issues.push({ code: "missing_summary", message: "Samenvatting ontbreekt." });
   }
 
-  if (standards.quickReferenceRecommended && lessonMissingQuickReference(lesson)) {
+  // Legacy scan-secties alleen afdwingen buiten Lesstandaard V1.
+  if (!usesStandardV1 && standards.quickReferenceRecommended && lessonMissingQuickReference(lesson)) {
     issues.push({ code: "missing_quick_reference", message: "Quick reference ontbreekt (aanbevolen)." });
   }
 
-  if (lessonMissingKeyTakeaway(lesson)) {
+  if (!usesStandardV1 && lessonMissingKeyTakeaway(lesson)) {
     issues.push({ code: "missing_key_takeaway", message: "Key takeaway ontbreekt." });
   }
 
-  if (standards.coachNotebookRecommended && !hasCoachNotebook(lesson.coachNotebook)) {
+  if (!usesStandardV1 && standards.coachNotebookRecommended && !hasCoachNotebook(lesson.coachNotebook)) {
     issues.push({ code: "missing_coach_notebook", message: "Coach's notebook ontbreekt (aanbevolen)." });
   }
 
@@ -151,10 +174,11 @@ export function validateAcademyLesson(lesson: AcademyLesson): AcademyLessonValid
   }
 
   const readingTime = lesson.estimatedReadingTime ?? lesson.quickReference?.readingTimeMinutes;
-  if (typeof readingTime === "number" && readingTime < standards.recommendedReadingTimeMinutes) {
+  const recommendedMinutes = usesStandardV1 ? 2 : standards.recommendedReadingTimeMinutes;
+  if (typeof readingTime === "number" && readingTime < recommendedMinutes) {
     issues.push({
       code: "reading_time_below_recommended",
-      message: `Leestijd (${readingTime} min) onder aanbevolen ${standards.recommendedReadingTimeMinutes} min.`,
+      message: `Leestijd (${readingTime} min) onder aanbevolen ${recommendedMinutes} min.`,
     });
   }
 

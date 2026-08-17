@@ -9,7 +9,8 @@ import { DEFAULT_MATCH_TYPE } from "@/lib/match-type";
 import { MAX_LINEUP_STARTERS } from "@/lib/match-lineup";
 import type { MatchLineupInitial } from "@/lib/queries/match-lineup";
 import { GlassCard } from "@/components/layout/glass-card";
-import { saveMatchAdminFormStateAction, deleteMatchAdminAction } from "@/actions/match-admin";
+import { saveMatchAdminFormStateAction } from "@/actions/match-admin";
+import { MatchDeleteDialog } from "@/components/admin/match-delete-dialog";
 import { addMatchGuestAction, addMatchRosterPlayerAction, removeMatchGuestAction } from "@/actions/match-guest";
 import { initialMatchAdminFormState, type MatchAdminFormState } from "@/lib/admin/match-admin-types";
 import {
@@ -19,7 +20,11 @@ import {
   fieldMessage,
 } from "@/lib/forms/admin-action-state";
 import { AdminFormBanner } from "@/components/admin/admin-form-message";
+import { AdminSaveBar } from "@/components/admin/shell/admin-ui";
 import type { MatchVerificationPayload } from "@/lib/admin/verification-types";
+import { sortPlayersBySquadNumber } from "@/lib/players/sort-by-squad-number";
+import { CLUB_NAME } from "@/constants/club";
+import { matchWorkflowHref } from "@/lib/match/match-workflow-steps";
 
 export type MatchAdminMember = {
   player_id: string;
@@ -140,7 +145,11 @@ function createInitialDraft(
   defaultStatus: MatchStatus,
 ): MatchDraft {
   const selected: Record<string, boolean> = {};
-  for (const m of members) selected[m.player_id] = initialSelectedIds.includes(m.player_id);
+  const fromLineupParticipants = new Set([...initialLineup.starters, ...initialLineup.bench]);
+  for (const m of members) {
+    selected[m.player_id] =
+      initialSelectedIds.includes(m.player_id) || fromLineupParticipants.has(m.player_id);
+  }
   const seededGoals = initGoals(initialGoalEvents);
   const lineupState = createInitialLineupState(initialLineup);
   return {
@@ -153,7 +162,13 @@ function createInitialDraft(
       referee: initialMatch.referee ?? "",
       notes: initialMatch.notes ?? "",
       goalsAgainst: initialMatch.goals_against,
-      status: mode === "create" ? defaultStatus : initialMatch.status,
+      // Afrondmodus (finish=1) geeft defaultStatus=played terwijl DB nog scheduled is.
+      status:
+        defaultStatus === "played"
+          ? "played"
+          : mode === "create"
+            ? defaultStatus
+            : initialMatch.status,
       goalsFor: seededGoals.length,
     },
     eventDraft: seededGoals,
@@ -201,6 +216,9 @@ export function MatchAdminForm({
   initialCardEvents = [],
   initialSubstitutionEvents = [],
   returnToHref,
+  preserveShapeEvents = false,
+  availableGuests = [],
+  workflowStep,
 }: {
   seasonId: string;
   members: MatchAdminMember[];
@@ -225,8 +243,30 @@ export function MatchAdminForm({
   initialCardEvents?: CardEvent[];
   initialSubstitutionEvents?: SubstitutionEvent[];
   returnToHref?: string;
+  /** Wissels/posities via MatchShapeEventsEditor — niet overschrijven bij uitslag-save. */
+  preserveShapeEvents?: boolean;
+  /** Catalogusgasten die nog niet op deze wedstrijd staan. */
+  availableGuests?: { playerId: string; fullName: string }[];
+  /** Optionele wizardstap: toont alleen relevante secties. */
+  workflowStep?:
+    | "wedstrijd"
+    | "selectie"
+    | "opstelling"
+    | "verloop"
+    | "uitslag"
+    | "na-de-wedstrijd"
+    | "controle";
 }) {
   const router = useRouter();
+  const afterMatchStep =
+    workflowStep === "uitslag" || workflowStep === "na-de-wedstrijd" || workflowStep === "verloop";
+  const showWedstrijd = !workflowStep || workflowStep === "wedstrijd" || workflowStep === "controle";
+  /** Losse selectie is niet meer primaire stap — alleen legacy/controle. */
+  const showSelectie = workflowStep === "selectie" || (!workflowStep && mode === "edit" && false);
+  /** Uitslag alleen bij gespeelde / afrondmodus — nooit in stap 1. */
+  const showUitslag =
+    mode === "create" ? false : afterMatchStep || workflowStep === "controle" || !workflowStep;
+  const compactAfterMatch = afterMatchStep;
   const [saveState, saveAction, savePending] = useActionState(saveMatchAdminFormStateAction, initialMatchAdminFormState);
 
   const [draft, setDraft] = useState<MatchDraft>(() =>
@@ -244,7 +284,6 @@ export function MatchAdminForm({
   );
 
   const [guestState, setGuestState] = useState<AdminFormState>(initialAdminFormState);
-  const [deleteState, setDeleteState] = useState<AdminFormState>(initialAdminFormState);
   const [guestName, setGuestName] = useState("");
   const [guestShirt, setGuestShirt] = useState("");
   const [guestPosition, setGuestPosition] = useState("");
@@ -253,9 +292,6 @@ export function MatchAdminForm({
   const [rosterShirt, setRosterShirt] = useState("");
   const [rosterPositionLabel, setRosterPositionLabel] = useState("");
   const [busyGuest, startGuestTransition] = useTransition();
-  const [busyDelete, startDeleteTransition] = useTransition();
-  const [correctionMode, setCorrectionMode] = useState(false);
-  const timelineRef = useRef<HTMLDivElement | null>(null);
   const opponent = draft.matchMetaDraft.opponent;
   const kickoffLocal = draft.matchMetaDraft.kickoffLocal;
   const isHome = draft.matchMetaDraft.isHome;
@@ -291,8 +327,6 @@ export function MatchAdminForm({
     setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, goalsAgainst: value } }));
   const setStatus = (value: MatchStatus) =>
     setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, status: value } }));
-  const setGoalsForInput = (value: number) =>
-    setDraft((prev) => ({ ...prev, matchMetaDraft: { ...prev.matchMetaDraft, goalsFor: value } }));
   const setGoals = (updater: GoalEvent[] | ((prev: GoalEvent[]) => GoalEvent[])) =>
     setDraft((prev) => ({
       ...prev,
@@ -367,19 +401,14 @@ export function MatchAdminForm({
     [draft.selectedSquadIds, members],
   );
   const squadMembers = useMemo(
-    () => members.filter((m) => draft.selectedSquadIds[m.player_id]),
+    () => sortPlayersBySquadNumber(members.filter((m) => draft.selectedSquadIds[m.player_id])),
     [draft.selectedSquadIds, members],
   );
   const lineupPool = useMemo(
-    () =>
-      members
-        .filter((m) => m.has_season_membership && !m.is_guest)
-        .sort(
-          (a, b) =>
-            (a.shirt_number ?? 99) - (b.shirt_number ?? 99) || a.name.localeCompare(b.name, "nl"),
-        ),
+    () => sortPlayersBySquadNumber(members.filter((m) => m.has_season_membership && !m.is_guest)),
     [members],
   );
+  const membersSorted = useMemo(() => sortPlayersBySquadNumber(members), [members]);
   const starterCount = useMemo(
     () => Object.values(draft.lineupRoleByPlayer).filter((r) => r === "starter").length,
     [draft.lineupRoleByPlayer],
@@ -454,7 +483,7 @@ export function MatchAdminForm({
     const errs: string[] = [];
     if (status !== "played") return errs;
     if (selectedIds.length === 0) errs.push("Selecteer minstens één speelster voor de wedstrijdselectie.");
-    if (goals.length !== goalsForInput) errs.push("Aantal goals moet exact gelijk zijn aan 'Goals voor'.");
+    if (goals.length !== goalsForInput) errs.push("Aantal doelpunten moet exact gelijk zijn aan ‘Doelpunten voor’.");
     for (let i = 0; i < goals.length; i++) {
       const g = goals[i];
       if (!g.scorer_player_id) errs.push(`Goal ${i + 1}: kies een scorer.`);
@@ -493,12 +522,13 @@ export function MatchAdminForm({
       const ids = lineupPool.filter((m) => draft.lineupRoleByPlayer[m.player_id] === role).map((m) => m.player_id);
       return ids.map((player_id, sort_order) => {
         const member = lineupPool.find((m) => m.player_id === player_id);
+        // Zod lineup-schema accepteert geen JSON-null — lege string wordt genormaliseerd.
         return {
           player_id,
           role,
-          position: member?.position_label?.trim() || null,
+          position: member?.position_label?.trim() || "",
           absence_reason:
-            role === "absent" ? draft.lineupAbsentReasons[player_id]?.trim() || null : null,
+            role === "absent" ? draft.lineupAbsentReasons[player_id]?.trim() || "" : "",
           sort_order,
         };
       });
@@ -511,12 +541,12 @@ export function MatchAdminForm({
       kickoff_at: kickoffIso,
       is_home: isHome,
       match_type: matchType,
-      location: location.trim() || null,
-      referee: referee.trim() || null,
-      notes: notes.trim() || null,
+      location: location.trim(),
+      referee: referee.trim(),
+      notes: notes.trim(),
       status,
       goals_for: status === "played" ? goals.length : 0,
-      goals_against: goalsAgainst,
+      goals_against: status === "played" ? goalsAgainst : 0,
       selected_player_ids: status === "played" ? selectedIds : [],
       goals:
         status === "played"
@@ -527,7 +557,8 @@ export function MatchAdminForm({
             }))
           : [],
       cards: status === "played" ? cards : [],
-      substitutions: status === "played" ? substitutions : [],
+      substitutions: status === "played" && !preserveShapeEvents ? substitutions : [],
+      preserve_shape_events: preserveShapeEvents,
       wotm_player_id: status === "played" ? wotmId : "",
       lineup,
     };
@@ -538,6 +569,7 @@ export function MatchAdminForm({
     goals,
     cards,
     substitutions,
+    preserveShapeEvents,
     goalsAgainst,
     goalsForInput,
     initialMatch.id,
@@ -556,19 +588,62 @@ export function MatchAdminForm({
     wotmId,
   ]);
 
+  // Afrondstap: forceer status played (ook als DB-record nog gepland is).
+  useEffect(() => {
+    if (!afterMatchStep) return;
+    if (draft.matchMetaDraft.status !== "played") setStatus("played");
+  }, [afterMatchStep, draft.matchMetaDraft.status]);
+
+  // Compact afronden: basis+bank zijn de enige scorers/assists/MVP/kaarten-bron.
+  useEffect(() => {
+    if (!compactAfterMatch || status !== "played") return;
+    const fromLineup = [...initialLineup.starters, ...initialLineup.bench];
+    if (fromLineup.length === 0) return;
+    setDraft((prev) => {
+      let changed = false;
+      const next = { ...prev.selectedSquadIds };
+      for (const id of fromLineup) {
+        if (!next[id]) {
+          next[id] = true;
+          changed = true;
+        }
+      }
+      return changed ? { ...prev, selectedSquadIds: next } : prev;
+    });
+  }, [compactAfterMatch, status, initialLineup.starters, initialLineup.bench]);
+
+  const lineupSelectionIncomplete =
+    compactAfterMatch &&
+    squadMembers.length === 0 &&
+    initialLineup.starters.length === 0 &&
+    initialLineup.bench.length === 0;
+
   useEffect(() => {
     if (saveState.status !== "success" || !saveState.matchId) return;
     refreshAfterAdminSave(router);
+    const base = `/beheer/wedstrijden/${saveState.matchId}?season=${encodeURIComponent(seasonId)}`;
     if (mode === "create") {
-      router.push(`/beheer/wedstrijden/${saveState.matchId}?season=${encodeURIComponent(seasonId)}`);
+      router.push(`/beheer/wedstrijden?season=${encodeURIComponent(seasonId)}`);
       return;
     }
     if (mode === "edit" && returnToHref) {
       router.push(returnToHref);
+      return;
     }
-  }, [saveState, mode, returnToHref, router, seasonId]);
+    if (mode === "edit" && workflowStep === "wedstrijd") {
+      router.push(`/beheer/wedstrijden?season=${encodeURIComponent(seasonId)}`);
+      return;
+    }
+    if (mode === "edit" && (workflowStep === "na-de-wedstrijd" || workflowStep === "uitslag")) {
+      router.push(`${base}&step=controle`);
+      return;
+    }
+    if (mode === "edit" && workflowStep === "controle" && status === "played") {
+      router.push(`/beheer/wedstrijden/${saveState.matchId}?season=${encodeURIComponent(seasonId)}`);
+    }
+  }, [saveState, mode, returnToHref, router, seasonId, workflowStep, status]);
 
-  const busy = savePending || busyGuest || busyDelete;
+  const busy = savePending || busyGuest;
   const submitBlocked = busy || lineupLiveErrors.length > 0 || (status === "played" && liveErrors.length > 0);
   const fieldErrors = saveState.status === "error" ? saveState.fieldErrors : undefined;
   const goalMsgs = collectGoalFieldMessages(fieldErrors);
@@ -647,32 +722,17 @@ export function MatchAdminForm({
     });
   };
 
-  const handleDeleteMatch = () => {
-    if (mode !== "edit" || initialMatch.id === "new") return;
-    if (!confirm("Deze wedstrijd en alle bijbehorende statistieken verwijderen? Dit kan niet ongedaan worden.")) return;
-    startDeleteTransition(async () => {
-      const res = await deleteMatchAdminAction(initialMatch.id);
-      if (!res.ok) {
-        setDeleteState({ status: "error", error: res.error });
-        return;
-      }
-      setDeleteState({ status: "success", message: "Wedstrijd verwijderd." });
-      router.push(`/beheer/wedstrijden?season=${encodeURIComponent(seasonId)}`);
-      refreshAfterAdminSave(router);
-    });
-  };
-
   const savePreviewText = useMemo(() => {
     const lines = goals.map((g, i) => {
       const scorer = members.find((m) => m.player_id === g.scorer_player_id)?.name ?? "Onbekend";
       const assist = g.assist_player_id ? members.find((m) => m.player_id === g.assist_player_id)?.name ?? "Onbekend" : null;
-      return `- Goal #${i + 1}: ${scorer}${assist ? ` (assist: ${assist})` : ""}`;
+      return `- Doelpunt #${i + 1}: ${scorer}${assist ? ` (assist van ${assist})` : ""}`;
     });
     const mvpName = wotmId ? members.find((m) => m.player_id === wotmId)?.name ?? "—" : "—";
     return [
       "Je slaat op:",
       `Score: ${goalsForInput}-${goalsAgainst}`,
-      "Goals:",
+      "Doelpunten:",
       ...(lines.length ? lines : ["- geen"]),
       `MVP: ${mvpName}`,
     ].join("\n");
@@ -690,15 +750,17 @@ export function MatchAdminForm({
   );
   const dirtySinceVerified = !!lastVerifiedSignature && lastVerifiedSignature !== currentSignature;
   const verification = saveState.status === "success" ? (saveState.verification as MatchVerificationPayload | undefined) : undefined;
+  const pageTitle =
+    mode === "edit"
+      ? "Wedstrijd bewerken"
+      : defaultStatus === "played"
+        ? "Uitslag invoeren"
+        : "Wedstrijd plannen";
 
   useEffect(() => {
     if (saveState.status !== "success" || !saveState.verification) return;
     setDraft((prev) => ({ ...prev, lastVerifiedSnapshot: currentSignature }));
   }, [currentSignature, saveState]);
-  useEffect(() => {
-    if (!correctionMode) return;
-    timelineRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [correctionMode]);
 
   return (
     <div className="space-y-8">
@@ -707,58 +769,61 @@ export function MatchAdminForm({
         className="space-y-8"
         onSubmit={(e) => {
           if (status !== "played") return;
+          // Afrondstap gaat naar Controleren — geen native confirm daar.
+          // Alleen bij definitief afronden (controle) nog een korte bevestiging.
+          if (afterMatchStep) return;
+          if (workflowStep !== "controle") return;
           if (!confirm(savePreviewText)) e.preventDefault();
         }}
       >
         <input type="hidden" name="payload" value={payloadJson} readOnly />
         <GlassCard className="space-y-0 divide-y divide-zvv-border">
+          {showWedstrijd ? (
           <div className="space-y-6 pb-8">
-            <p className="club-page-eyebrow">Match Control Center</p>
-            <div className="sticky top-2 z-10 rounded-2xl border border-zvv-border bg-white/95 p-3 shadow-sm backdrop-blur">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-2 py-1 text-zvv-muted">Seizoen: {seasonId.slice(0, 8)}…</span>
-                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-2 py-1 text-zvv-muted">Events: {goals.length}</span>
-                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-2 py-1 text-zvv-muted">Goals voor: {goalsForInput}</span>
-                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-2 py-1 text-zvv-muted">Assists: {goals.filter((g) => !!g.assist_player_id).length}</span>
-                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-2 py-1 text-zvv-muted">MVP: {wotmId ? (members.find((m) => m.player_id === wotmId)?.name ?? "—") : "—"}</span>
-                <span className={`rounded-full border px-2 py-1 ${liveErrors.length ? "border-red-300 bg-red-50 text-red-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}`}>
-                  {liveErrors.length ? `Validatie: ${liveErrors.length} issues` : "Validatie: OK"}
+            <div>
+              <p className="text-sm font-semibold text-zvv-primary">{pageTitle}</p>
+              <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
+                Stap 1 — Wedstrijdgegevens
+              </h2>
+              <p className="mt-1 text-sm text-zvv-muted">
+                {status === "played"
+                  ? "Wedstrijdgegevens en uitslag. Doelpunten en MVP horen bij afronden."
+                  : "Plan de wedstrijd. Opstelling, selectie en uitslag komen later — alleen als jij dat wilt."}
+              </p>
+            </div>
+            {status === "played" ? (
+            <div className="sticky top-2 z-10 rounded-2xl border border-zvv-border bg-white/95 p-3 shadow-sm backdrop-blur sm:p-4">
+              <div className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">Doelpunten: {goals.length}</span>
+                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">Assists: {goals.filter((g) => !!g.assist_player_id).length}</span>
+                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">MVP: {wotmId ? (members.find((m) => m.player_id === wotmId)?.name ?? "—") : "—"}</span>
+                <span className={`rounded-full border px-3 py-1 ${liveErrors.length ? "border-red-300 bg-red-50 text-red-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}`}>
+                  {liveErrors.length ? `${liveErrors.length} aandachtspunt${liveErrors.length === 1 ? "" : "en"}` : "Validatie in orde"}
                 </span>
-                <span className={`rounded-full border px-2 py-1 ${goals.length === goalsForInput ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-red-300 bg-red-50 text-red-700"}`}>
-                  Score/Event check: {goals.length}/{goalsForInput}
+                <span className={`rounded-full border px-3 py-1 ${goals.length === goalsForInput ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-red-300 bg-red-50 text-red-700"}`}>
+                  Score {goals.length}/{goalsForInput}
                 </span>
-                <span className={`rounded-full border px-2 py-1 ${saveState.status === "error" ? "border-red-300 bg-red-50 text-red-700" : !verification || dirtySinceVerified || savePending ? "border-amber-300 bg-amber-50 text-amber-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}`}>
-                  {saveState.status === "error" ? "ERROR" : !verification || dirtySinceVerified || savePending ? "DIRTY" : "VERIFIED"}
-                </span>
-                {verification ? (
-                  <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-1 text-emerald-700">
-                    verified {new Date(verification.verified_at).toLocaleTimeString("nl-NL")}
-                  </span>
-                ) : null}
-                <button type="button" onClick={() => setCorrectionMode((v) => !v)} className={`rounded-full border px-2 py-1 ${correctionMode ? "border-zvv-primary bg-zvv-primary-muted text-zvv-ink" : "border-zvv-border bg-zvv-card-mid text-zvv-muted"}`}>
-                  Correctie modus
-                </button>
               </div>
               {verification ? (
-                <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-[11px] text-emerald-800">
-                  Verified: event goals {verification.event_goal_count} · derived goals {verification.derived_goal_count} · event assists {verification.event_assist_count} · derived assists {verification.derived_assist_count} · integrity {verification.integrity_state}
-                </div>
-              ) : null}
-              {verification && verification.changes.length > 0 ? (
-                <div className="mt-2 rounded-lg border border-zvv-border bg-white px-3 py-2 text-[11px] text-zvv-ink">
-                  Wijzigingen: {verification.changes.map((c) => `${members.find((m) => m.player_id === c.player_id)?.name ?? "Speler"} ${c.goals_delta ? `${c.goals_delta > 0 ? "+" : ""}${c.goals_delta} goals` : ""}${c.goals_delta && c.assists_delta ? ", " : ""}${c.assists_delta ? `${c.assists_delta > 0 ? "+" : ""}${c.assists_delta} assists` : ""}`).join(" · ")}
-                  {verification.mvp_before_player_id !== verification.mvp_after_player_id ? ` · MVP gewijzigd` : ""}
+                <div className="mt-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                  Opgeslagen: {verification.event_goal_count} doelpunten · {verification.event_assist_count} assists · {verification.integrity_state === "verified" ? "alles klopt" : "controleer de uitslag"}
                 </div>
               ) : null}
               {dirtySinceVerified ? (
-                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800">
-                  Niet-opgeslagen wijzigingen sinds laatste verificatie.
+                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                  Niet-opgeslagen wijzigingen sinds de laatste opslag.
                 </div>
               ) : null}
             </div>
+            ) : (
+              <div className="rounded-xl border border-zvv-border bg-zvv-card-mid/50 px-4 py-3 text-sm text-zvv-muted">
+                Status Gepland: uitslag, doelpuntenmakers, assists en MVP vul je in na de wedstrijd via{" "}
+                <strong className="text-zvv-ink">Wedstrijd afronden</strong>.
+              </div>
+            )}
             <div className="grid gap-4 md:grid-cols-2">
               <label className="block space-y-2 md:col-span-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Tegenstander</span>
+                <span className="text-sm font-medium text-zvv-muted">Tegenstander</span>
                 <input required value={opponent} onChange={(e) => setOpponent(e.target.value)} className={inputCls} />
                 {fieldMessage(fieldErrors, "opponent") ? <span className="text-xs text-red-600">{fieldMessage(fieldErrors, "opponent")}</span> : null}
               </label>
@@ -798,14 +863,41 @@ export function MatchAdminForm({
                   <option value="cancelled">Afgelast</option>
                 </select>
               </label>
-              <label className="block space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Goals voor</span>
-                <input type="number" min={0} max={99} disabled value={status === "played" ? goals.length : 0} className={inputCls} />
-              </label>
-              <label className="block space-y-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Goals tegen</span>
-                <input type="number" min={0} max={99} value={goalsAgainst} onChange={(e) => setGoalsAgainst(Math.max(0, Math.min(99, Number(e.target.value) || 0)))} className={inputCls} />
-              </label>
+              {status === "played" ? (
+                <>
+                  <label className="block space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Doelpunten voor</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      name="goals_for_display"
+                      value={goals.length}
+                      readOnly
+                      className={inputCls}
+                      title="Volgt uit het aantal doelpunt-events"
+                    />
+                    {fieldMessage(fieldErrors, "goals_for") ? (
+                      <span className="text-xs text-red-600">{fieldMessage(fieldErrors, "goals_for")}</span>
+                    ) : null}
+                  </label>
+                  <label className="block space-y-2">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Doelpunten tegen</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      name="goals_against"
+                      value={goalsAgainst}
+                      onChange={(e) => setGoalsAgainst(Math.max(0, Math.min(99, Number(e.target.value) || 0)))}
+                      className={inputCls}
+                    />
+                    {fieldMessage(fieldErrors, "goals_against") ? (
+                      <span className="text-xs text-red-600">{fieldMessage(fieldErrors, "goals_against")}</span>
+                    ) : null}
+                  </label>
+                </>
+              ) : null}
               <label className="block space-y-2 md:col-span-2">
                 <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Locatie</span>
                 <input value={location} onChange={(e) => setLocation(e.target.value)} className={inputCls} placeholder="Optioneel" maxLength={200} />
@@ -826,13 +918,19 @@ export function MatchAdminForm({
               </label>
             </div>
           </div>
+          ) : null}
 
+          {showSelectie ? (
           <div className="space-y-4 border-t border-zvv-border py-8">
-            <p className="club-page-eyebrow">Opstelling</p>
-            <p className="text-sm text-zvv-muted">
-              Basis maximaal {MAX_LINEUP_STARTERS} speelsters · alleen seizoensselectie. Bank en afwezig zijn los van de
-              wedstrijdselectie bij gespeelde wedstrijden.
-            </p>
+            <div>
+              <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
+                Stap 2 — Wedstrijdselectie
+              </h2>
+              <p className="mt-1 text-sm text-zvv-muted">
+                Alleen de vaste selectie. Gastspeelsters verschijnen pas na <strong>+ Gastspeelster toevoegen</strong>.
+                De visuele 1-4-2-3-1-opstelling staat in stap Opstelling.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-4 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
               <span>Basis: {starterCount}/{MAX_LINEUP_STARTERS}</span>
               <span>Bank: {benchCount}</span>
@@ -862,7 +960,7 @@ export function MatchAdminForm({
                       <div className="min-w-0 text-sm font-medium text-zvv-ink">
                         {m.shirt_number != null ? `#${m.shirt_number}` : "—"} {m.name}
                         {m.position_label ? (
-                          <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-zvv-muted">
+                          <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-zvv-muted">
                             {m.position_label}
                           </span>
                         ) : null}
@@ -899,31 +997,217 @@ export function MatchAdminForm({
                 })}
               </div>
             )}
+            {mode === "edit" && initialMatch.id !== "new" ? (
+              <div className="rounded-xl border border-dashed border-zvv-primary/35 bg-zvv-primary-muted/40 p-4">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zvv-muted">+ Gastspeelster toevoegen</p>
+                <p className="mb-3 text-sm text-zvv-muted">
+                  Gasten horen niet in de vaste selectie. Koppel ze alleen voor deze wedstrijd.
+                </p>
+                <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <select
+                    value={rosterPlayerId}
+                    onChange={(e) => setRosterPlayerId(e.target.value)}
+                    className={`${inputCls} sm:col-span-2 lg:col-span-2`}
+                  >
+                    <option value="">Bestaande gastspeelster kiezen</option>
+                    {availableGuests.map((g) => (
+                      <option key={`ag-${g.playerId}`} value={g.playerId}>
+                        {g.fullName}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    value={rosterShirt}
+                    onChange={(e) => setRosterShirt(e.target.value)}
+                    className={inputCls}
+                    type="number"
+                    min={1}
+                    max={99}
+                    placeholder="Rugnummer"
+                  />
+                  <input
+                    value={rosterPositionLabel}
+                    onChange={(e) => setRosterPositionLabel(e.target.value)}
+                    className={inputCls}
+                    placeholder="Positie (optioneel)"
+                    maxLength={120}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddRosterPlayer}
+                    disabled={busy || !rosterPlayerId}
+                    className="club-btn-secondary text-sm font-bold disabled:opacity-40"
+                  >
+                    {busyGuest ? "Bezig…" : "Gast aan wedstrijd koppelen"}
+                  </button>
+                </div>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <input
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    className={`${inputCls} sm:col-span-2`}
+                    placeholder="Nieuwe gast — volledige naam *"
+                  />
+                  <input
+                    value={guestShirt}
+                    onChange={(e) => setGuestShirt(e.target.value)}
+                    className={inputCls}
+                    type="number"
+                    min={1}
+                    max={99}
+                    placeholder="Rugnummer"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddGuest}
+                    disabled={busy || !guestName.trim()}
+                    className="club-btn-primary text-sm font-bold disabled:opacity-40"
+                  >
+                    {busyGuest ? "Bezig…" : "+ Nieuwe gastspeelster"}
+                  </button>
+                </div>
+                <div className="mt-3">
+                  <AdminFormBanner state={guestState} />
+                </div>
+              </div>
+            ) : null}
           </div>
+          ) : null}
 
-          {status === "played" ? (
+          {showUitslag && status === "played" ? (
             <>
-              <div ref={timelineRef} className={`space-y-4 py-8 ${correctionMode ? "rounded-xl border border-zvv-primary/35 bg-zvv-primary-muted/20 p-4" : ""}`}>
-                <p className="club-page-eyebrow">Player event board</p>
+              <div className="space-y-4 py-8">
+                <div>
+                  <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink md:text-3xl">
+                    {compactAfterMatch ? "Wedstrijd afronden" : "Uitslag en gebeurtenissen"}
+                  </h2>
+                  <p className="mt-1 text-sm text-zvv-muted">
+                    {compactAfterMatch
+                      ? "Vul na afloop in een paar stappen de eindstand en belangrijkste gebeurtenissen in. Dit hoeft niet live tijdens de wedstrijd."
+                      : "Vul de eindstand, doelpunten, assists en MVP in."}
+                  </p>
+                </div>
+
+                {/* Eindstand */}
+                <div className="rounded-2xl border border-zvv-border bg-gradient-to-br from-zvv-card-mid/80 to-white px-4 py-5 md:px-6">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-muted">Eindstand</p>
+                  <div className="mt-3 flex flex-wrap items-center justify-center gap-3 md:gap-5">
+                    <span className="min-w-[7rem] text-center font-[family-name:var(--font-display)] text-xl text-zvv-ink md:text-2xl">
+                      {isHome ? CLUB_NAME : opponent || "Tegenstander"}
+                    </span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      name="goals_for"
+                      aria-label="Doelpunten voor"
+                      value={goalsForInput}
+                      onChange={(e) => {
+                        const n = Math.max(0, Math.min(99, Number(e.target.value) || 0));
+                        setDraft((prev) => {
+                          // Compact afronden: geen lege doelpuntrijen auto-genereren — alleen via + Doelpunt toevoegen.
+                          if (compactAfterMatch) {
+                            const trimmed =
+                              prev.eventDraft.length > n ? prev.eventDraft.slice(0, n) : prev.eventDraft;
+                            return {
+                              ...prev,
+                              eventDraft: trimmed,
+                              matchMetaDraft: { ...prev.matchMetaDraft, goalsFor: n },
+                            };
+                          }
+                          const prevGoals = prev.eventDraft;
+                          let nextGoals = prevGoals;
+                          if (prevGoals.length > n) nextGoals = prevGoals.slice(0, n);
+                          else if (prevGoals.length < n) {
+                            nextGoals = [
+                              ...prevGoals,
+                              ...Array.from({ length: n - prevGoals.length }, () => ({
+                                scorer_player_id: "",
+                                assist_player_id: null as string | null,
+                                minute: 0,
+                              })),
+                            ];
+                          }
+                          return {
+                            ...prev,
+                            eventDraft: nextGoals,
+                            matchMetaDraft: { ...prev.matchMetaDraft, goalsFor: n },
+                          };
+                        });
+                      }}
+                      className="h-14 w-16 rounded-xl border border-zvv-border bg-white text-center font-[family-name:var(--font-display)] text-3xl text-zvv-ink md:h-16 md:w-20 md:text-4xl"
+                    />
+                    <span className="font-[family-name:var(--font-display)] text-3xl text-zvv-ink/40">–</span>
+                    <input
+                      type="number"
+                      min={0}
+                      max={99}
+                      name="goals_against"
+                      aria-label="Doelpunten tegen"
+                      value={goalsAgainst}
+                      onChange={(e) => setGoalsAgainst(Math.max(0, Math.min(99, Number(e.target.value) || 0)))}
+                      className="h-14 w-16 rounded-xl border border-zvv-border bg-white text-center font-[family-name:var(--font-display)] text-3xl text-zvv-ink md:h-16 md:w-20 md:text-4xl"
+                    />
+                    <span className="min-w-[7rem] text-center font-[family-name:var(--font-display)] text-xl text-zvv-ink md:text-2xl">
+                      {isHome ? opponent || "Tegenstander" : CLUB_NAME}
+                    </span>
+                  </div>
+                  {compactAfterMatch ? (
+                    <p className="mt-3 text-center text-sm font-medium text-zvv-ink">
+                      {goals.filter((g) => g.scorer_player_id).length} van {goalsForInput} doelpunten ingevoerd
+                    </p>
+                  ) : goals.length !== goalsForInput ? (
+                    <p className="mt-3 text-center text-sm text-amber-800">
+                      {goalsForInput} doelpunten voor vereist · {goals.length} ingevoerd
+                    </p>
+                  ) : null}
+                </div>
+
+                {lineupSelectionIncomplete ? (
+                  <div
+                    className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-4 text-amber-950"
+                    data-testid="lineup-selection-gate"
+                  >
+                    <p className="font-semibold">De wedstrijdselectie is nog niet compleet.</p>
+                    <p className="mt-1 text-sm">
+                      Bevestig eerst basis en bank om doelpuntenmakers, assists, kaarten en MVP te kunnen kiezen.
+                    </p>
+                    {initialMatch.id && initialMatch.id !== "new" ? (
+                      <Link
+                        href={matchWorkflowHref(initialMatch.id, seasonId, "opstelling")}
+                        className="club-btn-primary club-btn-primary-sm mt-3 inline-flex"
+                      >
+                        Ga naar Opstelling &amp; selectie
+                      </Link>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {!compactAfterMatch ? (
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                  {members.map((m) => (
+                  {membersSorted.map((m) => (
                     <div key={m.player_id} className={`${toggleCls} items-center justify-between gap-2`}>
                       <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
                         <input type="checkbox" checked={!!selected[m.player_id]} onChange={(e) => setSelected((prev) => ({ ...prev, [m.player_id]: e.target.checked }))} className="h-4 w-4 shrink-0 rounded border-zvv-border bg-white text-zvv-primary focus:ring-zvv-primary/30" />
                         <span className="min-w-0 truncate text-sm font-medium text-zvv-ink">
                           {m.shirt_number != null ? `#${m.shirt_number}` : "—"} {m.name}
-                          <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-zvv-muted">{m.position_label || ""}</span>
-                          {m.is_guest ? <span className="ml-2 rounded border border-zvv-primary/30 bg-zvv-primary-muted px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-zvv-primary">Gast</span> : null}
-                          {!m.has_season_membership ? <span className="ml-2 rounded border border-zvv-border bg-white px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-zvv-muted">Geen seizoensmembership</span> : null}
+                          <span className="ml-2 text-xs font-semibold uppercase tracking-wide text-zvv-muted">{m.position_label || ""}</span>
+                          {m.is_guest ? <span className="ml-2 rounded border border-zvv-primary/30 bg-zvv-primary-muted px-1.5 py-0.5 text-xs font-black uppercase tracking-wide text-zvv-primary">Gast</span> : null}
+                          {!m.has_season_membership ? <span className="ml-2 rounded border border-zvv-border bg-white px-1.5 py-0.5 text-xs font-bold uppercase tracking-wide text-zvv-muted">Geen seizoenslidmaatschap</span> : null}
                         </span>
                       </label>
                       {m.is_guest && mode === "edit" && initialMatch.id !== "new" ? (
-                        <button type="button" onClick={() => handleRemoveGuest(m.player_id)} disabled={busy} className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-red-800 hover:bg-red-100 disabled:opacity-40">×</button>
+                        <button type="button" onClick={() => handleRemoveGuest(m.player_id)} disabled={busy} className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-bold uppercase tracking-wide text-red-800 hover:bg-red-100 disabled:opacity-40">×</button>
                       ) : null}
                     </div>
                   ))}
                 </div>
-                {squadMembers.length > 0 ? (
+                ) : !lineupSelectionIncomplete ? (
+                  <p className="text-sm text-zvv-muted">
+                    Speelsters voor goals, assists, kaarten en MVP: basis en bank ({squadMembers.length}).
+                  </p>
+                ) : null}
+                {!compactAfterMatch && squadMembers.length > 0 ? (
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {squadMembers.map((m) => {
                       const st = liveStats.get(m.player_id) ?? { goals: 0, assists: 0 };
@@ -935,7 +1219,7 @@ export function MatchAdminForm({
                             <span className="text-xs text-zvv-muted">{st.goals}G · {st.assists}A</span>
                           </div>
                           <div className="mt-2 flex gap-2">
-                            <button type="button" className="club-btn-secondary px-3 py-1 text-xs" onClick={() => handleAddGoalForPlayer(m.player_id)} disabled={busy}>+ Goal</button>
+                            <button type="button" className="club-btn-secondary px-3 py-1 text-xs" onClick={() => handleAddGoalForPlayer(m.player_id)} disabled={busy}>+ Doelpunt</button>
                             <button type="button" className="club-btn-secondary px-3 py-1 text-xs" onClick={() => handleQuickAssist(m.player_id)} disabled={busy}>+ Assist</button>
                             <button type="button" className={`rounded-lg border px-2 text-xs font-semibold ${isMvp ? "border-amber-400 bg-amber-50 text-amber-800" : "border-zvv-border bg-zvv-card-mid text-zvv-muted"}`} onClick={() => setWotmId(m.player_id)} disabled={busy}>⭐ MVP</button>
                           </div>
@@ -944,50 +1228,31 @@ export function MatchAdminForm({
                     })}
                   </div>
                 ) : null}
-                {mode === "edit" && initialMatch.id !== "new" ? (
-                  <div className="rounded-xl border border-dashed border-zvv-primary/35 bg-zvv-primary-muted/40 p-4">
-                    <p className="mb-3 text-xs font-bold uppercase tracking-wider text-zvv-muted">+ Gastspeler / tijdelijke speelster toevoegen</p>
-                    <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <select value={rosterPlayerId} onChange={(e) => setRosterPlayerId(e.target.value)} className={`${inputCls} sm:col-span-2 lg:col-span-2`}>
-                        <option value="">Bestaande speelster zonder seizoensmembership kiezen</option>
-                        {members
-                          .filter((m) => !m.has_season_membership || m.is_guest)
-                          .map((m) => (
-                            <option key={`roster-${m.player_id}`} value={m.player_id}>
-                              {m.name} {m.is_guest ? "(Gast)" : "(tijdelijk)"}
-                            </option>
-                          ))}
-                      </select>
-                      <input value={rosterShirt} onChange={(e) => setRosterShirt(e.target.value)} className={inputCls} type="number" min={1} max={99} placeholder="Rugnummer" />
-                      <input value={rosterPositionLabel} onChange={(e) => setRosterPositionLabel(e.target.value)} className={inputCls} placeholder="Positie-tekst" maxLength={120} />
-                      <button type="button" onClick={handleAddRosterPlayer} disabled={busy || !rosterPlayerId} className="club-btn-secondary text-sm font-bold disabled:opacity-40">
-                        {busyGuest ? "Bezig…" : "Aan match toevoegen"}
-                      </button>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                      <input value={guestName} onChange={(e) => setGuestName(e.target.value)} className={`${inputCls} sm:col-span-2`} placeholder="Volledige naam *" />
-                      <input value={guestShirt} onChange={(e) => setGuestShirt(e.target.value)} className={inputCls} type="number" min={1} max={99} placeholder="Rugnummer" />
-                      <select value={guestPosition} onChange={(e) => setGuestPosition(e.target.value)} className={inputCls}>
-                        <option value="">Linie</option><option value="GK">GK</option><option value="DEF">DEF</option><option value="MID">MID</option><option value="ATT">ATT</option>
-                      </select>
-                      <input value={guestPositionLabel} onChange={(e) => setGuestPositionLabel(e.target.value)} className={`${inputCls} sm:col-span-2 lg:col-span-3`} placeholder="Positie-tekst" maxLength={120} />
-                      <button type="button" onClick={handleAddGuest} disabled={busy || !guestName.trim()} className="club-btn-secondary text-sm font-bold disabled:opacity-40">{busyGuest ? "Bezig…" : "+ Gastspeler toevoegen"}</button>
-                    </div>
-                    <div className="mt-3"><AdminFormBanner state={guestState} /></div>
-                  </div>
-                ) : null}
               </div>
 
               <div className="space-y-4 py-8">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="club-page-eyebrow">Goal events timeline</p>
-                  <button type="button" onClick={handleAddGoal} disabled={busy || squadMembers.length === 0} className="club-btn-secondary">+ Goal toevoegen</button>
+                  <p className="club-page-eyebrow">Doelpunten</p>
+                  <button
+                    type="button"
+                    onClick={handleAddGoal}
+                    disabled={busy || squadMembers.length === 0 || lineupSelectionIncomplete}
+                    className="club-btn-secondary"
+                  >
+                    + Doelpunt toevoegen
+                  </button>
                 </div>
-                {goals.map((g, idx) => (
+                {lineupSelectionIncomplete ? (
+                  <p className="rounded-xl border border-zvv-border bg-zvv-card-mid/50 px-3 py-2 text-sm text-zvv-muted">
+                    Doelpuntformulieren zijn uitgeschakeld tot de opstelling (basis/bank) is bevestigd.
+                  </p>
+                ) : null}
+                {!lineupSelectionIncomplete
+                  ? goals.map((g, idx) => (
                   <div key={`goal-${idx}`} className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[5rem_1fr_1fr_auto]">
-                    <p className="md:col-span-4 text-xs font-bold uppercase tracking-wider text-zvv-muted">Goal #{idx + 1}</p>
+                    <p className="md:col-span-4 text-xs font-bold uppercase tracking-wider text-zvv-muted">Doelpunt #{idx + 1}</p>
                     <label className="block space-y-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
                       <input
                         type="number"
                         min={0}
@@ -1002,25 +1267,34 @@ export function MatchAdminForm({
                         disabled={busy}
                       />
                     </label>
-                    <select value={g.scorer_player_id} onChange={(e) => handleGoalUpdate(idx, { scorer_player_id: e.target.value })} className={inputCls} disabled={busy}>
-                      <option value="">Kies scorer</option>
-                      {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.shirt_number != null ? `#${m.shirt_number} ` : ""}{m.name}</option>)}
-                    </select>
-                    <select value={g.assist_player_id ?? ""} onChange={(e) => handleGoalUpdate(idx, { assist_player_id: e.target.value || null })} className={inputCls} disabled={busy}>
-                      <option value="">Geen assist</option>
-                      {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.shirt_number != null ? `#${m.shirt_number} ` : ""}{m.name}</option>)}
-                    </select>
+                    <label className="block space-y-1">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Scorer</span>
+                      <select value={g.scorer_player_id} onChange={(e) => handleGoalUpdate(idx, { scorer_player_id: e.target.value, assist_player_id: e.target.value === g.assist_player_id ? null : g.assist_player_id })} className={inputCls} disabled={busy}>
+                        <option value="">Kies scorer</option>
+                        {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.shirt_number != null ? `#${m.shirt_number} ` : ""}{m.name}</option>)}
+                      </select>
+                    </label>
+                    <label className="block space-y-1">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Assist</span>
+                      <select value={g.assist_player_id ?? ""} onChange={(e) => handleGoalUpdate(idx, { assist_player_id: e.target.value || null })} className={inputCls} disabled={busy}>
+                        <option value="">Geen assist</option>
+                        {squadMembers
+                          .filter((m) => m.player_id !== g.scorer_player_id)
+                          .map((m) => <option key={m.player_id} value={m.player_id}>{m.shirt_number != null ? `#${m.shirt_number} ` : ""}{m.name}</option>)}
+                      </select>
+                    </label>
                     <button type="button" onClick={() => handleGoalDelete(idx)} disabled={busy} className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-800 hover:bg-red-100 disabled:opacity-40">Verwijder</button>
                   </div>
-                ))}
+                ))
+                  : null}
                 {goalMsgs.length > 0 ? <ul className="list-inside list-disc space-y-1 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{goalMsgs.map((msg, i) => <li key={`${msg}-${i}`}>{msg}</li>)}</ul> : null}
                 {liveWarnings.length > 0 ? <ul className="list-inside list-disc space-y-1 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{liveWarnings.map((msg) => <li key={msg}>{msg}</li>)}</ul> : null}
                 <div className="rounded-xl border border-zvv-border bg-white p-4 text-sm">
-                  <p className="font-semibold text-zvv-ink">Live preview: goals {goals.length}/{goalsForInput}</p>
+                  <p className="font-semibold text-zvv-ink">Voorbeeld: doelpunten {goals.length}/{goalsForInput}</p>
                   <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {squadMembers.map((m) => {
                       const st = liveStats.get(m.player_id) ?? { goals: 0, assists: 0 };
-                      return <div key={m.player_id} className="rounded-lg border border-zvv-border px-3 py-2 text-xs"><p className="font-semibold text-zvv-ink">{m.name}</p><p className="text-zvv-muted">Goals {st.goals} · Assists {st.assists}</p></div>;
+                      return <div key={m.player_id} className="rounded-lg border border-zvv-border px-3 py-2 text-xs"><p className="font-semibold text-zvv-ink">{m.name}</p><p className="text-zvv-muted">Doelpunten {st.goals} · Assists {st.assists}</p></div>;
                     })}
                   </div>
                 </div>
@@ -1041,7 +1315,7 @@ export function MatchAdminForm({
                 {cards.map((c, idx) => (
                   <div key={`card-${idx}`} className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[5rem_1fr_8rem_auto]">
                     <label className="block space-y-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
                       <input
                         type="number"
                         min={0}
@@ -1091,6 +1365,7 @@ export function MatchAdminForm({
                 ))}
               </div>
 
+              {!preserveShapeEvents ? (
               <div className="space-y-4 py-8">
                 <div className="flex items-center justify-between gap-3">
                   <p className="club-page-eyebrow">Wissels</p>
@@ -1114,7 +1389,7 @@ export function MatchAdminForm({
                     className="grid gap-2 rounded-xl border border-zvv-border bg-zvv-card-mid p-3 md:grid-cols-[5rem_1fr_1fr_auto]"
                   >
                     <label className="block space-y-1">
-                      <span className="text-[10px] font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
+                      <span className="text-xs font-semibold uppercase tracking-wider text-zvv-muted">Minuut</span>
                       <input
                         type="number"
                         min={0}
@@ -1168,24 +1443,92 @@ export function MatchAdminForm({
                   </div>
                 ))}
               </div>
+              ) : (
+                <p className="py-4 text-sm text-zvv-muted">
+                  Wissels en positiewijzigingen beheer je in het blok hierboven.
+                </p>
+              )}
 
               <div className="space-y-4 py-8">
-                <p className="club-page-eyebrow">⭐ MVP</p>
-                <select value={wotmId} onChange={(e) => setWotmId(e.target.value)} className={inputCls} disabled={busy || squadMembers.length === 0}>
-                  <option value="">Kies MVP</option>
-                  {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.name}</option>)}
-                </select>
+                <div>
+                  <h2 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
+                    Stap 4 — MVP en controle
+                  </h2>
+                  <p className="mt-1 text-sm text-zvv-muted">
+                    Kies de speelster van de wedstrijd. Controleer of de eindstand overeenkomt met de doelpunten vóór het opslaan.
+                  </p>
+                </div>
+                <label className="block max-w-md space-y-2">
+                  <span className="text-sm font-medium text-zvv-muted">MVP</span>
+                  <select value={wotmId} onChange={(e) => setWotmId(e.target.value)} className={inputCls} disabled={busy || squadMembers.length === 0}>
+                    <option value="">Kies MVP</option>
+                    {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.name}</option>)}
+                  </select>
+                </label>
+                <div className="rounded-xl border border-zvv-border bg-white p-4 text-sm text-zvv-ink">
+                  <p className="font-semibold">Samenvatting</p>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-zvv-muted">
+                    <li>Eindstand: {goalsForInput}–{goalsAgainst}</li>
+                    <li>Doelpunten ingevoerd: {goals.length}</li>
+                    <li>Assists: {goals.filter((g) => !!g.assist_player_id).length}</li>
+                    <li>MVP: {wotmId ? members.find((m) => m.player_id === wotmId)?.name ?? "—" : "Nog niet gekozen"}</li>
+                  </ul>
+                </div>
               </div>
             </>
           ) : null}
 
           <div className="space-y-4 pt-8">
-            {liveErrors.length > 0 ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"><ul className="list-inside list-disc space-y-1">{liveErrors.map((e) => <li key={e}>{e}</li>)}</ul></div> : null}
+            {liveErrors.length > 0 ? <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert"><ul className="list-inside list-disc space-y-1">{liveErrors.map((e) => <li key={e}>{e}</li>)}</ul></div> : null}
             <FormStatusBanner state={saveState} />
-            <div className="flex flex-wrap gap-3">
-              <button type="submit" disabled={submitBlocked} className="club-btn-primary min-h-[48px] disabled:pointer-events-none disabled:opacity-40">{savePending ? "Bezig met opslaan…" : mode === "create" ? "Wedstrijd aanmaken" : "Wijzigingen opslaan"}</button>
-              <Link href={`/beheer/wedstrijden?season=${encodeURIComponent(seasonId)}`} className="club-btn-secondary inline-flex min-h-[48px] items-center">Naar kalender</Link>
-            </div>
+            <AdminSaveBar
+              status={
+                savePending
+                  ? "saving"
+                  : saveState.status === "error"
+                    ? "error"
+                    : !verification || dirtySinceVerified
+                      ? "dirty"
+                      : saveState.status === "success"
+                        ? "saved"
+                        : "idle"
+              }
+              primaryLabel={
+                mode === "create" || workflowStep === "wedstrijd"
+                  ? "Opslaan"
+                  : afterMatchStep
+                    ? "Controleren en afronden"
+                    : workflowStep === "controle"
+                      ? "Wedstrijd definitief afronden"
+                      : status === "played"
+                        ? "Uitslag opslaan"
+                        : "Wijzigingen opslaan"
+              }
+              primaryDisabled={submitBlocked}
+              summary={
+                status === "played"
+                  ? `Uitslag ${goalsForInput}–${goalsAgainst} · ${goals.length} doelpunten`
+                  : "Gepland — opstelling later optioneel, geen uitslag vereist"
+              }
+              secondary={
+                <span className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={`/beheer/wedstrijden?season=${encodeURIComponent(seasonId)}`}
+                    className="club-btn-secondary club-btn-primary-sm inline-flex min-h-[44px] items-center"
+                  >
+                    Terug naar wedstrijden
+                  </Link>
+                  {mode === "edit" && initialMatch.id !== "new" && status !== "played" ? (
+                    <Link
+                      href={`/beheer/wedstrijden/${initialMatch.id}?season=${encodeURIComponent(seasonId)}&step=opstelling`}
+                      className="text-sm font-semibold text-zvv-primary underline"
+                    >
+                      Opstelling later maken
+                    </Link>
+                  ) : null}
+                </span>
+              }
+            />
           </div>
         </GlassCard>
       </form>
@@ -1193,10 +1536,25 @@ export function MatchAdminForm({
       {mode === "edit" && initialMatch.id !== "new" ? (
         <GlassCard className="border-red-200">
           <p className="text-sm font-medium text-zvv-ink">Gevaarlijke zone</p>
-          <div className="mt-3"><AdminFormBanner state={deleteState} /></div>
-          <button type="button" onClick={handleDeleteMatch} disabled={busy} className="mt-4 rounded-xl border border-red-300 bg-red-50 px-5 py-2.5 text-sm font-semibold text-red-800 transition-colors hover:bg-red-100 disabled:opacity-40">
-            {busyDelete ? "Verwijderen…" : "Wedstrijd verwijderen…"}
-          </button>
+          <p className="mt-1 text-sm text-zvv-muted">
+            Verwijder een foutieve of overbodige wedstrijd. Alleen hoofdbeheer kan dit definitief uitvoeren.
+          </p>
+          <div className="mt-4">
+            <MatchDeleteDialog
+              matchId={initialMatch.id}
+              opponent={opponent || initialMatch.opponent}
+              kickoffAt={initialMatch.kickoff_at}
+              status={status}
+              hasStats={
+                status === "played" ||
+                goals.length > 0 ||
+                Number(goalsForInput) > 0 ||
+                Number(goalsAgainst) > 0
+              }
+              seasonId={seasonId}
+              triggerLabel="Wedstrijd verwijderen"
+            />
+          </div>
         </GlassCard>
       ) : null}
     </div>

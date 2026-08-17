@@ -4,17 +4,21 @@ import Link from "next/link";
 import { PhotoOrFallback } from "@/components/media/photo-with-fallback";
 import { TEAM_DISPLAY_LABEL, TEAM_DISPLAY_LABEL_UPPER } from "@/constants/club";
 
-const LOCAL_TEAM_FALLBACK = "/team.jpg";
-
+/**
+ * Geen lokale `/team.jpg`-fallback meer: seizoen 2025/26-foto mag niet publiek blijven.
+ * Nieuwe foto via Beheer → Club (`club_profile.team_photo_url`). Bestand blijft in `public/` archief.
+ */
 function TeamPhotoUnavailable() {
   return (
     <div className="flex min-h-[min(42vh,340px)] flex-col items-center justify-center gap-4 bg-gradient-to-br from-slate-50 to-blue-50 px-6 text-center md:min-h-[min(45vh,380px)] md:px-8">
       <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-zvv-primary/20 bg-white text-3xl shadow-sm md:h-16 md:w-16" aria-hidden>
         📷
       </div>
-      <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink md:text-3xl">Teamfoto binnenkort</p>
+      <p className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink md:text-3xl">
+        Nieuwe teamfoto volgt binnenkort
+      </p>
       <p className="max-w-md text-[15px] leading-relaxed text-zvv-muted">
-        Zodra de nieuwe teamfoto live staat, verschijnt hij hier groot en strak in clubstijl.
+        Voor seizoen 2026/27 plaatsen we hier binnenkort de nieuwe selectiefoto.
       </p>
     </div>
   );
@@ -33,7 +37,6 @@ export function TeamPhotoBlock({ dbUrl, seasonId }: { dbUrl: string | null; seas
           <div className="relative aspect-[16/11] min-h-[320px] w-full bg-zvv-card-mid sm:aspect-[16/10] sm:min-h-[380px] md:aspect-[16/8] md:min-h-[480px] lg:min-h-[520px]">
             <PhotoOrFallback
               url={dbUrl}
-              secondaryUrl={LOCAL_TEAM_FALLBACK}
               alt={`Teamfoto ${TEAM_DISPLAY_LABEL}`}
               className="object-cover object-center transition-transform duration-700 ease-out motion-safe:group-hover:scale-[1.02]"
               sizes="(max-width: 768px) 100vw, 1760px"

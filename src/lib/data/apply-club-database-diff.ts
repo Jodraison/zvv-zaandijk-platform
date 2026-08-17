@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ClubDatabase,
+  FitnessScoreConfig,
   FitnessTest,
+  FitnessTestResult,
+  FitnessTestSession,
   Match,
   MatchGoalEvent,
   MatchCardEvent,
@@ -9,6 +12,7 @@ import type {
   MatchMatchdayRosterRow,
   MatchPlayerStat,
   MatchSubstitution,
+  MatchPositionChange,
   Player,
   PlayerSeasonMembership,
   Season,
@@ -18,6 +22,25 @@ import type {
 
 function fail(ctx: string, message: string): never {
   throw new Error(`${ctx}: ${message}`);
+}
+
+const FITNESS_MIGRATION_MSG =
+  "Database nog niet bijgewerkt voor het nieuwe fitheidsprotocol. Pas migratie 025 toe.";
+
+function isMissingFitnessTableError(message: string): boolean {
+  return (
+    /relation .+ does not exist/i.test(message) ||
+    /Could not find the table/i.test(message) ||
+    /schema cache/i.test(message) ||
+    /PGRST205/i.test(message)
+  );
+}
+
+function failFitnessWrite(ctx: string, message: string): never {
+  if (isMissingFitnessTableError(message)) {
+    throw new Error(FITNESS_MIGRATION_MSG);
+  }
+  fail(ctx, message);
 }
 
 function statKey(s: MatchPlayerStat) {
@@ -46,6 +69,7 @@ function playerEq(a: Player, b: Player) {
     a.full_name === b.full_name &&
     a.photo_url === b.photo_url &&
     a.is_guest === b.is_guest &&
+    (a.birth_date ?? null) === (b.birth_date ?? null) &&
     a.initials === b.initials &&
     a.bio === b.bio &&
     a.preferred_foot === b.preferred_foot &&
@@ -101,7 +125,9 @@ function matchEq(a: Match, b: Match) {
     a.goals_against === b.goals_against &&
     a.status === b.status &&
     a.wotm_player_id === b.wotm_player_id &&
-    (a.integrity_state ?? "verified") === (b.integrity_state ?? "verified")
+    (a.integrity_state ?? "verified") === (b.integrity_state ?? "verified") &&
+    (a.lineup_status ?? "draft") === (b.lineup_status ?? "draft") &&
+    (a.lineup_confirmed_at ?? null) === (b.lineup_confirmed_at ?? null)
   );
 }
 
@@ -133,7 +159,26 @@ function substitutionEq(a: MatchSubstitution, b: MatchSubstitution) {
     a.match_id === b.match_id &&
     a.player_in_id === b.player_in_id &&
     a.player_out_id === b.player_out_id &&
-    a.minute === b.minute
+    a.minute === b.minute &&
+    (a.to_slot ?? null) === (b.to_slot ?? null) &&
+    (a.stoppage_time ?? 0) === (b.stoppage_time ?? 0) &&
+    (a.sort_order ?? 0) === (b.sort_order ?? 0) &&
+    (a.change_group_id ?? null) === (b.change_group_id ?? null) &&
+    (a.notes ?? null) === (b.notes ?? null)
+  );
+}
+
+function positionChangeEq(a: MatchPositionChange, b: MatchPositionChange) {
+  return (
+    a.match_id === b.match_id &&
+    a.player_id === b.player_id &&
+    a.minute === b.minute &&
+    a.stoppage_time === b.stoppage_time &&
+    a.from_slot === b.from_slot &&
+    a.to_slot === b.to_slot &&
+    (a.change_group_id ?? null) === (b.change_group_id ?? null) &&
+    (a.notes ?? null) === (b.notes ?? null) &&
+    a.sort_order === b.sort_order
   );
 }
 
@@ -169,6 +214,43 @@ function fitEq(a: FitnessTest, b: FitnessTest) {
   );
 }
 
+function fitSessionEq(a: FitnessTestSession, b: FitnessTestSession) {
+  return (
+    a.season_id === b.season_id &&
+    a.test_on === b.test_on &&
+    a.protocol_code === b.protocol_code &&
+    a.status === b.status &&
+    a.note === b.note &&
+    a.score_config_id === b.score_config_id &&
+    a.published_at === b.published_at &&
+    a.created_by === b.created_by &&
+    a.published_by === b.published_by
+  );
+}
+
+function fitResultEq(a: FitnessTestResult, b: FitnessTestResult) {
+  return (
+    a.session_id === b.session_id &&
+    a.player_id === b.player_id &&
+    a.flying_sprint_30m_seconds === b.flying_sprint_30m_seconds &&
+    a.agility_10_20_10_seconds === b.agility_10_20_10_seconds &&
+    a.plank_seconds === b.plank_seconds &&
+    a.six_minute_run_meters === b.six_minute_run_meters &&
+    a.participation_status === b.participation_status &&
+    a.participation_reason === b.participation_reason &&
+    a.note === b.note
+  );
+}
+
+function fitConfigEq(a: FitnessScoreConfig, b: FitnessScoreConfig) {
+  return (
+    a.code === b.code &&
+    a.label === b.label &&
+    a.version === b.version &&
+    JSON.stringify(a.config) === JSON.stringify(b.config)
+  );
+}
+
 /**
  * Past alleen gewijzigde rijen toe (geen volledige dataset-rewrite).
  * Verwijderingen respecteren FK-volgorde; match-/sessie-delete gebruikt CASCADE voor kind-tabellen.
@@ -186,6 +268,9 @@ export async function applyClubDatabaseDiff(
   const afterMatchIds = new Set(after.matches.map((m) => m.id));
   const afterSessIds = new Set(after.training_sessions.map((s) => s.id));
   const afterFitIds = new Set(after.fitness_tests.map((f) => f.id));
+  const afterFitResultIds = new Set(after.fitness_test_results.map((r) => r.id));
+  const afterFitSessionIds = new Set(after.fitness_test_sessions.map((s) => s.id));
+  const afterFitConfigIds = new Set(after.fitness_score_configs.map((c) => c.id));
 
   const afterRosterKeys = new Set(after.match_matchday_roster.map(rosterKey));
   const afterLineupIds = new Set(after.match_lineup_entries.map((e) => e.id));
@@ -194,8 +279,30 @@ export async function applyClubDatabaseDiff(
   const afterEventIds = new Set(after.match_goal_events.map((e) => e.id));
   const afterCardEventIds = new Set(after.match_card_events.map((e) => e.id));
   const afterSubstitutionIds = new Set(after.match_substitutions.map((e) => e.id));
+  const afterPosChangeIds = new Set((after.match_position_changes ?? []).map((e) => e.id));
 
   // --- Deletes (kinderen / afhankelijken eerst waar geen CASCADE van parent naar child) ---
+  for (const r of before.fitness_test_results) {
+    if (!afterFitResultIds.has(r.id) || !afterFitSessionIds.has(r.session_id)) {
+      const { error } = await client.from("fitness_test_results").delete().eq("id", r.id);
+      if (error) failFitnessWrite("fitness_test_results verwijderen", error.message);
+    }
+  }
+
+  for (const s of before.fitness_test_sessions) {
+    if (!afterFitSessionIds.has(s.id)) {
+      const { error } = await client.from("fitness_test_sessions").delete().eq("id", s.id);
+      if (error) failFitnessWrite("fitness_test_sessions verwijderen", error.message);
+    }
+  }
+
+  for (const c of before.fitness_score_configs) {
+    if (!afterFitConfigIds.has(c.id)) {
+      const { error } = await client.from("fitness_score_configs").delete().eq("id", c.id);
+      if (error) failFitnessWrite("fitness_score_configs verwijderen", error.message);
+    }
+  }
+
   for (const f of before.fitness_tests) {
     if (!afterFitIds.has(f.id)) {
       const { error } = await client.from("fitness_tests").delete().eq("id", f.id);
@@ -288,6 +395,12 @@ export async function applyClubDatabaseDiff(
       if (error) fail("match_substitutions verwijderen", error.message);
     }
   }
+  for (const s of before.match_position_changes ?? []) {
+    if (!afterPosChangeIds.has(s.id)) {
+      const { error } = await client.from("match_position_changes").delete().eq("id", s.id);
+      if (error) fail("match_position_changes verwijderen", error.message);
+    }
+  }
 
   for (const a of before.training_attendance) {
     if (!afterAttKeys.has(attKey(a))) {
@@ -324,6 +437,7 @@ export async function applyClubDatabaseDiff(
         full_name: p.full_name,
         photo_url: p.photo_url,
         is_guest: p.is_guest,
+        birth_date: p.birth_date ?? null,
         initials: p.initials,
         bio: p.bio,
         preferred_foot: p.preferred_foot,
@@ -374,6 +488,8 @@ export async function applyClubDatabaseDiff(
         status: m.status,
         wotm_player_id: m.wotm_player_id,
         integrity_state: m.integrity_state ?? "verified",
+        lineup_status: m.lineup_status ?? "draft",
+        lineup_confirmed_at: m.lineup_confirmed_at ?? null,
       };
       const { error } = await client.from("matches").upsert(row as never, { onConflict: "id" });
       if (error) fail("matches opslaan", error.message);
@@ -471,10 +587,36 @@ export async function applyClubDatabaseDiff(
         player_in_id: s.player_in_id,
         player_out_id: s.player_out_id,
         minute: s.minute,
+        to_slot: s.to_slot ?? null,
+        stoppage_time: s.stoppage_time ?? 0,
+        sort_order: s.sort_order ?? 0,
+        change_group_id: s.change_group_id ?? null,
+        notes: s.notes ?? null,
         updated_at: new Date().toISOString(),
       };
       const { error } = await client.from("match_substitutions").upsert(row as never, { onConflict: "id" });
       if (error) fail("match_substitutions opslaan", error.message);
+    }
+  }
+
+  for (const s of after.match_position_changes ?? []) {
+    const b = (before.match_position_changes ?? []).find((x) => x.id === s.id);
+    if (!b || !positionChangeEq(b, s)) {
+      const row = {
+        id: s.id,
+        match_id: s.match_id,
+        player_id: s.player_id,
+        minute: s.minute,
+        stoppage_time: s.stoppage_time,
+        from_slot: s.from_slot,
+        to_slot: s.to_slot,
+        change_group_id: s.change_group_id,
+        notes: s.notes,
+        sort_order: s.sort_order,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await client.from("match_position_changes").upsert(row as never, { onConflict: "id" });
+      if (error) fail("match_position_changes opslaan", error.message);
     }
   }
 
@@ -531,6 +673,66 @@ export async function applyClubDatabaseDiff(
       };
       const { error } = await client.from("fitness_tests").upsert(row as never, { onConflict: "id" });
       if (error) fail("fitness_tests opslaan", error.message);
+    }
+  }
+
+  for (const c of after.fitness_score_configs) {
+    const b = before.fitness_score_configs.find((x) => x.id === c.id);
+    if (!b || !fitConfigEq(b, c)) {
+      const row = {
+        id: c.id,
+        code: c.code,
+        label: c.label,
+        version: c.version,
+        config: c.config,
+        created_at: c.created_at,
+      };
+      const { error } = await client.from("fitness_score_configs").upsert(row as never, { onConflict: "id" });
+      if (error) failFitnessWrite("fitness_score_configs opslaan", error.message);
+    }
+  }
+
+  for (const s of after.fitness_test_sessions) {
+    const b = before.fitness_test_sessions.find((x) => x.id === s.id);
+    if (!b || !fitSessionEq(b, s)) {
+      const row = {
+        id: s.id,
+        season_id: s.season_id,
+        test_on: s.test_on,
+        protocol_code: s.protocol_code,
+        status: s.status,
+        note: s.note,
+        score_config_id: s.score_config_id,
+        created_at: s.created_at,
+        updated_at: new Date().toISOString(),
+        published_at: s.published_at,
+        created_by: s.created_by,
+        published_by: s.published_by,
+      };
+      const { error } = await client.from("fitness_test_sessions").upsert(row as never, { onConflict: "id" });
+      if (error) failFitnessWrite("fitness_test_sessions opslaan", error.message);
+    }
+  }
+
+  for (const r of after.fitness_test_results) {
+    const b = before.fitness_test_results.find((x) => x.id === r.id);
+    if (!b || !fitResultEq(b, r)) {
+      const row = {
+        id: r.id,
+        session_id: r.session_id,
+        player_id: r.player_id,
+        flying_sprint_30m_seconds: r.flying_sprint_30m_seconds,
+        agility_10_20_10_seconds: r.agility_10_20_10_seconds,
+        plank_seconds: r.plank_seconds,
+        six_minute_run_meters: r.six_minute_run_meters,
+        participation_status: r.participation_status,
+        participation_reason: r.participation_reason,
+        note: r.note,
+        created_at: r.created_at,
+        updated_at: new Date().toISOString(),
+      };
+      const { error } = await client.from("fitness_test_results").upsert(row as never, { onConflict: "id" });
+      if (error) failFitnessWrite("fitness_test_results opslaan", error.message);
     }
   }
 

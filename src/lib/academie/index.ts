@@ -16,6 +16,15 @@ export type {
 export { ACADEMY_CATEGORY_DEFINITIONS } from "@/lib/academie/categories-data";
 
 export {
+  ACADEMY_LEARNING_PATHS,
+  listAcademyLearningPaths,
+} from "@/lib/academie/learning-paths";
+export type {
+  AcademyLearningPath,
+  LearningPathStatus,
+} from "@/lib/academie/learning-paths";
+
+export {
   getAcademyCategoryOverview,
   hasAcademyCategoryOverview,
 } from "@/lib/academie/category-overviews";
@@ -80,6 +89,113 @@ export type {
   AcademyLessonUsageContextId,
   AcademyLessonFieldSlot,
 } from "@/lib/academie/lesson-types";
+
+export {
+  ACADEMY_LESSON_LEVEL_LABELS,
+  ACADEMY_LESSON_POSITION_IDS,
+  ACADEMY_LESSON_POSITION_LABELS,
+} from "@/lib/academie/lesson-standard-v1";
+export type {
+  AcademyLessonAgreementCard,
+  AcademyLessonChoiceCompare,
+  AcademyLessonChoiceMoment,
+  AcademyLessonCoachingChip,
+  AcademyLessonDecisionBranch,
+  AcademyLessonDecisionStep,
+  AcademyLessonFieldLegendItem,
+  AcademyLessonMatchMoment,
+  AcademyLessonMistakePair,
+  AcademyLessonMistakeVisual,
+  AcademyLessonPositionCard,
+  AcademyLessonPositionId,
+  AcademyLessonStandardV1,
+  AcademyLessonVideoSlot,
+  AcademyLessonWhyCard,
+} from "@/lib/academie/lesson-standard-v1";
+
+/** Tactical Visual System V1 — canonieke illustratieregels. */
+export {
+  FORMATION_4231_US,
+  FORMATION_4231_US_COMPACT,
+  FORMATION_KW_R6,
+  FORMATION_PRESS_BASE,
+  KW_R6_OPPONENTS,
+  PRESS_BALL,
+  PRESS_OPPONENTS,
+  TACTICAL_COLORS,
+  TACTICAL_LEGEND_ITEMS,
+  TACTICAL_VIEWBOX,
+  ballBesideHolder,
+  fieldPointToSvg,
+  usPlayersFromFormation,
+} from "@/lib/academie/tactical-visual-system";
+export type {
+  TacticalLine,
+  TacticalLineKind,
+  TacticalOurPosition,
+  TacticalPlayerMarker,
+  TacticalPoint,
+  TacticalSituationDefinition,
+  TacticalSituationId,
+  TacticalTeam,
+  TacticalTitleEyebrow,
+  TacticalZone,
+} from "@/lib/academie/tactical-visual-system";
+
+export { evaluateTacticalAnimation, lerpPoint } from "@/lib/academie/tactical-animation-engine";
+export { getTacticalAnimation, listAnimatedSituationIds } from "@/lib/academie/tactical-animation-registry";
+export {
+  createCurvedRun,
+  createPressingArc,
+  avoidPlayerCollision,
+  createSafeCurvedRun,
+} from "@/lib/academie/tactical-animation-collision";
+export type { TacticalPhaseState, TacticalSequenceBrief } from "@/lib/academie/tactical-animation-v4-state";
+export { canLastLineStepUp, PRESS_GOOD_BRIEF, PRESS_BAD_BRIEF, CONNECTED_TEAM_BRIEF } from "@/lib/academie/tactical-animation-v4-state";
+export {
+  validateAnimationV4,
+  validateAnimationCollision,
+  validateDefensiveSpacing,
+  validatePressingChain,
+  validateLocalNumbers,
+  validateRoleIntegrity,
+} from "@/lib/academie/tactical-animation-v4-validators";
+export type {
+  CollectiveTeamState,
+  CollectiveSequenceBrief,
+  LastLineAction,
+  RestDefenseStructure,
+  OpponentTacticalBrief,
+  CollectiveFrameAudit,
+} from "@/lib/academie/tactical-collective";
+export {
+  applyCollectiveShift,
+  evaluateLastLineAction,
+  usCollectiveShape,
+  opponentCollectiveShape,
+  measureTeamLength,
+  measureLineGapsUs,
+  auditCollectiveFrame,
+  TEAM_LENGTH_GUIDE,
+  LINE_GAP_GUIDE,
+} from "@/lib/academie/tactical-collective";
+export {
+  getCollectiveBrief,
+  COLLECTIVE_PILOT_IDS,
+  KW_R6_COLLECTIVE_BRIEF,
+  CONNECTED_TEAM_COLLECTIVE_BRIEF,
+} from "@/lib/academie/tactical-collective-briefs";
+export {
+  validateCollectiveAnimation,
+  validateAllCollective,
+} from "@/lib/academie/tactical-collective-validate";
+export type { CollectiveValidationIssue } from "@/lib/academie/tactical-collective-validate";
+export type {
+  TacticalAnimationDefinition,
+  TacticalAnimationFrame,
+  TacticalAnimationPhase,
+} from "@/lib/academie/tactical-animation-types";
+export { TACTICAL_ANIMATION_PREF_KEY } from "@/lib/academie/tactical-animation-types";
 
 export { ACADEMY_LESSON_DEFINITIONS } from "@/lib/academie/lessons-data";
 

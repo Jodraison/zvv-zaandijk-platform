@@ -1,5 +1,5 @@
 /**
- * Single Source of Truth voor alle Statistics Center queries.
+ * Single Source of Truth voor alle Statistiekcentrum-queries.
  *
  * Publieke façade: delegeert naar bestaande canonieke query-functies en statistiekmodules.
  */

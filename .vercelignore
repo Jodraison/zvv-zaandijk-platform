@@ -1,0 +1,17 @@
+# Keep Vercel uploads lean — source only; remote build installs deps.
+node_modules
+.next
+.next-*
+.review-artifacts
+.review-backups
+.review-screenshots
+.review-auth
+.data
+.git
+docs
+*.log
+.env
+.env.local
+.env.*
+!.env.example
+.vercel

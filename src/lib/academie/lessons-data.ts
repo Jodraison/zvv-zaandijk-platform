@@ -1,30 +1,802 @@
 import type { AcademyLesson } from "@/lib/academie/lesson-types";
+import type { AcademyLessonStandardV1 } from "@/lib/academie/lesson-standard-v1";
 
 const VOETBALVISIE_CATEGORY_ID = "cat.voetbalvisie";
 const IDENTITEIT_TOPIC_ID = "topic.voetbalvisie.identiteit";
-
-/** Content anchors — invulschema voor definitieve lesinhoud ZVV Zaandijk VRZ1. */
-const IDENTITEIT_ANCHORS = {
-  summary: { id: "les.identiteit.summary" },
-  quickReference: { id: "les.identiteit.quick-reference" },
-  visual: { id: "les.identiteit.visual" },
-  keyTakeaway: { id: "les.identiteit.key-takeaway" },
-  whyImportant: { id: "les.identiteit.why-important" },
-  practicalExplanation: { id: "les.identiteit.practical" },
-  commonMistakes: { id: "les.identiteit.mistakes" },
-  coachNotebook: { id: "les.identiteit.coach-notebook" },
-  trainerFocus: { id: "les.identiteit.trainer-focus" },
-  selfCheck: { id: "les.identiteit.zelf-controleren" },
-  relatedTopics: { id: "les.identiteit.related" },
-  whyLearning: { id: "les.identiteit.waarom-leer-ik-dit" },
-  onThePitch: { id: "les.identiteit.op-het-trainingsveld" },
-  whenToUse: { id: "les.identiteit.wanneer-gebruik-je-dit" },
-} as const;
+const KERNWAARDEN_TOPIC_ID = "topic.voetbalvisie.kernwaarden";
+const TEAMAFSPRAKEN_TOPIC_ID = "topic.voetbalvisie.teamafspraken";
+const GEDRAGSREGELS_TOPIC_ID = "topic.voetbalvisie.gedragsregels";
+const INTENSITEIT_TOPIC_ID = "topic.voetbalvisie.intensiteit";
+const MENTALITEIT_TOPIC_ID = "topic.voetbalvisie.mentaliteit";
 
 /**
- * Les: Onze identiteit — content-ready structuur.
- * Definitieve tekst invullen per `data-content-anchor` in dit bestand.
+ * Les: Onze identiteit — Lesstandaard V2 (visual-first).
  */
+const IDENTITEIT_STANDARD: AcademyLessonStandardV1 = {
+  updatedAt: "2026-07-20",
+  levelLabel: "Basis",
+  traitChips: ["Samen", "Moedig", "Intens", "Slim", "Verantwoordelijk"],
+  learningOutcomes: [
+    "Onze vijf eigenschappen kennen.",
+    "Zien wanneer we ervan afwijken.",
+    "Weten wat jij dan doet.",
+  ],
+  situation: {
+    title: "Wedstrijdsituatie",
+    explanation: "Bal bij onze R6 — zie hoe linies verbonden blijven terwijl het veld groot blijft.",
+    note: "Compact = verbonden linies. Niet: iedereen naar de bal.",
+    fieldPreset: "connected-team",
+  },
+  recognizeTitle: "Goed of niet?",
+  recognizeCompare: {
+    good: "RW zet druk én 8/6/lijn sluiten aan.",
+    bad: "RW sprint alleen; de binnenlijn blijft open.",
+    badSituationId: "press-bad",
+    goodSituationId: "press-good",
+    badTitle: "Alleen jagen",
+    goodTitle: "Team sluit aan achter de druk",
+    badConsequence: "LB speelt naar 8 binnenin; druk is nutteloos.",
+    goodConsequence: "LB kan alleen terug naar LCB.",
+  },
+  decisionTreeTitle: "Beslisboom",
+  decisionBranch: {
+    start: "Balverlies",
+    question: "Kun jij direct druk geven én kan het team aansluiten?",
+    yes: {
+      label: "Ja",
+      result: "Druk op de bal; team sluit aan en maakt het veld klein.",
+    },
+    no: {
+      label: "Nee",
+      result: "Niet alleen doorjagen; herstel positie, vertraag, sluit compact aan.",
+    },
+  },
+  positions: [
+    {
+      id: "keeper",
+      role: "Keeper",
+      mainTask: "Rustig coachen, team van achteruit verbonden houden.",
+      watchFor: ["Niet automatisch lang bij veilige opbouw."],
+    },
+    {
+      id: "lb",
+      role: "Verdediging",
+      mainTask: "Breedte met bal; aansluiten bij druk.",
+      watchFor: ["Niet te vroeg vooruit zonder steun."],
+    },
+    {
+      id: "lcv",
+      role: "Verdediging",
+      mainTask: "Rust, afstand, verbinding middenveld/keeper.",
+      watchFor: ["Ook de ruimte achterin checken."],
+    },
+    {
+      id: "rcv",
+      role: "Verdediging",
+      mainTask: "Inspelen wanneer het kan; linie organiseren.",
+      watchFor: ["Niet forceren bij gesloten lijn."],
+    },
+    {
+      id: "rb",
+      role: "Verdediging",
+      mainTask: "Rechts steunen; direct reageren bij balverlies.",
+      watchFor: ["Bezetting achter de bal houden."],
+    },
+    {
+      id: "l6",
+      role: "Middenveld",
+      mainTask: "Aanspeelbaar blijven; tempo kiezen.",
+      watchFor: ["Niet verstoppen achter tegenstander."],
+    },
+    {
+      id: "r6",
+      role: "Middenveld",
+      mainTask: "Linies verbinden; balans bewaken.",
+      watchFor: ["Niet met iedereen voor de bal."],
+    },
+    {
+      id: "10",
+      role: "Middenveld",
+      mainTask: "Ruimte tussen linies; helpen versnellen.",
+      watchFor: ["Blijf bewegen en coachen."],
+    },
+    {
+      id: "lw",
+      role: "Aanval",
+      mainTask: "Veld groot maken; actie; direct omschakelen.",
+      watchFor: ["Niet blijven staan na balverlies."],
+    },
+    {
+      id: "rw",
+      role: "Aanval",
+      mainTask: "Diepte of naar binnen voor teamgenoot.",
+      watchFor: ["Wissel je loopactie."],
+    },
+    {
+      id: "spits",
+      role: "Aanval",
+      mainTask: "Eerste aanspeelpunt én eerste verdediger.",
+      watchFor: ["Druk alleen met team-aansluiting."],
+    },
+  ],
+  mistakes: [
+    {
+      visual: "solo",
+      wrong: "Links buiten start alleen uit.\nGevolg: afstanden groter.",
+      better: "Coach, wacht op aansluiting en start op het juiste moment.",
+      badSituationId: "solo-solve",
+      goodSituationId: "solo-support",
+      badTitle: "Links buiten start alleen uit",
+      goodTitle: "Links buiten start met steun en timing",
+      badTakeaway: "LW start te vroeg of alleen zonder steun.",
+      goodTakeaway: "Coach, wacht op aansluiting en start op het juiste moment.",
+      badConsequence: "De balbezitter heeft geen opties; aanval loopt vast.",
+      goodConsequence: "De balbezitter krijgt meerdere oplossingen en de aanval blijft verbonden.",
+    },
+    {
+      visual: "blind-run",
+      wrong: "Speelster rent blind op de bal af.\nGevolg: gaten in het team.",
+      better: "Juiste moment, juiste richting, met steun.",
+      badSituationId: "blind-run",
+      goodSituationId: "blind-press",
+      badTitle: "Speelster rent blind op de bal af",
+      goodTitle: "Drukzetten met richting en rugdekking",
+      badTakeaway: "Rechte jacht zonder trigger of rugdekking.",
+      goodTakeaway: "Juiste moment, juiste richting, met steun.",
+      badConsequence: "Tegenstander speelt om haar heen; centrum komt open.",
+      goodConsequence: "De tegenstander houdt minder oplossingen en het team kan doorschuiven.",
+    },
+    {
+      visual: "always-forward",
+      wrong: "LCV forceert een gesloten vooruitpass.\nGevolg: onnodig balverlies.",
+      better: "Vooruit als het kan; anders bal houden en opnieuw openen.",
+      badSituationId: "always-forward",
+      goodSituationId: "forward-relocate",
+      badTitle: "LCV forceert een gesloten vooruitpass",
+      goodTitle: "Eerst verplaatsen, daarna vooruit",
+      badTakeaway: "Vooruitlijn is dicht; toch forceren.",
+      goodTakeaway: "Vooruit als het kan; anders bal houden en opnieuw openen.",
+      badConsequence: "Onderschepping en omschakelgevaar.",
+      goodConsequence: "We behouden controle en creëren een betere vooruitpass.",
+    },
+  ],
+  coachingChips: [
+    { label: "Samen", meaning: "Afstanden klein — niet allemaal naar de bal." },
+    { label: "Aansluiten", meaning: "Beweeg mee achter de actie." },
+    { label: "Rust", meaning: "Forceer niet; houd overzicht." },
+    { label: "Vooruit", meaning: "Ga vooruit als de ruimte open is." },
+    { label: "Herstel", meaning: "Direct reageren na balverlies of fout." },
+    { label: "Coach", meaning: "Info geven vóór de actie." },
+  ],
+  video: {
+    provider: "youtube",
+    placeholder: true,
+    title: "Onze identiteit in beelden",
+    caption: "Korte clips volgen later.",
+  },
+  summaryPoints: [
+    "Wij handelen als één team.",
+    "Moedig = verantwoord durven, niet roekeloos.",
+    "Na een fout begint meteen de volgende actie.",
+  ],
+  closingNote: "Vraag: wat heeft ons team nu nodig?",
+};
+
+/**
+ * Les: Kernwaarden — decision-making filter (niet opnieuw “wie zijn wij”).
+ */
+const KERNWAARDEN_STANDARD: AcademyLessonStandardV1 = {
+  updatedAt: "2026-07-20",
+  levelLabel: "Basis",
+  traitChips: ["Team", "Ruimte", "Aansluiting", "Risico", "Keuze"],
+  learningOutcomes: [
+    "Je ziet wanneer er meer dan één keuze is.",
+    "Je checkt ruimte, aansluiting en risico.",
+    "Je kiest wat het team het meeste helpt.",
+  ],
+  situation: {
+    title: "Wedstrijdsituatie",
+    explanation: "Bal bij R6. Wanneer is vooruit wél of niet verstandig?",
+    note: "Beste keuze ≠ altijd snelste of mooiste.",
+    situationId: "kw-r6-ball",
+    fieldPreset: "kw-r6-ball",
+  },
+  choiceCompareTitle: "Twee keuzes",
+  choiceCompare: {
+    left: {
+      title: "Direct vooruit",
+      text: "Hier: lijn gecontroleerd; risico bij balverlies.",
+      situationId: "kw-choice-force",
+    },
+    right: {
+      title: "Eerst verplaatsen",
+      text: "Hier: bal houden, laten verschuiven, opnieuw kijken.",
+      situationId: "kw-choice-relocate",
+    },
+    nuance: "Lijn open + ontvanger kan handelen + team kan aansluiten? Speel vooruit.",
+  },
+  decisionTreeTitle: "Beslisboom",
+  decisionBranch: {
+    start: "Ik ontvang de bal.",
+    question: "Kan ik verantwoord vooruit spelen?",
+    yes: {
+      label: "Ja",
+      result: "Check ruimte + aansluiting.",
+    },
+    no: {
+      label: "Nee",
+      result: "Ga naar vraag 2.",
+    },
+    yesFollowUp: {
+      question: "Heeft de ontvanger ruimte én kan het team aansluiten?",
+      yes: {
+        label: "Ja",
+        result: "Speel vooruit.",
+      },
+      no: {
+        label: "Nee",
+        result: "Behoud de bal en zoek opnieuw.",
+      },
+    },
+    followUp: {
+      question: "Kan ik de tegenstander laten bewegen met balbehoud?",
+      yes: {
+        label: "Ja",
+        result: "Kort, zijwaarts of terug — maak opnieuw ruimte.",
+      },
+      no: {
+        label: "Nee",
+        result: "Bescherm de bal, coach steun, minst risico.",
+      },
+    },
+    end: "Na iedere pass opnieuw kijken.",
+  },
+  positionNote: "Dit keuzefilter geldt voor iedere positie.",
+  choiceMomentsTitle: "Drie keuzemomenten",
+  choiceMoments: [
+    {
+      title: "Vooruit of bal houden",
+      situation: "LCV: 10 dicht, R6 vrij — daarna kan ruimte groeien.",
+      choiceA: "Forceren naar 10.",
+      choiceB: "R6 inspelen.",
+      best: "B — R6 inspelen.",
+      why: "Balbehoud dwingt verschuiving; daarna opnieuw vooruit.",
+      situationId: "kw-moment-hold",
+    },
+    {
+      title: "Actie of samenspelen",
+      situation: "LW 1v1; LB buitenom; 10 binnenin.",
+      choiceA: "Direct de actie.",
+      choiceB: "Combineer met LB of 10.",
+      best: "Check verdediger + steun.",
+      why: "Verkeerd + ruimte: actie. Goed + steun vrij: combineer. 2e man: speel vrij.",
+      situationId: "kw-moment-wing",
+    },
+    {
+      title: "Schieten of doorspelen",
+      situation: "10 tussen linies; CB’s blokkeren; RW vrijer.",
+      choiceA: "Meteen schieten.",
+      choiceB: "Doorspelen naar RW of SP.",
+      best: "Check ruimte op doel.",
+      why: "Ruimte + balans: schiet. Blok + vrije teamgenoot: doorspelen.",
+      situationId: "kw-moment-finish",
+    },
+  ],
+  coachingChips: [
+    { label: "Vooruit", meaning: "Ruimte open; team kan aansluiten." },
+    { label: "Houden", meaning: "Niet forceren; behoud de bal." },
+    { label: "Draai", meaning: "Verplaats naar de vrije kant." },
+    { label: "Steun", meaning: "Geef een veilige oplossing." },
+    { label: "Risico", meaning: "Wat als de actie mislukt?" },
+  ],
+  summaryPoints: [
+    "Kijk vooruit, maar forceer niet.",
+    "Check ruimte, aansluiting en risico.",
+    "Kies wat het team het meeste helpt.",
+  ],
+  closingNote: "Kan ik in één zin uitleggen waarom dit goed was voor het team?",
+};
+
+/**
+ * Les: Teamafspraken — collectieve uitvoering (niet wie/kiezen).
+ */
+const TEAMAFSPRAKEN_STANDARD: AcademyLessonStandardV1 = {
+  updatedAt: "2026-07-20",
+  levelLabel: "Basis",
+  traitChips: ["Kijk", "Steun", "Aansluiten", "Coach", "Samen"],
+  learningOutcomes: [
+    "Je kent onze vijf vaste teamafspraken.",
+    "Je helpt een teamgenoot vóór, tijdens en na de actie.",
+    "Je herkent wanneer het team niet samen beweegt.",
+  ],
+  situation: {
+    title: "Wedstrijdsituatie",
+    explanation: "LCV bouwt op — steun, vooruit en balans rond de bal.",
+    note: "Geldt voor iedere positie. Afspraken maken samen handelen sneller.",
+    situationId: "ta-lcv-buildup",
+  },
+  agreementsTitle: "Vijf teamafspraken",
+  agreements: [
+    {
+      title: "Kijk vóór de bal komt",
+      body: "Scan schouder en druk vóór je aanname.",
+    },
+    {
+      title: "Geef twee oplossingen",
+      body: "Eén veilig (steun) én één vooruitgericht.",
+    },
+    {
+      title: "Beweeg mee achter de actie",
+      body: "Na je pass bied je je opnieuw aan.",
+    },
+    {
+      title: "Druk is nooit alleen",
+      body: "Eerste druk; rest sluit de ruimtes.",
+    },
+    {
+      title: "Coach vóór de actie",
+      body: "Zeg ‘tijd’ of ‘man’ vóór de keuze.",
+    },
+  ],
+  recognizeTitle: "Goed of niet?",
+  recognizeCompare: {
+    bad: "RB alleen — geen veilige én geen vooruit optie.",
+    good: "Veilig terug + vooruit — vóór ontvangst.",
+    badSituationId: "ta-rb-alone",
+    goodSituationId: "ta-rb-support",
+    badTitle: "RB alleen zonder steun",
+    goodTitle: "RB met veilige én vooruit optie",
+    badConsequence: "Onder druk geen oplossing; balverlies dreigt.",
+    goodConsequence: "RB kan kiezen; team blijft verbonden.",
+  },
+  decisionTreeTitle: "Beslisboom",
+  decisionBranch: {
+    start: "Mijn teamgenoot krijgt de bal.",
+    question: "Kan zij mij zien én veilig aanspelen?",
+    yes: {
+      label: "Ja",
+      result: "Blijf bruikbaar; kijk wat de volgende actie vraagt.",
+    },
+    no: {
+      label: "Nee",
+      result: "Ga naar vraag 2.",
+    },
+    followUp: {
+      question: "Kan ik een andere oplossing creëren?",
+      yes: {
+        label: "Ja",
+        result: "Beweeg kort, diep, breed of achter de bal.",
+      },
+      no: {
+        label: "Nee",
+        result: "Maak ruimte, coach, positioneer voor balans.",
+      },
+    },
+    end: "Na iedere beweging opnieuw kijken.",
+  },
+  positionNote: "Deze afspraken gelden voor iedere positie.",
+  matchMomentsTitle: "Drie wedstrijdmomenten",
+  matchMoments: [
+    {
+      title: "Voor de bal komt",
+      situation: "Bal naar L6; 8 in haar rug.",
+      agreement: "Kijk vóór de bal komt.",
+      action: "Scan → kaats, terug of draai; coach ‘man’/‘tijd’.",
+      why: "Zonder scan is de aanname al te laat.",
+      situationId: "ta-moment-scan",
+    },
+    {
+      title: "Na je pass",
+      situation: "10 speelt naar LW.",
+      agreement: "Beweeg mee achter de actie.",
+      action: "10 loopt binnenin voor kaats; 6’en houden balans.",
+      why: "De vervolgloop maakt de volgende combinatie.",
+      situationId: "ta-moment-after-pass",
+    },
+    {
+      title: "Teamgenoot zet druk",
+      situation: "SP zet druk op hun CB.",
+      agreement: "Druk is nooit alleen.",
+      action: "10 sluit 6; vleugels binnen; 6’en door.",
+      why: "Eerste druk werkt alleen als ruimtes kleiner worden.",
+      situationId: "ta-moment-press",
+    },
+  ],
+  coachingChips: [
+    { label: "Kijk", meaning: "Scan vóór ontvangst — hardop als tip." },
+    { label: "Tijd", meaning: "Ruimte om te draaien of aan te nemen." },
+    { label: "Man", meaning: "Druk in rug — kaats of draai." },
+    { label: "Steun", meaning: "Veilige oplossing achter/naast de bal." },
+    { label: "Aansluiten", meaning: "Beweeg mee; maak afstanden kleiner." },
+    { label: "Door", meaning: "Schuif samen één stap vooruit." },
+  ],
+  summaryPoints: [
+    "Help de speelster aan de bal vóór haar keuze.",
+    "Geef een veilige én een vooruitgerichte optie.",
+    "Na iedere actie: kijken, bewegen, coachen.",
+  ],
+  closingNote: "Welke oplossing geef jij zonder bal?",
+};
+
+const GEDRAGSREGELS_STANDARD: AcademyLessonStandardV1 = {
+  updatedAt: "2026-07-20",
+  levelLabel: "Basis",
+  traitChips: ["Herstel", "Help", "Coach", "Accepteer", "Bespreek"],
+  learningOutcomes: [
+    "Je weet wat je direct na een fout doet.",
+    "Je helpt teamgenoten zonder verwijten.",
+    "Je blijft betrokken bij wissels, spanning en beslissingen.",
+  ],
+  situation: {
+    title: "Situatie",
+    explanation: "Onze 10 verliest de bal — herstel begint meteen.",
+    note: "Emotie mag. Jouw volgende actie moet het team helpen.",
+    situationId: "gr-10-loss",
+  },
+  agreementsTitle: "Vijf gedragsregels",
+  agreementsCardLabel: "Regel",
+  agreements: [
+    {
+      title: "Eerst herstellen",
+      body: "Na een fout direct in actie. Teleurstelling wacht.",
+    },
+    {
+      title: "Help, wijs niet",
+      body: "Los eerst samen op. Bespreken komt daarna.",
+    },
+    {
+      title: "Coach de oplossing",
+      body: "Zeg wat zij nu kan doen — niet alleen wat fout ging.",
+    },
+    {
+      title: "Blijf betrokken",
+      body: "Na wissel of tegenslag blijf je het team helpen.",
+    },
+    {
+      title: "Kies het juiste moment",
+      body: "Tijdens actie kort. Uitgebreid wanneer stil.",
+    },
+  ],
+  recognizeTitle: "Goed of niet?",
+  recognizeCompare: {
+    bad: "Blijven staan en verwijten — extra tijd voor hen.",
+    good: "Herstellen en helpen — eerst gevaar, daarna praten.",
+    badSituationId: "gr-l6-freeze",
+    goodSituationId: "gr-l6-recover",
+    badTitle: "Bevriezen na de fout",
+    goodTitle: "Direct herstellen",
+    badConsequence: "Extra tijd en ruimte voor de tegenstander.",
+    goodConsequence: "Gevaar wordt beperkt; daarna kun je kort coachen.",
+  },
+  decisionTreeTitle: "Beslisboom",
+  decisionBranch: {
+    start: "Er gaat iets mis.",
+    question: "Is de situatie nog bezig?",
+    yes: {
+      label: "Ja",
+      result: "Herstel, help, coach alleen wat nu nodig is.",
+    },
+    no: {
+      label: "Nee",
+      result: "Ga naar vraag 2.",
+    },
+    followUp: {
+      question: "Moet dit direct kort worden opgelost?",
+      yes: {
+        label: "Ja",
+        result: "Zeg rustig en concreet wat de afspraak is.",
+      },
+      no: {
+        label: "Nee",
+        result: "Bewaar het voor rust of na de wedstrijd.",
+      },
+    },
+    end: "Terug naar de volgende actie.",
+  },
+  positionNote: "Deze gedragsregels gelden voor iedereen.",
+  matchMomentsTitle: "Drie wedstrijdmomenten",
+  matchMoments: [
+    {
+      title: "Teamgenoot maakt een fout",
+      situation: "RCV speelt verkeerd; gevaar richting doel.",
+      agreement: "Armen omhoog; stoppen met lopen.",
+      agreementLabel: "Verkeerd",
+      action: "Sprint terug, vertraag, sluit — daarna kort coachen.",
+      actionLabel: "Gewenst",
+      why: "Onze reactie geeft hen meer dan de fout zelf.",
+      situationId: "gr-moment-teammate",
+      goodSituationId: "gr-moment-teammate-good",
+      badTitle: "Blijven staan en wijzen",
+      goodTitle: "Herstellen en helpen",
+      badConsequence: "Zij krijgen extra tijd en ruimte.",
+      goodConsequence: "Gevaar wordt beperkt; daarna kun je kort coachen.",
+    },
+    {
+      title: "Je wordt gewisseld",
+      situation: "Je wilt door; de coach wisselt je.",
+      agreement: "Boos wegdraaien; niet meer coachen.",
+      agreementLabel: "Verkeerd",
+      action: "Accepteer, geef info aan IN, steun — gesprek later.",
+      actionLabel: "Gewenst",
+      why: "Teleurstelling mag. Afhaken helpt niemand.",
+      situationId: "gr-moment-sub",
+      goodSituationId: "gr-moment-sub-good",
+      badTitle: "Boos wegdraaien",
+      goodTitle: "Accepteer en blijf steunen",
+      badConsequence: "Team mist info en steun vanaf de kant.",
+      goodConsequence: "IN weet meer; team blijft verbonden.",
+    },
+    {
+      title: "Oneens met een beslissing",
+      situation: "Oneens met coaching, scheids of keuze.",
+      agreement: "Discussie tijdens doorlopend spel.",
+      agreementLabel: "Verkeerd",
+      action: "Taak uitvoeren; korte vraag wanneer stil; later praten.",
+      actionLabel: "Gewenst",
+      why: "Oneens mag — professioneel handelen blijft.",
+      situationId: "gr-moment-disagree",
+      goodSituationId: "gr-moment-disagree-good",
+      badTitle: "Discussie tijdens het spel",
+      goodTitle: "Taak uitvoeren, later praten",
+      badConsequence: "Aandacht weg van het spel; structuur valt stil.",
+      goodConsequence: "Wedstrijd gaat door; gesprek komt op het juiste moment.",
+    },
+  ],
+  coachingChips: [
+    { label: "Herstel", meaning: "Direct terug in de volgende actie." },
+    { label: "Help", meaning: "Los het gevaar samen op." },
+    { label: "Rust", meaning: "Geen verwijten; aandacht bij het spel." },
+    { label: "Kort", meaning: "Alleen de info die nu nodig is." },
+    { label: "Later", meaning: "Uitgebreid gesprek op het juiste moment." },
+    { label: "Door", meaning: "Accepteer en voer de volgende taak uit." },
+  ],
+  summaryPoints: [
+    "Na een fout begint direct de volgende actie.",
+    "Coach wat iemand nu kan doen, niet alleen wat fout ging.",
+    "Teleurstelling mag, afhaken niet.",
+  ],
+  closingNote: "Helpt mijn reactie het team in de volgende vijf seconden?",
+};
+
+const INTENSITEIT_STANDARD: AcademyLessonStandardV1 = {
+  updatedAt: "2026-07-20",
+  levelLabel: "Basis",
+  traitChips: ["Reageer", "Versnel", "Overtuiging", "Aansluiten", "Herstel"],
+  learningOutcomes: [
+    "Je herkent wanneer we direct moeten versnellen.",
+    "Je weet wanneer rust beter is dan haast.",
+    "Je begrijpt waarom intensiteit altijd gezamenlijk is.",
+  ],
+  situation: {
+    title: "Situatie",
+    explanation: "Balwinst bij R6 — ruimte rechts; samen versnellen.",
+    note: "Niet altijd snel. Wel direct herkennen wanneer de wedstrijd om snelheid vraagt.",
+    situationId: "in-r6-win",
+  },
+  agreementsTitle: "Vijf intensiteitsregels",
+  agreementsCardLabel: "Regel",
+  agreements: [
+    {
+      title: "Reageer direct",
+      body: "Na balwinst, balverlies of fout begint de volgende actie meteen.",
+    },
+    {
+      title: "Versnel bij voordeel",
+      body: "Tegenstander uit positie? Handel vóór hun herstel.",
+    },
+    {
+      title: "Ga volledig",
+      body: "Halve sprint, halve druk of twijfel helpt niemand.",
+    },
+    {
+      title: "Versnel samen",
+      body: "Bal, loops en aansluiting kiezen hetzelfde tempo.",
+    },
+    {
+      title: "Herstel opnieuw",
+      body: "Na een explosieve actie snel terug in positie.",
+    },
+  ],
+  recognizeTitle: "Goed of niet?",
+  recognizeCompare: {
+    bad: "Te laat versnellen — zij staan weer klaar.",
+    good: "Samen op het juiste moment — tempo vóór herstel.",
+    badSituationId: "in-10-late",
+    goodSituationId: "in-10-tempo",
+    badTitle: "Intensiteit = overal achteraan rennen",
+    goodTitle: "Samen versnellen op het juiste moment",
+    badConsequence: "Afstanden te groot; centrum open; zij spelen uit.",
+    goodConsequence: "Het team blijft compact en kan de volgende actie opnieuw uitvoeren.",
+  },
+  decisionTreeTitle: "Beslisboom",
+  decisionBranch: {
+    start: "De situatie verandert.",
+    question: "Ligt er direct voordeel?",
+    yes: {
+      label: "Ja",
+      result: "Ga naar vraag 2.",
+    },
+    no: {
+      label: "Nee",
+      result: "Houd rust, herstel positie, blijf kijken.",
+    },
+    yesFollowUp: {
+      question: "Kan het team de versnelling ondersteunen?",
+      yes: {
+        label: "Ja",
+        result: "Versnel en voer de actie volledig uit.",
+      },
+      no: {
+        label: "Nee",
+        result: "Forceer niet. Behoud de bal of vertraag.",
+      },
+    },
+    end: "Na de actie direct opnieuw organiseren.",
+  },
+  positionNote: "Intensiteit geldt voor iedere positie; het moment verschilt.",
+  matchMomentsTitle: "Drie wedstrijdmomenten",
+  matchMoments: [
+    {
+      title: "Balwinst en ruimte",
+      situation: "L6 onderschept; LW en 10 klaar vooruit.",
+      agreement: "Zij kunnen niet direct compact herstellen.",
+      agreementLabel: "Herken",
+      action: "Blik vooruit; LW/10 starten; rest sluit aan.",
+      actionLabel: "Gewenst",
+      why: "De ruimte bestaat maar enkele seconden.",
+      situationId: "in-moment-turnover",
+    },
+    {
+      title: "Drukzetten",
+      situation: "Hun RCV krijgt slechte pass richting zijlijn.",
+      agreement: "Slechte aanname of pass naar de lijn.",
+      agreementLabel: "Herken",
+      action: "SP druk; LW sluit RB; 10 sluit midden; rest door.",
+      actionLabel: "Gewenst",
+      why: "De trigger maakt druk kansrijk.",
+      situationId: "in-moment-press",
+    },
+    {
+      title: "Geen voordeel — rust",
+      situation: "RCV heeft bal; vooruitlijnen dicht; RB/R6 veilig.",
+      agreement: "Geen ruimte, geen overtal, niet klaar voor risico.",
+      agreementLabel: "Herken",
+      action: "Niet forceren; verplaatsen; opnieuw zoeken.",
+      actionLabel: "Gewenst",
+      why: "Rust maakt het volgende versnellingsmoment mogelijk.",
+      situationId: "in-moment-rest",
+    },
+  ],
+  coachingChips: [
+    { label: "Nu", meaning: "Voordeel ligt er; handel direct." },
+    { label: "Ga", meaning: "Voer de gekozen actie volledig uit." },
+    { label: "Tempo", meaning: "Verhoog handelings- en balsnelheid." },
+    { label: "Aansluiten", meaning: "Beweeg mee achter de actie." },
+    { label: "Rust", meaning: "Geen voordeel; behoud controle." },
+    { label: "Herstel", meaning: "Kom direct opnieuw in positie." },
+  ],
+  summaryPoints: [
+    "Intensiteit begint bij snel herkennen.",
+    "Versnel alleen wanneer het team voordeel kan benutten.",
+    "Na iedere actie organiseer je direct opnieuw.",
+  ],
+  closingNote: "Vraagt deze situatie om versnellen, volhouden of juist rust?",
+};
+
+const MENTALITEIT_STANDARD: AcademyLessonStandardV1 = {
+  updatedAt: "2026-07-20",
+  levelLabel: "Basis",
+  traitChips: ["Accepteer", "Herfocus", "Uitvoeren", "Help", "Volgende"],
+  learningOutcomes: [
+    "Je weet waarom de volgende actie telt.",
+    "Je herfocus na fout, kans of tegengoal.",
+    "Je blijft afspraken uitvoeren onder druk.",
+  ],
+  situation: {
+    title: "Situatie",
+    explanation: "Spits mist — kans voorbij; wedstrijd vraagt herfocus.",
+    note: "De vorige actie kun je niet veranderen. De volgende actie wel.",
+    situationId: "me-spits-miss",
+  },
+  agreementsTitle: "Vijf mentale regels",
+  agreementsCardLabel: "Regel",
+  agreements: [
+    {
+      title: "Accepteer snel",
+      body: "Verspil geen energie aan de vorige actie.",
+    },
+    {
+      title: "Herfocus",
+      body: "Zoek direct de volgende taak.",
+    },
+    {
+      title: "Blijf uitvoeren",
+      body: "De afspraken veranderen niet door de stand.",
+    },
+    {
+      title: "Help elkaar",
+      body: "Sterke teams trekken elkaar omhoog.",
+    },
+    {
+      title: "Volgende actie",
+      body: "Iedere situatie is een nieuwe kans.",
+    },
+  ],
+  recognizeTitle: "Goed of niet?",
+  recognizeCompare: {
+    bad: "Blijven hangen — discussie, positie kwijt.",
+    good: "Accepteer, sprint terug, sluit aan, coach.",
+    badSituationId: "me-10-hang",
+    goodSituationId: "me-10-refocus",
+    badTitle: "Blijven hangen na de fout",
+    goodTitle: "Accepteer en herfocus",
+    badConsequence: "Positie kwijt; team mist een speelster.",
+    goodConsequence: "Blok staat weer dicht; volgende actie kan beginnen.",
+  },
+  decisionTreeTitle: "Beslisboom",
+  decisionBranch: {
+    start: "Er gaat iets mis.",
+    question: "Kan ik de vorige actie nog veranderen?",
+    yes: {
+      label: "Ja",
+      result: "Nee — die is voorbij. Herfocus.",
+    },
+    no: {
+      label: "Nee",
+      result: "Wat vraagt de volgende situatie? Voer die volledig uit.",
+    },
+    end: "Na afloop evalueren.",
+  },
+  positionNote: "Deze mentale regels gelden voor iedereen.",
+  matchMomentsTitle: "Drie wedstrijdmomenten",
+  matchMoments: [
+    {
+      title: "Gemiste kans",
+      situation: "Grote kans mis; tegenstander bouwt op.",
+      agreement: "Teleurstelling mag — blijven staan niet.",
+      agreementLabel: "Herken",
+      action: "Eerste druk; sluit passlijn; team sluit aan.",
+      actionLabel: "Gewenst",
+      why: "De kans is voorbij; de wedstrijd niet.",
+      situationId: "me-moment-chance",
+    },
+    {
+      title: "Tegengoal",
+      situation: "We krijgen een goal tegen.",
+      agreement: "Stand verandert — afspraken niet.",
+      agreementLabel: "Herken",
+      action: "Blijf uitvoeren: steun, tempo, coaching.",
+      actionLabel: "Gewenst",
+      why: "Paniek verandert de stand niet; goede keuzes wel.",
+      situationId: "me-moment-concede",
+    },
+    {
+      title: "Laatste vijf minuten",
+      situation: "2-1 achter; weinig tijd.",
+      agreement: "Geen paniekballen zonder steun.",
+      agreementLabel: "Herken",
+      action: "Gecontroleerd risico; balans achter de aanval.",
+      actionLabel: "Gewenst",
+      why: "Rust + gericht risico houdt keuzes scherp.",
+      situationId: "me-moment-late",
+    },
+  ],
+  coachingChips: [
+    { label: "Volgende", meaning: "Zoek de taak die nu telt." },
+    { label: "Herfocus", meaning: "Laat de vorige actie los." },
+    { label: "Samen", meaning: "Trek elkaar omhoog onder druk." },
+    { label: "Door", meaning: "Voer de afspraak volledig uit." },
+    { label: "Rust", meaning: "Geen paniek; blijf kiezen." },
+    { label: "Blijf", meaning: "Stand verandert de afspraken niet." },
+  ],
+  summaryPoints: [
+    "De vorige actie is voorbij.",
+    "De volgende actie bepaalt de wedstrijd.",
+    "Een sterk team blijft goede keuzes maken.",
+  ],
+  closingNote: "Helpt mijn volgende actie het team?",
+};
+
 export const ACADEMY_LESSON_DEFINITIONS: AcademyLesson[] = [
   {
     id: "lesson.voetbalvisie.identiteit",
@@ -33,68 +805,100 @@ export const ACADEMY_LESSON_DEFINITIONS: AcademyLesson[] = [
     slug: "onze-identiteit",
     title: "Onze identiteit",
     lessonLevel: "intro",
-    estimatedReadingTime: 3,
-    qualityLevel: "foundation",
-    requiredVisuals: {
-      images: 1,
-      videos: 0,
-      tacticalIllustrations: 0,
-    },
-    contentAnchors: IDENTITEIT_ANCHORS,
-    sectionExtras: {
-      summary: { practiceExample: { anchorId: "les.identiteit.summary.praktijk" } },
-      quickReference: { practiceExample: { anchorId: "les.identiteit.quick-reference.praktijk" } },
-      visual: { practiceExample: { anchorId: "les.identiteit.visual.praktijk" } },
-      keyTakeaway: { practiceExample: { anchorId: "les.identiteit.key-takeaway.praktijk" } },
-      whyImportant: { practiceExample: { anchorId: "les.identiteit.why-important.praktijk" } },
-      practicalExplanation: { practiceExample: { anchorId: "les.identiteit.practical.praktijk" } },
-      commonMistakes: { practiceExample: { anchorId: "les.identiteit.mistakes.praktijk" } },
-      coachNotebook: { practiceExample: { anchorId: "les.identiteit.coach-notebook.praktijk" } },
-      whyLearning: { practiceExample: { anchorId: "les.identiteit.waarom-leer-ik-dit.praktijk" } },
-      onThePitch: { practiceExample: { anchorId: "les.identiteit.op-het-trainingsveld.praktijk" } },
-      whenToUse: { practiceExample: { anchorId: "les.identiteit.wanneer-gebruik-je-dit.praktijk" } },
-    },
-    quickReference: {
-      readingTimeMinutes: 3,
-    },
-    visuals: [{ kind: "placeholder" }, { kind: "placeholder" }],
-    trainerFocus: {
-      anchorId: "les.identiteit.trainer-focus",
-    },
-    selfCheck: {
-      anchorId: "les.identiteit.zelf-controleren",
-      items: [{ id: "hoofdtaak" }, { id: "belangrijkste-fout" }, { id: "toepassing" }],
-    },
-    whyLearning: {
-      items: [
-        { id: "why-important" },
-        { id: "delivers" },
-        { id: "helps-team" },
-        { id: "wins-matches" },
-      ],
-    },
-    whenToUse: {
-      items: [
-        { id: "balbezit" },
-        { id: "balverlies" },
-        { id: "omschakeling" },
-        { id: "standaardsituaties" },
-        { id: "coaching" },
-      ],
-    },
-    onThePitch: {
-      slots: [
-        { id: "warming-up", videoAnchorId: "les.identiteit.veld.warming-up.video", drillAnchorId: "les.identiteit.veld.warming-up.oefenvorm" },
-        { id: "positiespel", videoAnchorId: "les.identiteit.veld.positiespel.video", drillAnchorId: "les.identiteit.veld.positiespel.oefenvorm" },
-        { id: "partijvorm", videoAnchorId: "les.identiteit.veld.partijvorm.video", drillAnchorId: "les.identiteit.veld.partijvorm.oefenvorm" },
-        { id: "omschakelvorm", videoAnchorId: "les.identiteit.veld.omschakelvorm.video", drillAnchorId: "les.identiteit.veld.omschakelvorm.oefenvorm" },
-        { id: "afwerkvorm", videoAnchorId: "les.identiteit.veld.afwerkvorm.video", drillAnchorId: "les.identiteit.veld.afwerkvorm.oefenvorm" },
-        { id: "wedstrijd", videoAnchorId: "les.identiteit.veld.wedstrijd.video", drillAnchorId: "les.identiteit.veld.wedstrijd.oefenvorm" },
-      ],
-    },
+    estimatedReadingTime: 2,
+    qualityLevel: "complete",
+    summary: "Samen, moedig, intens, slim, verantwoordelijk — zo zijn wij herkenbaar.",
+    keyTakeaway: "De uitslag kan wisselen. Ons gedrag niet.",
+    standard: IDENTITEIT_STANDARD,
     relatedTopics: [
       { categorySlug: "onze-voetbalvisie", topicSlug: "kernwaarden", title: "Kernwaarden" },
       { categorySlug: "onze-voetbalvisie", topicSlug: "teamafspraken", title: "Teamafspraken" },
+    ],
+  },
+  {
+    id: "lesson.voetbalvisie.kernwaarden",
+    topicId: KERNWAARDEN_TOPIC_ID,
+    categoryId: VOETBALVISIE_CATEGORY_ID,
+    slug: "kernwaarden",
+    title: "Kernwaarden",
+    lessonLevel: "intro",
+    estimatedReadingTime: 2,
+    qualityLevel: "complete",
+    summary: "Onze waarden helpen ons kiezen wanneer meerdere oplossingen mogelijk zijn.",
+    keyTakeaway: "Kies niet automatisch de snelste of mooiste oplossing. Kies wat het team nu nodig heeft.",
+    standard: KERNWAARDEN_STANDARD,
+    relatedTopics: [
+      { categorySlug: "onze-voetbalvisie", topicSlug: "onze-identiteit", title: "Onze identiteit" },
+      { categorySlug: "onze-voetbalvisie", topicSlug: "teamafspraken", title: "Teamafspraken" },
+    ],
+  },
+  {
+    id: "lesson.voetbalvisie.teamafspraken",
+    topicId: TEAMAFSPRAKEN_TOPIC_ID,
+    categoryId: VOETBALVISIE_CATEGORY_ID,
+    slug: "teamafspraken",
+    title: "Teamafspraken",
+    lessonLevel: "intro",
+    estimatedReadingTime: 2,
+    qualityLevel: "complete",
+    summary: "Afspraken helpen ons om sneller samen te handelen wanneer de wedstrijd onrustig wordt.",
+    keyTakeaway: "Vrijheid werkt pas wanneer iedereen dezelfde basisafspraken begrijpt.",
+    standard: TEAMAFSPRAKEN_STANDARD,
+    relatedTopics: [
+      { categorySlug: "onze-voetbalvisie", topicSlug: "onze-identiteit", title: "Onze identiteit" },
+      { categorySlug: "onze-voetbalvisie", topicSlug: "kernwaarden", title: "Kernwaarden" },
+    ],
+  },
+  {
+    id: "lesson.voetbalvisie.gedragsregels",
+    topicId: GEDRAGSREGELS_TOPIC_ID,
+    categoryId: VOETBALVISIE_CATEGORY_ID,
+    slug: "gedragsregels",
+    title: "Gedragsregels",
+    lessonLevel: "intro",
+    estimatedReadingTime: 2,
+    qualityLevel: "complete",
+    summary: "Juist wanneer iets misgaat, laten we zien welk team we zijn.",
+    keyTakeaway: "Emotie mag er zijn. Jouw volgende actie moet het team helpen.",
+    standard: GEDRAGSREGELS_STANDARD,
+    relatedTopics: [
+      { categorySlug: "onze-voetbalvisie", topicSlug: "teamafspraken", title: "Teamafspraken" },
+      { categorySlug: "onze-voetbalvisie", topicSlug: "onze-identiteit", title: "Onze identiteit" },
+    ],
+  },
+  {
+    id: "lesson.voetbalvisie.intensiteit",
+    topicId: INTENSITEIT_TOPIC_ID,
+    categoryId: VOETBALVISIE_CATEGORY_ID,
+    slug: "intensiteit",
+    title: "Intensiteit",
+    lessonLevel: "intro",
+    estimatedReadingTime: 2,
+    qualityLevel: "complete",
+    summary:
+      "Intensiteit betekent dat wij op het juiste moment sneller reageren, beslissen en handelen.",
+    keyTakeaway: "Niet altijd snel. Wel direct herkennen wanneer de wedstrijd om snelheid vraagt.",
+    standard: INTENSITEIT_STANDARD,
+    relatedTopics: [
+      { categorySlug: "onze-voetbalvisie", topicSlug: "gedragsregels", title: "Gedragsregels" },
+      { categorySlug: "onze-voetbalvisie", topicSlug: "teamafspraken", title: "Teamafspraken" },
+    ],
+  },
+  {
+    id: "lesson.voetbalvisie.mentaliteit",
+    topicId: MENTALITEIT_TOPIC_ID,
+    categoryId: VOETBALVISIE_CATEGORY_ID,
+    slug: "mentaliteit",
+    title: "Mentaliteit",
+    lessonLevel: "intro",
+    estimatedReadingTime: 2,
+    qualityLevel: "complete",
+    summary: "Hoe blijf je goede beslissingen nemen wanneer de druk het hoogst is.",
+    keyTakeaway: "De vorige actie kun je niet veranderen. De volgende actie wel.",
+    standard: MENTALITEIT_STANDARD,
+    relatedTopics: [
+      { categorySlug: "onze-voetbalvisie", topicSlug: "intensiteit", title: "Intensiteit" },
+      { categorySlug: "onze-voetbalvisie", topicSlug: "gedragsregels", title: "Gedragsregels" },
     ],
   },
 ];

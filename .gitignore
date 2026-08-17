@@ -1,6 +1,7 @@
 # Dependencies & build
 node_modules
 .next
+.next-*
 
 # Secrets — never commit real values (use .env.example as template)
 .env
@@ -8,5 +9,10 @@ node_modules
 .env.*
 !.env.example
 
+# Local QA auth / dumps (may contain session cookies)
+.review-auth/
+
 .data
 *.log
+
+.vercel

@@ -189,7 +189,7 @@ export function FitnessBatchForm({
         {pending ? "Opslaan…" : "Meting opslaan (alle speelsters)"}
       </button>
       <p className="text-xs text-zvv-muted">
-        Laat velden leeg om ze over te slaan. Bestaande meting op dezelfde datum wordt vervangen.
+        Laat velden leeg om ze over te slaan. Alleen ingevulde speelsters worden bijgewerkt — andere metingen op dezelfde datum blijven staan.
       </p>
     </form>
   );

@@ -1,0 +1,26 @@
+{
+  "order": 7,
+  "sessionId": "FDL-DS-FAR-SIDE-SQUEEZE-V1",
+  "slug": "verre-zijde-knijpt",
+  "activeRole": "us.LW",
+  "freezeMs": 6400,
+  "previewMs": 5000,
+  "liveDurationMs": 9000,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan",
+    "t2-trigger",
+    "t2b-first-touch",
+    "t3-freeze"
+  ],
+  "mobileFocusIds": [
+    "us.LW",
+    "us.L6",
+    "us.LB",
+    "us.SP"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

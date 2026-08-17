@@ -29,7 +29,7 @@ async function insertSeasonRow(data: z.infer<typeof seasonSchema>) {
         is_active: !!data.is_active,
       });
     },
-    { action: "season_create", entity: "season", entity_id: id },
+    { action: "season_create", entity: "season", entity_id: id, capability: "system_admin" },
   );
 }
 
@@ -48,7 +48,7 @@ export async function setActiveSeason(seasonId: string): Promise<void> {
         s.is_active = s.id === seasonId;
       });
     },
-    { action: "season_set_active", entity: "season", entity_id: seasonId },
+    { action: "season_set_active", entity: "season", entity_id: seasonId, capability: "system_admin" },
   );
 }
 

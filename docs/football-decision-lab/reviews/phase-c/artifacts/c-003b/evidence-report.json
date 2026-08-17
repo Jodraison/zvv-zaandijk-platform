@@ -1,0 +1,86 @@
+{
+  "route": "http://127.0.0.1:3000/academie/decision-lab/binnenkant-dicht-rw",
+  "startedAt": "2026-07-22T19:34:59.806Z",
+  "viewports": [
+    {
+      "name": "desktop-1440x900",
+      "status": "ok",
+      "http": 200,
+      "overflowX": false,
+      "scrubVisible": true,
+      "playVisible": true,
+      "freezePhase": "BESLIS",
+      "seekMethod": "window",
+      "consoleErrors": [],
+      "artifacts": [
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\desktop-1440x900-pitch.png",
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\desktop-1440x900-freeze.png",
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\desktop-1440x900-fout-vs-goed.png"
+      ]
+    },
+    {
+      "name": "desktop-1280x720",
+      "status": "ok",
+      "http": 200,
+      "overflowX": false,
+      "scrubVisible": true,
+      "playVisible": true,
+      "freezePhase": "BESLIS",
+      "seekMethod": "window",
+      "consoleErrors": [],
+      "artifacts": [
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\desktop-1280x720-pitch.png",
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\desktop-1280x720-freeze.png"
+      ]
+    },
+    {
+      "name": "tablet-1024x768",
+      "status": "ok",
+      "http": 200,
+      "overflowX": false,
+      "scrubVisible": true,
+      "playVisible": true,
+      "freezePhase": "BESLIS",
+      "seekMethod": "window",
+      "consoleErrors": [],
+      "artifacts": [
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\tablet-1024x768-pitch.png",
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\tablet-1024x768-freeze.png"
+      ]
+    },
+    {
+      "name": "mobile-390x844",
+      "status": "ok",
+      "http": 200,
+      "overflowX": false,
+      "scrubVisible": true,
+      "playVisible": true,
+      "freezePhase": "BESLIS",
+      "seekMethod": "window",
+      "consoleErrors": [],
+      "artifacts": [
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\mobile-390x844-pitch.png",
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\mobile-390x844-freeze.png"
+      ]
+    },
+    {
+      "name": "mobile-360x800",
+      "status": "ok",
+      "http": 200,
+      "overflowX": false,
+      "scrubVisible": true,
+      "playVisible": true,
+      "freezePhase": "BESLIS",
+      "seekMethod": "window",
+      "consoleErrors": [],
+      "artifacts": [
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\mobile-360x800-pitch.png",
+        "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\mobile-360x800-freeze.png"
+      ]
+    }
+  ],
+  "consoleErrors": [],
+  "pageErrors": [],
+  "reducedMotionArtifact": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-003b\\desktop-1280x720-reduced-motion.png",
+  "finishedAt": "2026-07-22T19:35:48.048Z"
+}

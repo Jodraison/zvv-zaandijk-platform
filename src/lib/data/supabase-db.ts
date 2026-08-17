@@ -1,7 +1,13 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   ClubDatabase,
+  FitnessParticipationStatus,
+  FitnessProtocolCode,
+  FitnessScoreConfig,
+  FitnessSessionStatus,
   FitnessTest,
+  FitnessTestResult,
+  FitnessTestSession,
   FitnessTestType,
   Match,
   MatchGoalEvent,
@@ -12,6 +18,7 @@ import type {
   MatchMatchdayRosterRow,
   MatchPlayerStat,
   MatchSubstitution,
+  MatchPositionChange,
   MatchStatus,
   Player,
   PlayerPosition,
@@ -40,7 +47,10 @@ function asFitnessType(_s: string): FitnessTestType {
 }
 
 function asTrainingStatus(s: string | null | undefined): TrainingSessionStatus {
-  return String(s ?? "completed").toLowerCase() === "cancelled" ? "cancelled" : "completed";
+  const v = String(s ?? "scheduled").toLowerCase();
+  if (v === "cancelled") return "cancelled";
+  if (v === "completed") return "completed";
+  return "scheduled";
 }
 
 export type LoadedClubDatabase = {
@@ -58,6 +68,57 @@ function asCardType(s: string): MatchCardType {
   return s === "red" ? "red" : "yellow";
 }
 
+const FITNESS_OPTIONAL_TABLES = new Set([
+  "fitness_test_sessions",
+  "fitness_test_results",
+  "fitness_score_configs",
+]);
+
+function isMissingFitnessTableError(message: string): boolean {
+  return (
+    /relation .+ does not exist/i.test(message) ||
+    /Could not find the table/i.test(message) ||
+    /schema cache/i.test(message) ||
+    /PGRST205/i.test(message)
+  );
+}
+
+function numOrNull(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : n;
+}
+
+function intOrNull(v: unknown): number | null {
+  if (v === null || v === undefined) return null;
+  const n = Number(v);
+  return Number.isNaN(n) ? null : Math.trunc(n);
+}
+
+function asFitnessProtocolCode(s: string): FitnessProtocolCode {
+  return s === "four_part_v1" ? "four_part_v1" : "four_part_v1";
+}
+
+function asFitnessSessionStatus(s: string): FitnessSessionStatus {
+  return s === "published" ? "published" : "draft";
+}
+
+const FITNESS_PARTICIPATION_STATUSES: FitnessParticipationStatus[] = [
+  "pending",
+  "partial",
+  "complete",
+  "absent",
+  "injured",
+  "not_tested",
+  "stopped",
+  "other",
+];
+
+function asFitnessParticipationStatus(s: string): FitnessParticipationStatus {
+  const v = s as FitnessParticipationStatus;
+  return FITNESS_PARTICIPATION_STATUSES.includes(v) ? v : "pending";
+}
+
 export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debugLabel = "loadClubDatabase"): Promise<LoadedClubDatabase> {
   const [
     profileRes,
@@ -71,9 +132,13 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     eventsRes,
     cardEventsRes,
     subEventsRes,
+    posChangesRes,
     sessRes,
     attRes,
     fitRes,
+    fitSessRes,
+    fitResultRes,
+    fitConfigRes,
   ] = await Promise.all([
     client.from("club_profile").select("team_photo_url, schema_version").eq("id", "default").maybeSingle(),
     client.from("seasons").select("*").order("starts_on", { ascending: false }),
@@ -86,9 +151,13 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     client.from("match_goal_events").select("*").order("sort_order", { ascending: true }),
     client.from("match_card_events").select("*"),
     client.from("match_substitutions").select("*"),
+    client.from("match_position_changes").select("*"),
     client.from("training_sessions").select("*").order("session_at", { ascending: false }),
     client.from("training_attendance").select("*"),
     client.from("fitness_tests").select("*").order("test_on", { ascending: false }).order("recorded_at", { ascending: false }),
+    client.from("fitness_test_sessions").select("*").order("test_on", { ascending: false }),
+    client.from("fitness_test_results").select("*"),
+    client.from("fitness_score_configs").select("*").order("code"),
   ]);
 
   const named = [
@@ -103,14 +172,25 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     ["match_goal_events", eventsRes],
     ["match_card_events", cardEventsRes],
     ["match_substitutions", subEventsRes],
+    ["match_position_changes", posChangesRes],
     ["training_sessions", sessRes],
     ["training_attendance", attRes],
     ["fitness_tests", fitRes],
+    ["fitness_test_sessions", fitSessRes],
+    ["fitness_test_results", fitResultRes],
+    ["fitness_score_configs", fitConfigRes],
   ] as const;
 
+  const fitnessTableMissing = new Set<string>();
   const failures: { table: string; message: string }[] = [];
   for (const [table, res] of named) {
-    if (res.error?.message) failures.push({ table, message: res.error.message });
+    const msg = res.error?.message;
+    if (!msg) continue;
+    if (FITNESS_OPTIONAL_TABLES.has(table) && isMissingFitnessTableError(msg)) {
+      fitnessTableMissing.add(table);
+      continue;
+    }
+    failures.push({ table, message: msg });
   }
   if (failures.length) {
     const detail = failures.map((f) => `${f.table}: ${f.message}`).join("; ");
@@ -133,12 +213,18 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
   }));
 
   const players: Player[] = (playersRes.data ?? []).map((r) => {
-    const row = r as { is_guest?: boolean };
+    const row = r as { is_guest?: boolean; birth_date?: string | null };
+    const birthRaw = row.birth_date;
+    const birth_date =
+      typeof birthRaw === "string" && /^\d{4}-\d{2}-\d{2}/.test(birthRaw)
+        ? birthRaw.slice(0, 10)
+        : null;
     return {
       id: r.id,
       full_name: r.full_name,
       photo_url: r.photo_url ?? null,
       is_guest: !!row.is_guest,
+      birth_date,
       initials: typeof (r as { initials?: string | null }).initials === "string" ? (r as { initials: string }).initials : null,
       bio: typeof (r as { bio?: string | null }).bio === "string" ? (r as { bio: string }).bio : null,
       preferred_foot:
@@ -241,6 +327,9 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     status: asMatchStatus(String(r.status)),
     wotm_player_id: r.wotm_player_id ?? null,
     integrity_state: (r as { integrity_state?: string | null }).integrity_state === "invalid" ? "invalid" : "verified",
+    lineup_status:
+      (r as { lineup_status?: string | null }).lineup_status === "confirmed" ? "confirmed" : "draft",
+    lineup_confirmed_at: (r as { lineup_confirmed_at?: string | null }).lineup_confirmed_at ?? null,
   }));
 
   const match_player_stats: MatchPlayerStat[] = (statsRes.data ?? []).map((r) => ({
@@ -283,6 +372,11 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
       player_in_id: string;
       player_out_id: string;
       minute?: number | null;
+      to_slot?: string | null;
+      stoppage_time?: number | null;
+      sort_order?: number | null;
+      change_group_id?: string | null;
+      notes?: string | null;
     };
     return {
       id: row.id,
@@ -290,6 +384,38 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
       player_in_id: row.player_in_id,
       player_out_id: row.player_out_id,
       minute: Number(row.minute ?? 0),
+      to_slot: row.to_slot ?? null,
+      stoppage_time: Number(row.stoppage_time ?? 0),
+      sort_order: Number(row.sort_order ?? 0),
+      change_group_id: row.change_group_id ?? null,
+      notes: row.notes ?? null,
+    };
+  });
+
+  const match_position_changes: MatchPositionChange[] = (posChangesRes.data ?? []).map((r) => {
+    const row = r as {
+      id: string;
+      match_id: string;
+      player_id: string;
+      minute?: number | null;
+      stoppage_time?: number | null;
+      from_slot: string;
+      to_slot: string;
+      change_group_id?: string | null;
+      notes?: string | null;
+      sort_order?: number | null;
+    };
+    return {
+      id: row.id,
+      match_id: row.match_id,
+      player_id: row.player_id,
+      minute: Number(row.minute ?? 0),
+      stoppage_time: Number(row.stoppage_time ?? 0),
+      from_slot: row.from_slot,
+      to_slot: row.to_slot,
+      change_group_id: row.change_group_id ?? null,
+      notes: row.notes ?? null,
+      sort_order: Number(row.sort_order ?? 0),
     };
   });
 
@@ -308,6 +434,71 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     present: !!r.present,
     note: r.note ?? null,
   }));
+
+  const fitness_test_sessions: FitnessTestSession[] = fitnessTableMissing.has("fitness_test_sessions")
+    ? []
+    : (fitSessRes.data ?? []).map((r) => {
+        const raw = r as Record<string, unknown>;
+        const testOn =
+          typeof raw.test_on === "string" ? raw.test_on.slice(0, 10) : String(raw.test_on ?? "").slice(0, 10);
+        return {
+          id: String(raw.id),
+          season_id: String(raw.season_id),
+          test_on: testOn,
+          protocol_code: asFitnessProtocolCode(String(raw.protocol_code ?? "four_part_v1")),
+          status: asFitnessSessionStatus(String(raw.status ?? "draft")),
+          note: typeof raw.note === "string" ? raw.note : raw.note === null ? null : null,
+          score_config_id:
+            raw.score_config_id === null || raw.score_config_id === undefined ? null : String(raw.score_config_id),
+          created_at: String(raw.created_at ?? ""),
+          updated_at: String(raw.updated_at ?? ""),
+          published_at:
+            raw.published_at === null || raw.published_at === undefined ? null : String(raw.published_at),
+          created_by: raw.created_by === null || raw.created_by === undefined ? null : String(raw.created_by),
+          published_by:
+            raw.published_by === null || raw.published_by === undefined ? null : String(raw.published_by),
+        };
+      });
+
+  const fitness_test_results: FitnessTestResult[] = fitnessTableMissing.has("fitness_test_results")
+    ? []
+    : (fitResultRes.data ?? []).map((r) => {
+        const raw = r as Record<string, unknown>;
+        return {
+          id: String(raw.id),
+          session_id: String(raw.session_id),
+          player_id: String(raw.player_id),
+          flying_sprint_30m_seconds: numOrNull(raw.flying_sprint_30m_seconds),
+          agility_10_20_10_seconds: numOrNull(raw.agility_10_20_10_seconds),
+          plank_seconds: intOrNull(raw.plank_seconds),
+          six_minute_run_meters: intOrNull(raw.six_minute_run_meters),
+          participation_status: asFitnessParticipationStatus(String(raw.participation_status ?? "pending")),
+          participation_reason:
+            typeof raw.participation_reason === "string"
+              ? raw.participation_reason
+              : raw.participation_reason === null
+                ? null
+                : null,
+          note: typeof raw.note === "string" ? raw.note : raw.note === null ? null : null,
+          created_at: String(raw.created_at ?? ""),
+          updated_at: String(raw.updated_at ?? ""),
+        };
+      });
+
+  const fitness_score_configs: FitnessScoreConfig[] = fitnessTableMissing.has("fitness_score_configs")
+    ? []
+    : (fitConfigRes.data ?? []).map((r) => {
+        const raw = r as Record<string, unknown>;
+        const cfg = raw.config;
+        return {
+          id: String(raw.id),
+          code: String(raw.code),
+          label: String(raw.label),
+          version: Number(raw.version ?? 1),
+          config: cfg !== null && typeof cfg === "object" && !Array.isArray(cfg) ? (cfg as Record<string, unknown>) : {},
+          created_at: String(raw.created_at ?? ""),
+        };
+      });
 
   const fitness_tests: FitnessTest[] = (fitRes.data ?? []).map((r) => {
     const raw = r as Record<string, unknown>;
@@ -359,9 +550,13 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
       match_goal_events,
       match_card_events,
       match_substitutions,
+      match_position_changes,
       training_sessions,
       training_attendance,
       fitness_tests,
+      fitness_test_sessions,
+      fitness_test_results,
+      fitness_score_configs,
       team_photo_url,
     },
     schemaVersion,
@@ -407,7 +602,36 @@ export async function syncClubDatabaseToSupabase(
     if (e3) throw new Error(`${table} upsert: ${e3.message}`);
   }
 
+  async function deleteOrphanIdsOptional(table: string, keep: Set<string>) {
+    if (keep.size === 0) return;
+    const { data: existing, error: e1 } = await client.from(table).select("id");
+    if (e1) {
+      if (isMissingFitnessTableError(e1.message)) return;
+      throw new Error(`${table} select: ${e1.message}`);
+    }
+    const stale = (existing ?? []).map((x: { id: string }) => x.id).filter((id) => !keep.has(id));
+    if (stale.length) {
+      const { error: e2 } = await client.from(table).delete().in("id", stale);
+      if (e2) {
+        if (isMissingFitnessTableError(e2.message)) return;
+        throw new Error(`${table} delete: ${e2.message}`);
+      }
+    }
+  }
+
+  async function upsertTableOptional<T extends { id: string }>(table: string, rows: T[]) {
+    if (!rows.length) return;
+    const { error: e3 } = await client.from(table).upsert(rows as never[], { onConflict: "id" });
+    if (e3) {
+      if (isMissingFitnessTableError(e3.message)) return;
+      throw new Error(`${table} upsert: ${e3.message}`);
+    }
+  }
+
   /* Verwijder eerst kinderen (FK-veilig); match_player_stats en training_attendance volgen via cascade of expliciet. */
+  await deleteOrphanIdsOptional("fitness_test_results", new Set(db.fitness_test_results.map((r) => r.id)));
+  await deleteOrphanIdsOptional("fitness_test_sessions", new Set(db.fitness_test_sessions.map((s) => s.id)));
+  await deleteOrphanIdsOptional("fitness_score_configs", new Set(db.fitness_score_configs.map((c) => c.id)));
   await deleteOrphanIds("fitness_tests", new Set(db.fitness_tests.map((f) => f.id)));
   await deleteOrphanIds("training_sessions", new Set(db.training_sessions.map((s) => s.id)));
   await deleteOrphanIds("matches", new Set(db.matches.map((m) => m.id)));
@@ -476,6 +700,9 @@ export async function syncClubDatabaseToSupabase(
     if (u) throw new Error(`training_attendance upsert: ${u.message}`);
   }
 
+  await upsertTableOptional("fitness_score_configs", db.fitness_score_configs);
+  await upsertTableOptional("fitness_test_sessions", db.fitness_test_sessions);
+  await upsertTableOptional("fitness_test_results", db.fitness_test_results);
   await upsertTable("fitness_tests", db.fitness_tests);
 
   const { data: verRows, error: verErr } = await client

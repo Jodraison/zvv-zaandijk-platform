@@ -25,7 +25,37 @@ export function formatDateNL(date: string | Date | number): string {
   );
 }
 
-/** DD-MM-YYYY + tijd (uur:minuut), nl-NL. */
+/** Menselijke datum: "maandag 17 augustus" (jaar alleen als ≠ huidig). */
+export function formatHumanDateNL(date: string | Date | number, opts?: { includeYear?: boolean }): string {
+  const d = parseClubDateInput(date);
+  return safe(d, () => {
+    const nowY = new Date().getFullYear();
+    const includeYear = opts?.includeYear ?? d.getUTCFullYear() !== nowY;
+    return d.toLocaleDateString("nl-NL", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      ...(includeYear ? { year: "numeric" as const } : {}),
+      timeZone: "Europe/Amsterdam",
+    });
+  });
+}
+
+const AMSTERDAM = { timeZone: "Europe/Amsterdam" } as const;
+
+/** Kloktijd in Europe/Amsterdam (HH:MM). */
+export function formatTimeNl(date: string | Date | number): string {
+  const d = parseClubDateInput(date);
+  return safe(d, () =>
+    d.toLocaleTimeString("nl-NL", {
+      hour: "2-digit",
+      minute: "2-digit",
+      ...AMSTERDAM,
+    }),
+  );
+}
+
+/** DD-MM-YYYY + tijd (uur:minuut), nl-NL, altijd Amsterdam. */
 export function formatDateTimeNL(date: string | Date | number): string {
   const d = parseClubDateInput(date);
   return safe(d, () => {
@@ -33,12 +63,9 @@ export function formatDateTimeNL(date: string | Date | number): string {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
+      ...AMSTERDAM,
     });
-    const time = d.toLocaleTimeString("nl-NL", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-    return `${day} ${time}`;
+    return `${day} ${formatTimeNl(d)}`;
   });
 }
 
@@ -46,7 +73,7 @@ export function formatDateTimeNL(date: string | Date | number): string {
 export function formatKickoffLongNl(iso: string): string {
   const d = parseClubDateInput(iso);
   return safe(d, () => {
-    const wd = d.toLocaleDateString("nl-NL", { weekday: "long" });
+    const wd = d.toLocaleDateString("nl-NL", { weekday: "long", ...AMSTERDAM });
     return `${wd} ${formatDateTimeNL(d)}`;
   });
 }
@@ -55,7 +82,7 @@ export function formatKickoffLongNl(iso: string): string {
 export function formatKickoffShortNl(iso: string): string {
   const d = parseClubDateInput(iso);
   return safe(d, () => {
-    const wd = d.toLocaleDateString("nl-NL", { weekday: "short" });
+    const wd = d.toLocaleDateString("nl-NL", { weekday: "short", ...AMSTERDAM });
     return `${wd} ${formatDateTimeNL(d)}`;
   });
 }

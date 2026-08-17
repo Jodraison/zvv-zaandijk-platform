@@ -34,14 +34,14 @@ export const matchEntryPayloadSchema = z
       if (ast && !sel.has(ast)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Assistent moet bij de geselecteerde spelers horen",
+          message: "Assistgever moet bij de geselecteerde speelsters horen",
           path: ["goals", i, "assist_player_id"],
         });
       }
       if (ast && ast === g.scorer_player_id) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: "Scorer en assist kunnen niet dezelfde speler zijn",
+          message: "Scorer en assist kunnen niet dezelfde speelster zijn",
           path: ["goals", i, "assist_player_id"],
         });
       }

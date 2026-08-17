@@ -1,5 +1,6 @@
 import type { AcademyCategory, AcademyTopic } from "@/lib/academie/types";
 import type { AcademyLessonContentLevel, AcademyLessonQualityLevel, AcademyLessonRequiredVisuals } from "@/lib/academie/lesson-standards";
+import type { AcademyLessonStandardV1 } from "@/lib/academie/lesson-standard-v1";
 
 /** Visueel mediablok — ondersteunt meerdere typen; sectie verborgen bij ontbreken. */
 export type AcademyLessonVisual =
@@ -212,4 +213,9 @@ export type AcademyLesson = {
   keyPoints?: string[];
   relatedTopics?: AcademyLessonRelatedTopic[];
   quiz?: AcademyLessonQuizSlot;
+  /**
+   * Lesstandaard V1 — canonieke content-layout voor alle lessen.
+   * Primair renderpad in `AcademyLessonLayout`.
+   */
+  standard?: AcademyLessonStandardV1;
 };

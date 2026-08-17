@@ -23,7 +23,7 @@ export function GuestPlayerCreateForm({ seasonId }: { seasonId: string }) {
       <input type="hidden" name="season_id" value={seasonId} />
       {state.status !== "idle" ? <div className="md:col-span-2"><AdminFormBanner state={state} /></div> : null}
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
-        Gast naam
+        Naam gastspeelster
         <input name="full_name" required className={inputCls} />
         {fieldMessage(fe, "full_name") ? <span className="text-xs text-red-600">{fieldMessage(fe, "full_name")}</span> : null}
       </label>
@@ -40,14 +40,18 @@ export function GuestPlayerCreateForm({ seasonId }: { seasonId: string }) {
         <input name="shirt_number" type="number" min={1} max={99} className={inputCls} />
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted">
-        Positie enum
+        Positiegroep
         <select name="position" className={inputCls}>
-          <option value="">—</option><option value="GK">GK</option><option value="DEF">DEF</option><option value="MID">MID</option><option value="ATT">ATT</option>
+          <option value="">—</option>
+          <option value="GK">Keeper</option>
+          <option value="DEF">Verdediging</option>
+          <option value="MID">Middenveld</option>
+          <option value="ATT">Aanval</option>
         </select>
       </label>
       <label className="space-y-2 text-xs font-semibold uppercase tracking-wider text-zvv-muted md:col-span-2">
-        Display positie (bij koppelen)
-        <input name="display_position" className={inputCls} />
+        Positie
+        <input name="display_position" className={inputCls} placeholder="Bijv. Linksbuiten" />
       </label>
       <div className="md:col-span-2">
         <button type="submit" disabled={pending} className="club-btn-secondary disabled:opacity-40">{pending ? "Bezig..." : "Gast opslaan"}</button>

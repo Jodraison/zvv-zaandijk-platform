@@ -77,3 +77,28 @@ export async function uploadTeamPhoto(_prev: TeamPhotoUploadState, formData: For
 
   return { status: "success", message: "Teamfoto geüpload. De homepage is bijgewerkt." };
 }
+
+/**
+ * Admin-only: verwijdert de publieke teamfoto-URL zodat de homepage-placeholder verschijnt.
+ * Het archiefbestand in Storage/`public/team.jpg` blijft bestaan.
+ */
+export async function clearTeamPhoto(_prev: TeamPhotoUploadState, _formData: FormData): Promise<TeamPhotoUploadState> {
+  await assertAdminServerAction();
+
+  try {
+    await mutateDb(
+      (db) => {
+        db.team_photo_url = null;
+      },
+      { action: "club_team_photo_clear", entity: "club_profile", entity_id: "default" },
+    );
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Database bijwerken mislukt.";
+    return { status: "error", message: msg };
+  }
+
+  return {
+    status: "success",
+    message: "Teamfoto verwijderd van de website. Upload een nieuwe foto wanneer die klaar is.",
+  };
+}

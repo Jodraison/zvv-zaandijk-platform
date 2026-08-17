@@ -1,0 +1,35 @@
+{
+  "order": 17,
+  "sessionId": "FDL-DS-SWITCH-PLAY-WHEN-V1",
+  "slug": "switch-nu",
+  "family": "possession-switch",
+  "activeRole": "us.L6",
+  "supportRoles": [
+    "us.R6",
+    "us.LW",
+    "us.LB"
+  ],
+  "teamPerspective": "blue-zvv",
+  "formationOrigin": "canonical-4-2-3-1-start",
+  "ballHolder": "us.L6",
+  "attackingDirection": "left-to-right",
+  "ids": {
+    "live": "fdl-ds-switch-nu-live",
+    "good": "fdl-ds-switch-nu-good",
+    "bad": "fdl-ds-switch-nu-bad"
+  },
+  "gates": {
+    "dedicatedFilmExists": true,
+    "elevenUsPlayers": true,
+    "liveGoodBadResolve": true,
+    "freezeEvaluates": true,
+    "goodLongerThanLive": true,
+    "goodPastFreeze": true,
+    "badPastFreeze": true,
+    "activeRoleHighlighted": true,
+    "notGenericPressId": true,
+    "blueUsMarkers": true,
+    "formationTraceable": true
+  },
+  "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+}

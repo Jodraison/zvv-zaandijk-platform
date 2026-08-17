@@ -1,0 +1,340 @@
+{
+  "base": "http://localhost:3003",
+  "d1": {
+    "gsDone": true,
+    "versionOk": true
+  },
+  "m1": {
+    "gsDone": true,
+    "versionOk": true
+  },
+  "overflow320": false,
+  "consoleErrors": [],
+  "shots": [
+    {
+      "file": "d1440-01-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "1440x900",
+      "page": "academy",
+      "state": "untouched",
+      "stage": "home",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 4,
+      "progressSnippet": null
+    },
+    {
+      "file": "d1440-02-base.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "1440x900",
+      "stage": "transform-base",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 4,
+      "progressSnippet": null
+    },
+    {
+      "file": "d1440-03-trigger.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "1440x900",
+      "stage": "transform-trigger",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 4,
+      "progressSnippet": null
+    },
+    {
+      "file": "d1440-04-press.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "1440x900",
+      "stage": "transform-press",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 4,
+      "progressSnippet": null
+    },
+    {
+      "file": "d1440-05-lesson-open.png",
+      "cta": "▶ Naar scan Stap 2 van 6",
+      "viewport": "1440x900",
+      "stage": "situation",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 22,
+      "progressSnippet": null
+    },
+    {
+      "file": "d1440-06-scan.png",
+      "cta": "▶ Naar beslismoment",
+      "viewport": "1440x900",
+      "stage": "scan",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 9,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":1,\"lessonStage\":\"scan\",\"progressVersion\":2,\"updatedAt\":\"2026-07-23T07:27:26.632Z\",\"openedAt\":\"2026-07-23T07:27:26.632Z"
+    },
+    {
+      "file": "d1440-07-decision.png",
+      "cta": "",
+      "viewport": "1440x900",
+      "stage": "decision",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 18,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":2,\"lessonStage\":\"decision\",\"progressVersion\":2,\"updatedAt\":\"2026-07-23T07:27:26.832Z\",\"openedAt\":\"2026-07-23T07:27:26."
+    },
+    {
+      "file": "d1440-08-consequence.png",
+      "cta": "▶ Begrijp waarom",
+      "viewport": "1440x900",
+      "stage": "consequence",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 18,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":3,\"lessonStage\":\"consequence\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:27:58.020Z\",\"openedAt\":\"2026"
+    },
+    {
+      "file": "d1440-09-explanation.png",
+      "cta": "→ Rond sessie af",
+      "viewport": "1440x900",
+      "stage": "explanation",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 11,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":4,\"lessonStage\":\"explanation\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:27:59.164Z\",\"openedAt\":\"2026"
+    },
+    {
+      "file": "d1440-10-completion.png",
+      "cta": "→ Start volgende sessie 3–4 min",
+      "viewport": "1440x900",
+      "stage": "completion",
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 9,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"lessonStage\":\"completion\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:27:59.355Z\",\"openedAt\":\"202"
+    },
+    {
+      "file": "d1440-11-after.png",
+      "cta": "▶ Start volgende sessie 3–4 min",
+      "viewport": "1440x900",
+      "stage": "academy-after",
+      "gsDone": true,
+      "versionOk": true,
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 0,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"lessonStage\":\"completion\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:27:59.355Z\",\"openedAt\":\"202"
+    },
+    {
+      "file": "d1440-12-hub.png",
+      "cta": "→ Start volgende sessie 3–4 min",
+      "viewport": "1440x900",
+      "stage": "hub",
+      "gsDone": true,
+      "overflow": false,
+      "w": 1440,
+      "h": 900,
+      "smallTouchApprox": 1,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"lessonStage\":\"completion\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:27:59.355Z\",\"openedAt\":\"202"
+    },
+    {
+      "file": "d1280-01-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "1280x720",
+      "stage": "untouched",
+      "overflow": false,
+      "w": 1280,
+      "h": 720,
+      "smallTouchApprox": 4,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-01-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "390x844",
+      "page": "academy",
+      "state": "untouched",
+      "stage": "home",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 2,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-02-base.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "390x844",
+      "stage": "transform-base",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 2,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-03-trigger.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "390x844",
+      "stage": "transform-trigger",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 2,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-04-press.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "390x844",
+      "stage": "transform-press",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 2,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-04b-fullscreen.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "390x844",
+      "stage": "fullscreen-pitch",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 20,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-05-lesson-open.png",
+      "cta": "▶ Naar scan Stap 2 van 6",
+      "viewport": "390x844",
+      "stage": "situation",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 14,
+      "progressSnippet": null
+    },
+    {
+      "file": "m390-06-scan.png",
+      "cta": "▶ Naar beslismoment",
+      "viewport": "390x844",
+      "stage": "scan",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 5,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":1,\"lessonStage\":\"scan\",\"progressVersion\":2,\"updatedAt\":\"2026-07-23T07:28:12.243Z\",\"openedAt\":\"2026-07-23T07:28:12.243Z"
+    },
+    {
+      "file": "m390-07-decision.png",
+      "cta": "",
+      "viewport": "390x844",
+      "stage": "decision",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 14,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":2,\"lessonStage\":\"decision\",\"progressVersion\":2,\"updatedAt\":\"2026-07-23T07:28:12.482Z\",\"openedAt\":\"2026-07-23T07:28:12."
+    },
+    {
+      "file": "m390-08-consequence.png",
+      "cta": "▶ Begrijp waarom",
+      "viewport": "390x844",
+      "stage": "consequence",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 14,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":3,\"lessonStage\":\"consequence\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:28:43.482Z\",\"openedAt\":\"2026"
+    },
+    {
+      "file": "m390-09-explanation.png",
+      "cta": "→ Rond sessie af",
+      "viewport": "390x844",
+      "stage": "explanation",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 7,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"started\",\"step\":4,\"lessonStage\":\"explanation\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:28:44.444Z\",\"openedAt\":\"2026"
+    },
+    {
+      "file": "m390-10-completion.png",
+      "cta": "→ Start volgende sessie 3–4 min",
+      "viewport": "390x844",
+      "stage": "completion",
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 5,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"lessonStage\":\"completion\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:28:44.641Z\",\"openedAt\":\"202"
+    },
+    {
+      "file": "m390-11-after.png",
+      "cta": "▶ Start volgende sessie 3–4 min",
+      "viewport": "390x844",
+      "stage": "academy-after",
+      "gsDone": true,
+      "versionOk": true,
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 2,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"lessonStage\":\"completion\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:28:44.641Z\",\"openedAt\":\"202"
+    },
+    {
+      "file": "m390-12-hub.png",
+      "cta": "→ Start volgende sessie 3–4 min",
+      "viewport": "390x844",
+      "stage": "hub",
+      "gsDone": true,
+      "overflow": false,
+      "w": 390,
+      "h": 844,
+      "smallTouchApprox": 3,
+      "progressSnippet": "{\"FDL-GS-INSIDE-CLOSE-RB-PRESS-V1\":{\"status\":\"completed\",\"step\":5,\"lessonStage\":\"completion\",\"progressVersion\":2,\"choice\":\"B\",\"updatedAt\":\"2026-07-23T07:28:44.641Z\",\"openedAt\":\"202"
+    },
+    {
+      "file": "m360-01-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "360x800",
+      "stage": "untouched",
+      "overflow": false,
+      "w": 360,
+      "h": 800,
+      "smallTouchApprox": 2,
+      "progressSnippet": null
+    },
+    {
+      "file": "m320-01-untouched.png",
+      "cta": "▶ Start eerste beslissessie 3–4 min · Druk herkennen",
+      "viewport": "320x568",
+      "stage": "untouched",
+      "overflow": false,
+      "w": 320,
+      "h": 568,
+      "smallTouchApprox": 2,
+      "progressSnippet": null
+    }
+  ],
+  "gates": {
+    "untouchedStart": true,
+    "completionPersisted": true,
+    "progressVersion2": true,
+    "noOverflow": true,
+    "mobile320NoOverflow": true
+  }
+}

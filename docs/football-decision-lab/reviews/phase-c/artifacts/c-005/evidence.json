@@ -1,0 +1,78 @@
+{
+  "base": "http://127.0.0.1:3000",
+  "shots": [
+    {
+      "name": "academy-desktop-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-desktop-above-fold.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-full",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-desktop-full.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-mobile-above-fold.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-paths",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-mobile-paths.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-desktop-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\dl-desktop-above-fold.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-desktop-next-decision",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\dl-desktop-next-decision.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-desktop-mission-map",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\dl-desktop-mission-map.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-mobile-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\dl-mobile-above-fold.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-mobile-mission-route",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\dl-mobile-mission-route.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-tablet-1024",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-tablet-1024.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-1280",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-desktop-1280.png",
+      "overflowX": false,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-360",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-005\\academy-mobile-360.png",
+      "overflowX": false,
+      "consoleErrors": []
+    }
+  ],
+  "consoleErrors": []
+}

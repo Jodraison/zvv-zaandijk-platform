@@ -39,7 +39,7 @@ export function WotmSpotlight({
           <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent md:bg-gradient-to-r" />
         </div>
         <div className="flex flex-col justify-center px-7 py-8 md:px-10 md:py-12">
-          <p className="text-[11px] font-black uppercase tracking-[0.32em] text-amber-800">Player of the match</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.32em] text-amber-800">Speelster van de wedstrijd</p>
           <h3 className="mt-4 font-[family-name:var(--font-display)] text-[clamp(2.5rem,7vw,4rem)] leading-[0.95] tracking-wide text-zvv-ink">
             {name}
             {isGuest ? <span className="ml-2 text-xl font-normal text-zvv-muted md:text-2xl">(gast)</span> : null}

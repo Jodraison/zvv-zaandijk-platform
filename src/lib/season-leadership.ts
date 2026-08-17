@@ -9,11 +9,11 @@ export function assertSeasonLeadershipValid(db: ClubDatabase, seasonId: string):
     throw new Error("Er mag maar één aanvoerder per seizoen zijn.");
   }
   if (vices.length > 1) {
-    throw new Error("Er mag maar één assistent-aanvoerder per seizoen zijn.");
+    throw new Error("Er mag maar één vice-aanvoerder per seizoen zijn.");
   }
   const capId = caps[0]?.player_id;
   const viceId = vices[0]?.player_id;
   if (capId && viceId && capId === viceId) {
-    throw new Error("Aanvoerder en assistent-aanvoerder mogen niet dezelfde speelster zijn.");
+    throw new Error("Aanvoerder en vice-aanvoerder mogen niet dezelfde speelster zijn.");
   }
 }

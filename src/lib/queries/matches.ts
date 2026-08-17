@@ -1,5 +1,6 @@
 import type { ClubDatabase, Match } from "@/types";
 import { resolveMatchScore } from "@/lib/domain/match-score";
+import { isProductionMatch } from "@/lib/match/match-data-scope";
 
 /** Uitslag op basis van canonical match scorevelden. */
 export function matchResult(db: ClubDatabase, m: Match): "W" | "D" | "L" | null {
@@ -11,8 +12,15 @@ export function matchResult(db: ClubDatabase, m: Match): "W" | "D" | "L" | null 
   return "D";
 }
 
-export function seasonMatches(db: ClubDatabase, seasonId: string): Match[] {
-  return db.matches.filter((m) => m.season_id === seasonId).sort((a, b) => b.kickoff_at.localeCompare(a.kickoff_at));
+export function seasonMatches(
+  db: ClubDatabase,
+  seasonId: string,
+  opts?: { includeNonProduction?: boolean },
+): Match[] {
+  return db.matches
+    .filter((m) => m.season_id === seasonId)
+    .filter((m) => (opts?.includeNonProduction ? true : isProductionMatch(m)))
+    .sort((a, b) => b.kickoff_at.localeCompare(a.kickoff_at));
 }
 
 /** Eerstvolgende geplande wedstrijd (DB): zelfde seizoen, status scheduled, kickoff strikt na nu. */
@@ -20,7 +28,7 @@ export function nextScheduledMatch(db: ClubDatabase, seasonId: string, now = new
   if (!seasonId) return null;
   const t = now.getTime();
   const upcoming = db.matches
-    .filter((m) => m.season_id === seasonId && m.status === "scheduled")
+    .filter((m) => m.season_id === seasonId && m.status === "scheduled" && isProductionMatch(m))
     .filter((m) => new Date(m.kickoff_at).getTime() > t)
     .sort((a, b) => new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime());
   return upcoming[0] ?? null;
@@ -32,7 +40,7 @@ export function nextScheduledMatch(db: ClubDatabase, seasonId: string, now = new
  */
 export function seasonPlayedOut(db: ClubDatabase, seasonId: string, now = new Date()): boolean {
   if (!seasonId) return false;
-  const ms = db.matches.filter((m) => m.season_id === seasonId);
+  const ms = db.matches.filter((m) => m.season_id === seasonId && isProductionMatch(m));
   if (ms.length === 0) return false;
   const t = now.getTime();
   return ms.every((m) => m.status === "played" && new Date(m.kickoff_at).getTime() < t);
@@ -42,7 +50,7 @@ export function lastPlayedMatch(db: ClubDatabase, seasonId: string, now = new Da
   if (!seasonId) return null;
   const t = now.getTime();
   const past = db.matches
-    .filter((m) => m.season_id === seasonId && m.status === "played")
+    .filter((m) => m.season_id === seasonId && m.status === "played" && isProductionMatch(m))
     .filter((m) => new Date(m.kickoff_at).getTime() <= t)
     .sort((a, b) => b.kickoff_at.localeCompare(a.kickoff_at));
   return past[0] ?? null;
@@ -52,7 +60,7 @@ export function teamFormLast5(db: ClubDatabase, seasonId: string, now = new Date
   if (!seasonId) return [];
   const t = now.getTime();
   const played = db.matches
-    .filter((m) => m.season_id === seasonId && m.status === "played")
+    .filter((m) => m.season_id === seasonId && m.status === "played" && isProductionMatch(m))
     .filter((m) => new Date(m.kickoff_at).getTime() <= t)
     .sort((a, b) => b.kickoff_at.localeCompare(a.kickoff_at))
     .slice(0, 5);

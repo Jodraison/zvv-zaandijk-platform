@@ -40,9 +40,7 @@ const RankingRowCard = memo(function RankingRowCard({
   disputesHref: string;
 }) {
   const posLine = membershipPositionLabel(r.display_position, r.position);
-  // "1 Assist" vs "2 Assists" — only Goals uses plural difference worth noting;
-  // keeping it simple and matching spec exactly: Goals · Assists · WOTM
-  const statsLine = `${r.goals_total} Goals · ${r.assists_total} Assists · ${r.wotm_total} WOTM`;
+  const statsLine = `${r.goals_total} doelpunten · ${r.assists_total} assists · ${r.wotm_total} MVP`;
 
   return (
     <li className="list-none [contain:layout]">
@@ -106,7 +104,6 @@ const RankingRowCard = memo(function RankingRowCard({
         {/* RIGHT — CTA */}
         <div className="shrink-0 text-sm font-semibold text-blue-600">
           {adminMode ? (
-            // Admin: show disputes link styled as secondary, Profiel as primary
             <span className="flex items-center gap-3">
               <Link
                 href={disputesHref}
@@ -114,7 +111,7 @@ const RankingRowCard = memo(function RankingRowCard({
                 onClick={(e) => e.stopPropagation()}
                 className="hidden text-xs font-semibold text-slate-400 hover:text-zvv-primary sm:block"
               >
-                Disputes
+                Correcties
               </Link>
               <span>Profiel →</span>
             </span>
@@ -153,17 +150,7 @@ export function RankingBoard({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6">
-      {adminMode ? (
-        <div className="mb-6 rounded-2xl border border-zvv-border bg-white p-4 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-wider text-zvv-muted">Databron</p>
-          <p className="mt-2 text-sm text-zvv-ink">
-            Goals en assists komen uitsluitend uit geverifieerde `match_goal_events`. WOTM telt uit `matches.wotm_player_id`.
-          </p>
-          <p className="mt-1 text-xs text-zvv-muted">
-            Wedstrijden met integrity-status invalid worden automatisch uitgesloten van ranking.
-          </p>
-        </div>
-      ) : null}
+      {/* Technische databron-copy hoort in /beheer/datacontrole — niet op publieke ranking. */}
 
       {/* Section header */}
       <div className="mb-4 flex items-center justify-between">

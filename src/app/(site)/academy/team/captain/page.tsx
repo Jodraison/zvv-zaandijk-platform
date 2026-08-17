@@ -4,8 +4,8 @@ import { AcademyRouteStub } from "@/components/academy/academy-route-stub";
 export default function AcademyCaptainPage() {
   return (
     <AcademyRouteStub
-      title="Captain"
-      description="Captain-dashboard volgt later. Route-entry is actief."
+      title="Aanvoerder"
+      description="Het aanvoerdersdashboard volgt later. Deze route is al actief."
     />
   );
 }

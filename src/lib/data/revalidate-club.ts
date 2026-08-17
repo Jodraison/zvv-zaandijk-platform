@@ -1,4 +1,5 @@
 import { revalidatePath, revalidateTag } from "next/cache";
+import { MATCH_REVALIDATE_PATHS } from "@/lib/admin/match-save-contract";
 
 /**
  * Na elke Supabase-write: volledige App Router-cache onder de root layout invalideren.
@@ -13,23 +14,24 @@ import { revalidatePath, revalidateTag } from "next/cache";
  * - Seizoen (cookie/URL) → `SeasonHydrate` + server `resolveSeasonId` op volgende load
  *
  * Layout + dynamische segmenten (`[playerId]`, `[matchId]`, beheer-wedstrijd) worden expliciet meegenomen.
+ * Match-specifieke paden: zie MATCH_REVALIDATE_PATHS (canonieke contractlijst).
  */
 export function revalidateClubDataAfterMutation(): void {
   revalidateTag("players");
   revalidatePath("/", "layout");
-  revalidatePath("/");
-  revalidatePath("/ranking");
-  revalidatePath("/wedstrijden");
-  revalidatePath("/selectie");
+  for (const path of MATCH_REVALIDATE_PATHS) {
+    revalidatePath(path);
+  }
   revalidatePath("/fitheid");
   revalidatePath("/training");
-  revalidatePath("/beheer");
   /** Layout-type: nested routes onder deze paden (incl. dynamische segmenten). */
   revalidatePath("/wedstrijden", "layout");
   revalidatePath("/selectie", "layout");
   revalidatePath("/beheer", "layout");
+  revalidatePath("/statistieken", "layout");
   /** Dynamische pagina’s expliciet (Next kan segment-paden cachen). */
   revalidatePath("/selectie/[playerId]", "page");
   revalidatePath("/wedstrijden/[matchId]", "page");
   revalidatePath("/beheer/wedstrijden/[matchId]", "page");
+  revalidatePath("/beheer/wedstrijden", "page");
 }

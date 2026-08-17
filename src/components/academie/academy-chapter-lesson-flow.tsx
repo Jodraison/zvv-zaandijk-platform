@@ -57,7 +57,9 @@ export function AcademyChapterLessonFlow({ lessons }: { lessons: ResolvedAcademy
       <p id="chapter-flow-heading" className="club-page-eyebrow">
         Lesvolgorde
       </p>
-      <p className="mt-1 text-sm text-zvv-muted">Werk de lessen op volgorde door — elke les bouwt voort op de vorige.</p>
+      <p className="mt-1 text-sm text-zvv-muted">
+        Volgorde: identiteit → kiezen → uitvoeren → gedrag → tempo → focus onder druk.
+      </p>
 
       <ol className="mt-5 flex list-none flex-col items-center gap-0 p-0 md:flex-row md:flex-wrap md:items-start md:justify-start md:gap-y-3">
         {lessons.map((lesson, index) => (

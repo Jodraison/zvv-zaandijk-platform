@@ -1,0 +1,605 @@
+{
+  "generatedAt": "2026-07-23T07:53:56.286Z",
+  "dedicatedCount": 17,
+  "goldenLive": "fdl-gs-inside-close-live",
+  "goldenIntact": true,
+  "catalogIssues": [],
+  "allGatesPass": true,
+  "reports": [
+    {
+      "order": 2,
+      "sessionId": "FDL-DS-INSIDE-CLOSE-LW-PRESS-V1",
+      "slug": "binnenkant-dicht-lw",
+      "family": "press-mirror",
+      "activeRole": "us.LW",
+      "supportRoles": [
+        "us.L6",
+        "us.LB",
+        "us.10"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbR",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-binnenkant-dicht-lw-live",
+        "good": "fdl-ds-binnenkant-dicht-lw-good",
+        "bad": "fdl-ds-binnenkant-dicht-lw-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 3,
+      "sessionId": "FDL-DS-INSIDE-CLOSE-RW-DECISION-V1",
+      "slug": "binnenkant-dicht-decision",
+      "family": "press-stable",
+      "activeRole": "us.RW",
+      "supportRoles": [
+        "us.R6",
+        "us.RB",
+        "us.L6"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-binnenkant-dicht-decision-live",
+        "good": "fdl-ds-binnenkant-dicht-decision-good",
+        "bad": "fdl-ds-binnenkant-dicht-decision-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 4,
+      "sessionId": "FDL-DS-SECOND-PRESS-8-V1",
+      "slug": "tweede-druk-8",
+      "family": "press-second",
+      "activeRole": "us.R6",
+      "supportRoles": [
+        "us.RW",
+        "us.L6",
+        "us.RB"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-tweede-druk-8-live",
+        "good": "fdl-ds-tweede-druk-8-good",
+        "bad": "fdl-ds-tweede-druk-8-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 5,
+      "sessionId": "FDL-DS-DEPTH-COVER-RB-V1",
+      "slug": "rugdekking-rb",
+      "family": "press-depth",
+      "activeRole": "us.RB",
+      "supportRoles": [
+        "us.RW",
+        "us.R6",
+        "us.RCV"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-rugdekking-rb-live",
+        "good": "fdl-ds-rugdekking-rb-good",
+        "bad": "fdl-ds-rugdekking-rb-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 6,
+      "sessionId": "FDL-DS-ST-STEER-PIN-V1",
+      "slug": "spits-stuurt",
+      "family": "press-steer",
+      "activeRole": "us.SP",
+      "supportRoles": [
+        "us.RW",
+        "us.10",
+        "us.R6"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-spits-stuurt-live",
+        "good": "fdl-ds-spits-stuurt-good",
+        "bad": "fdl-ds-spits-stuurt-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 7,
+      "sessionId": "FDL-DS-FAR-SIDE-SQUEEZE-V1",
+      "slug": "verre-zijde-knijpt",
+      "family": "press-farside",
+      "activeRole": "us.LW",
+      "supportRoles": [
+        "us.L6",
+        "us.LB",
+        "us.SP"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbR",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-verre-zijde-knijpt-live",
+        "good": "fdl-ds-verre-zijde-knijpt-good",
+        "bad": "fdl-ds-verre-zijde-knijpt-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 8,
+      "sessionId": "FDL-DS-PRESS-ABORT-RECOVER-V1",
+      "slug": "niet-doordrukken",
+      "family": "press-abort",
+      "activeRole": "us.RW",
+      "supportRoles": [
+        "us.R6",
+        "us.RB",
+        "us.RCV"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-niet-doordrukken-live",
+        "good": "fdl-ds-niet-doordrukken-good",
+        "bad": "fdl-ds-niet-doordrukken-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 9,
+      "sessionId": "FDL-DS-INSIDE-CLOSE-RW-PRESSURE-V1",
+      "slug": "binnenkant-onder-druk",
+      "family": "press-pressure",
+      "activeRole": "us.RW",
+      "supportRoles": [
+        "us.R6",
+        "us.RB",
+        "us.10"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-binnenkant-onder-druk-live",
+        "good": "fdl-ds-binnenkant-onder-druk-good",
+        "bad": "fdl-ds-binnenkant-onder-druk-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 10,
+      "sessionId": "FDL-DS-COUNTERPRESS-FIRST-ACTION-V1",
+      "slug": "balverlies-direct-druk",
+      "family": "transition-counter",
+      "activeRole": "us.R6",
+      "supportRoles": [
+        "us.RW",
+        "us.10",
+        "us.RB"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-balverlies-direct-druk-live",
+        "good": "fdl-ds-balverlies-direct-druk-good",
+        "bad": "fdl-ds-balverlies-direct-druk-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 11,
+      "sessionId": "FDL-DS-REST-DEFENCE-AFTER-BEATEN-V1",
+      "slug": "restverdediging",
+      "family": "transition-rest",
+      "activeRole": "us.RB",
+      "supportRoles": [
+        "us.RCV",
+        "us.R6",
+        "us.GK"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-restverdediging-live",
+        "good": "fdl-ds-restverdediging-good",
+        "bad": "fdl-ds-restverdediging-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 12,
+      "sessionId": "FDL-DS-FIRST-PASS-AFTER-WIN-V1",
+      "slug": "eerste-pass-na-win",
+      "family": "transition-firstpass",
+      "activeRole": "us.R6",
+      "supportRoles": [
+        "us.L6",
+        "us.10",
+        "us.RW"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "press-occupation-from-4-2-3-1-reference (PRESS_V2; chrome Vanuit 4-2-3-1)",
+      "ballHolder": "opp.cbL",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-eerste-pass-na-win-live",
+        "good": "fdl-ds-eerste-pass-na-win-good",
+        "bad": "fdl-ds-eerste-pass-na-win-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 13,
+      "sessionId": "FDL-DS-BUILD-UNDER-PRESS-SAFE-V1",
+      "slug": "opbouw-speel-veilig",
+      "family": "build-safe",
+      "activeRole": "us.RCV",
+      "supportRoles": [
+        "us.LCV",
+        "us.R6",
+        "us.RB"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "canonical-4-2-3-1-start",
+      "ballHolder": "us.RCV",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-opbouw-speel-veilig-live",
+        "good": "fdl-ds-opbouw-speel-veilig-good",
+        "bad": "fdl-ds-opbouw-speel-veilig-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 14,
+      "sessionId": "FDL-DS-BUILD-BREAK-LINE-V1",
+      "slug": "opbouw-lijn-open",
+      "family": "build-break",
+      "activeRole": "us.LCV",
+      "supportRoles": [
+        "us.R6",
+        "us.10",
+        "us.SP"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "canonical-4-2-3-1-start",
+      "ballHolder": "us.LCV",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-opbouw-lijn-open-live",
+        "good": "fdl-ds-opbouw-lijn-open-good",
+        "bad": "fdl-ds-opbouw-lijn-open-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 15,
+      "sessionId": "FDL-DS-WIDE-1V1-FORCE-OUTSIDE-V1",
+      "slug": "flank-1v1-stuur-buiten",
+      "family": "flank-1v1",
+      "activeRole": "us.RB",
+      "supportRoles": [
+        "us.RCV",
+        "us.R6",
+        "us.RW"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "canonical-4-2-3-1-start",
+      "ballHolder": "opp.lw",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-flank-1v1-stuur-buiten-live",
+        "good": "fdl-ds-flank-1v1-stuur-buiten-good",
+        "bad": "fdl-ds-flank-1v1-stuur-buiten-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 16,
+      "sessionId": "FDL-DS-HALFSPACE-RECEIVE-NEXT-ACTION-V1",
+      "slug": "halfspace-volgende-actie",
+      "family": "possession-halfspace",
+      "activeRole": "us.10",
+      "supportRoles": [
+        "us.RW",
+        "us.SP",
+        "us.R6"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "canonical-4-2-3-1-start",
+      "ballHolder": "us.10",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-halfspace-volgende-actie-live",
+        "good": "fdl-ds-halfspace-volgende-actie-good",
+        "bad": "fdl-ds-halfspace-volgende-actie-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 17,
+      "sessionId": "FDL-DS-SWITCH-PLAY-WHEN-V1",
+      "slug": "switch-nu",
+      "family": "possession-switch",
+      "activeRole": "us.L6",
+      "supportRoles": [
+        "us.R6",
+        "us.LW",
+        "us.LB"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "canonical-4-2-3-1-start",
+      "ballHolder": "us.L6",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-switch-nu-live",
+        "good": "fdl-ds-switch-nu-good",
+        "bad": "fdl-ds-switch-nu-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    },
+    {
+      "order": 18,
+      "sessionId": "FDL-DS-BOX-RUN-NEAR-POST-V1",
+      "slug": "voorzet-near-post",
+      "family": "final-nearpost",
+      "activeRole": "us.SP",
+      "supportRoles": [
+        "us.RW",
+        "us.10",
+        "us.LW"
+      ],
+      "teamPerspective": "blue-zvv",
+      "formationOrigin": "canonical-4-2-3-1-start",
+      "ballHolder": "us.RW",
+      "attackingDirection": "left-to-right",
+      "ids": {
+        "live": "fdl-ds-voorzet-near-post-live",
+        "good": "fdl-ds-voorzet-near-post-good",
+        "bad": "fdl-ds-voorzet-near-post-bad"
+      },
+      "gates": {
+        "dedicatedFilmExists": true,
+        "elevenUsPlayers": true,
+        "liveGoodBadResolve": true,
+        "freezeEvaluates": true,
+        "goodLongerThanLive": true,
+        "goodPastFreeze": true,
+        "badPastFreeze": true,
+        "activeRoleHighlighted": true,
+        "notGenericPressId": true,
+        "blueUsMarkers": true,
+        "formationTraceable": true
+      },
+      "remainingLimitation": "Factory-compiled family film (shared PRESS_V2 / 4231 geometry with family-specific phase scripts). Not Golden Session hand-authored beat quality; body/gaze micro-detail is engine-default."
+    }
+  ]
+}

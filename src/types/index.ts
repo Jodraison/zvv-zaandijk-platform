@@ -2,7 +2,8 @@ export type MatchStatus = "scheduled" | "played" | "postponed" | "cancelled";
 
 /** Wedstrijdtype — enum in DB (`match_type`). */
 export type MatchType = "competition" | "cup" | "friendly";
-export type TrainingSessionStatus = "completed" | "cancelled";
+export type TrainingSessionStatus = "scheduled" | "completed" | "cancelled";
+export type MatchLineupStatus = "draft" | "confirmed";
 
 export type PlayerPosition = "GK" | "DEF" | "MID" | "ATT";
 
@@ -23,6 +24,8 @@ export interface Player {
   photo_url: string | null;
   /** Gast-speelster: alleen via wedstrijd-roster, geen vaste selectie/ranking. */
   is_guest: boolean;
+  /** YYYY-MM-DD — persoonsniveau; niet publiek tonen (geen jaar/leeftijd). */
+  birth_date?: string | null;
   initials?: string | null;
   bio?: string | null;
   preferred_foot?: string | null;
@@ -67,6 +70,8 @@ export interface PlayerSeasonMembership {
   is_guest: boolean;
 }
 
+export type MatchDataScope = "production" | "demo" | "qa";
+
 export interface Match {
   id: string;
   season_id: string;
@@ -83,6 +88,14 @@ export interface Match {
   status: MatchStatus;
   wotm_player_id: string | null;
   integrity_state?: "verified" | "invalid";
+  lineup_status?: MatchLineupStatus;
+  lineup_confirmed_at?: string | null;
+  /**
+   * production = telt mee in publieke aggregaties.
+   * demo/qa = nooit in ranking/records/homepage/seizoenstats.
+   * Ontbrekend veld → afgeleid via notes/opponent-patronen (`resolveMatchDataScope`).
+   */
+  data_scope?: MatchDataScope;
 }
 
 export interface MatchPlayerStat {
@@ -118,6 +131,25 @@ export interface MatchSubstitution {
   player_in_id: string;
   player_out_id: string;
   minute: number;
+  to_slot?: string | null;
+  stoppage_time?: number;
+  sort_order?: number;
+  change_group_id?: string | null;
+  notes?: string | null;
+}
+
+/** Positiewijziging zonder wissel. */
+export interface MatchPositionChange {
+  id: string;
+  match_id: string;
+  player_id: string;
+  minute: number;
+  stoppage_time: number;
+  from_slot: string;
+  to_slot: string;
+  change_group_id: string | null;
+  notes: string | null;
+  sort_order: number;
 }
 
 export interface TrainingSession {
@@ -138,6 +170,58 @@ export interface TrainingAttendance {
 
 export type FitnessProgressStatus = "improved" | "declined" | "equal" | "no_previous";
 
+export type FitnessSessionStatus = "draft" | "published";
+export type FitnessProtocolCode = "four_part_v1";
+export type FitnessParticipationStatus =
+  | "pending"
+  | "partial"
+  | "complete"
+  | "absent"
+  | "injured"
+  | "not_tested"
+  | "stopped"
+  | "other";
+
+export interface FitnessScoreConfig {
+  id: string;
+  code: string;
+  label: string;
+  version: number;
+  config: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface FitnessTestSession {
+  id: string;
+  season_id: string;
+  test_on: string;
+  protocol_code: FitnessProtocolCode;
+  status: FitnessSessionStatus;
+  note: string | null;
+  score_config_id: string | null;
+  created_at: string;
+  updated_at: string;
+  published_at: string | null;
+  created_by: string | null;
+  published_by: string | null;
+}
+
+/** Vier losse meetwaarden — geen total_time / totalTime. */
+export interface FitnessTestResult {
+  id: string;
+  session_id: string;
+  player_id: string;
+  flying_sprint_30m_seconds: number | null;
+  agility_10_20_10_seconds: number | null;
+  plank_seconds: number | null;
+  six_minute_run_meters: number | null;
+  participation_status: FitnessParticipationStatus;
+  participation_reason: string | null;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface FitnessTest {
   id: string;
   season_id: string;
@@ -145,7 +229,7 @@ export interface FitnessTest {
   test_type: FitnessTestType;
   /** Kalenderdatum van de meting (YYYY-MM-DD) */
   test_on: string;
-  /** Totaal seconden (20+40+60); bij aparte sprints = som daarvan. */
+  /** Totaal seconden (20+40+60); bij aparte sprints = som daarvan. Legacy only. */
   total_time: number;
   sprint_20m: number;
   sprint_40m: number;
@@ -167,11 +251,18 @@ export interface ClubDatabase {
   match_lineup_entries: MatchLineupEntry[];
   match_player_stats: MatchPlayerStat[];
   match_goal_events: MatchGoalEvent[];
+  match_position_changes: MatchPositionChange[];
   match_card_events: MatchCardEvent[];
   match_substitutions: MatchSubstitution[];
   training_sessions: TrainingSession[];
   training_attendance: TrainingAttendance[];
+  /** Legacy sprint 20/40/60 */
   fitness_tests: FitnessTest[];
+  /** Nieuw protocol — sessions */
+  fitness_test_sessions: FitnessTestSession[];
+  /** Nieuw protocol — results (geen total_time) */
+  fitness_test_results: FitnessTestResult[];
+  fitness_score_configs: FitnessScoreConfig[];
   /** Teamfoto voor homepage; komt uit `club_profile` in Supabase */
   team_photo_url: string | null;
 }
@@ -193,12 +284,16 @@ export interface PlayerSeasonRankingRow {
   assists_total: number;
   wotm_total: number;
   matches_played: number;
+  /** Wedstrijden zonder tegengoals (GK/DEF, vanaf 2026/27) */
+  clean_sheets_total: number;
 }
 
 export interface PlayerDetailAggregates {
   goals_total: number;
   assists_total: number;
   wotm_total: number;
+  /** Wedstrijden zonder tegengoals (GK/DEF, vanaf 2026/27) */
+  clean_sheets_total: number;
   attendance_rate: number;
   sessions_considered: number;
   attendance_present_count: number;

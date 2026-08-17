@@ -1,0 +1,126 @@
+{
+  "base": "http://127.0.0.1:3010",
+  "shots": [
+    {
+      "name": "academy-desktop-above-fold-0pct",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-desktop-above-fold-0pct.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-full-0pct",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-desktop-full-0pct.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-in-progress",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-desktop-in-progress.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 2,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-mobile-above-fold.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-paths",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-mobile-paths.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-desktop-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\dl-desktop-above-fold.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 4,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-desktop-trainingsroute",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\dl-desktop-trainingsroute.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 4,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-mobile-above-fold",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\dl-mobile-above-fold.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 4,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "dl-mobile-trainingsblok",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\dl-mobile-trainingsblok.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 4,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-desktop-1280",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-desktop-1280.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-tablet-1024",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-tablet-1024.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    },
+    {
+      "name": "academy-mobile-360",
+      "file": "C:\\Users\\jodra\\Documents\\zvv-app-clean\\platform\\docs\\football-decision-lab\\reviews\\phase-c\\artifacts\\c-006\\academy-mobile-360.png",
+      "overflowX": false,
+      "recommendCount": 0,
+      "titleHits": 1,
+      "hasFootballAcademy": true,
+      "hasStartCta": true,
+      "consoleErrors": []
+    }
+  ],
+  "consoleErrors": []
+}

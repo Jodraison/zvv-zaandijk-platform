@@ -1,0 +1,26 @@
+{
+  "order": 9,
+  "sessionId": "FDL-DS-INSIDE-CLOSE-RW-PRESSURE-V1",
+  "slug": "binnenkant-onder-druk",
+  "activeRole": "us.RW",
+  "freezeMs": 5400,
+  "previewMs": 4000,
+  "liveDurationMs": 7800,
+  "positioningMode": "authored",
+  "stepIds": [
+    "t0-set",
+    "t1-scan-fast",
+    "t2-fast-pass",
+    "t2b-poor-touch",
+    "t3-freeze-early"
+  ],
+  "mobileFocusIds": [
+    "us.RW",
+    "us.R6",
+    "us.RB",
+    "us.10"
+  ],
+  "ballHolderOpening": "opp.cbL",
+  "freezeEvaluates": true,
+  "authored": true
+}

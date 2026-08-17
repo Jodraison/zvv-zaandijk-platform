@@ -86,7 +86,7 @@ function buildFitnessSummary(db: ClubDatabase, seasonId: string): TeamDevelopmen
 }
 
 /**
- * Compacte trainings- en fitheidssamenvatting voor Statistics Center.
+ * Compacte trainings- en fitheidssamenvatting voor het Statistiekcentrum.
  * Delegeert naar `teamAttendanceSummary` en bestaande fitheidshelpers — geen eigen aggregatie.
  */
 export function getTeamDevelopment(

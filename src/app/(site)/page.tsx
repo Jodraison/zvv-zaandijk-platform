@@ -8,9 +8,18 @@ import { MatchCountdown } from "@/components/home/match-countdown";
 import { ClubHomeHero } from "@/components/home/club-home-hero";
 import { TeamPhotoBlock } from "@/components/home/team-photo-block";
 import { SeasonStandoutsPodium } from "@/components/home/season-standouts-podium";
+import { FitnessLeaderSpotlight } from "@/components/home/fitness-leader-spotlight";
 import { HomePlayerShowcase } from "@/components/home/home-player-showcase";
+import {
+  getBirthdayPlayersForDate,
+  isPublicBirthdayPreviewAllowed,
+  resolveBirthdayPreviewDate,
+} from "@/lib/players/birthdays";
+import { mapSquadToBirthdayPeople } from "@/lib/players/birthday-squad";
+import type { HomeBirthdayPlayer } from "@/components/home/home-birthday-spotlight";
+import { buildHomeTeamSpotlight } from "@/lib/home/team-spotlight";
 
-type Props = { searchParams: Promise<{ season?: string }> };
+type Props = { searchParams: Promise<{ season?: string; vandaag?: string }> };
 
 export default async function HomePage({ searchParams }: Props) {
   const sp = await searchParams;
@@ -20,18 +29,44 @@ export default async function HomePage({ searchParams }: Props) {
   const nextM = nextScheduledMatch(db, seasonId);
   const form = teamFormLast5(db, seasonId);
 
+  const allowBirthdayPreview = isPublicBirthdayPreviewAllowed();
+  const previewDate = resolveBirthdayPreviewDate(sp.vandaag, { allowPreview: allowBirthdayPreview });
+  const birthdayOn = previewDate ?? new Date();
+  const squadPeople = mapSquadToBirthdayPeople(db, seasonId);
+  const birthdayPlayers: HomeBirthdayPlayer[] = getBirthdayPlayersForDate(squadPeople, birthdayOn).map(
+    (p) => ({
+      ...p,
+      href: `/selectie/${encodeURIComponent(p.id)}?season=${encodeURIComponent(seasonId)}`,
+    }),
+  );
+  const teamSpotlight = buildHomeTeamSpotlight(db, seasonId);
+
   const q = (sid: string) => `?season=${encodeURIComponent(sid)}`;
   const navTiles = [
     { href: `/selectie${q(seasonId)}`, title: "Selectie", subtitle: "Speelsters en profielen", icon: "🛡️" },
     { href: `/wedstrijden${q(seasonId)}`, title: "Wedstrijden", subtitle: "Programma en uitslagen", icon: "⚽" },
-    { href: `/ranking${q(seasonId)}`, title: "Ranking", subtitle: "Goals, assists en WOTM", icon: "🏆" },
+    { href: `/ranking${q(seasonId)}`, title: "Ranglijst", subtitle: "Doelpunten, assists en MVP", icon: "🏆" },
     { href: `/training${q(seasonId)}`, title: "Training", subtitle: "Opkomst en ritme", icon: "📈" },
     { href: `/fitheid${q(seasonId)}`, title: "Fitheid", subtitle: "Sprintdata en progressie", icon: "⚡" },
   ] as const;
 
   return (
     <>
-      <ClubHomeHero seasonId={seasonId} nextM={nextM} />
+      {previewDate ? (
+        <div
+          className="border-b border-amber-300/80 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950"
+          data-testid="birthday-dev-preview-banner"
+        >
+          <span className="font-semibold">Voorbeeldweergave — niet openbaar. </span>
+          Verjaardagsdatum geforceerd via development-preview ({sp.vandaag}). In productie wordt deze parameter genegeerd.
+        </div>
+      ) : null}
+      <ClubHomeHero
+        seasonId={seasonId}
+        nextM={nextM}
+        birthdayPlayers={birthdayPlayers}
+        teamSpotlight={teamSpotlight}
+      />
 
       <main className="mx-auto max-w-[114rem] space-y-14 px-4 pb-14 pt-12 md:space-y-20 md:px-0 md:pb-16 md:pt-14">
         {/* Match focus: één blok — geen dubbele witte card eromheen op mobiel */}
@@ -43,11 +78,14 @@ export default async function HomePage({ searchParams }: Props) {
               isHome={nextM.is_home}
               matchId={nextM.id}
               seasonId={seasonId}
+              status={nextM.status}
+              matchType={nextM.match_type}
             />
           ) : (
             <div className="rounded-2xl border border-zvv-border bg-white p-6 shadow-[0_18px_48px_rgba(15,23,42,0.1)] md:p-8">
               <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-zvv-primary">Volgende wedstrijd</p>
-              <p className="mt-3 text-base text-zvv-muted">Nog geen aankomende wedstrijd ingepland.</p>
+              <p className="mt-3 font-[family-name:var(--font-display)] text-2xl text-zvv-ink">Nog niet gepland</p>
+              <p className="mt-2 text-base text-zvv-muted">Het officiële programma volgt later.</p>
             </div>
           )}
         </section>
@@ -80,7 +118,7 @@ export default async function HomePage({ searchParams }: Props) {
                 </div>
                 <TeamFormStrip form={form} />
                 <Link href={`/ranking${q(seasonId)}`} className="mt-6 inline-block text-sm font-semibold text-white transition-colors hover:text-blue-100 hover:underline">
-                  Volledige ranking →
+                  Volledige ranglijst →
                 </Link>
               </div>
             </div>
@@ -94,6 +132,7 @@ export default async function HomePage({ searchParams }: Props) {
                   <SeasonStandoutsPodium ranking={ranking} seasonId={seasonId} />
                 </div>
               </div>
+              <FitnessLeaderSpotlight db={db} seasonId={seasonId} />
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {navTiles.map((tile) => (
                   <Link
