@@ -64,7 +64,7 @@ try {
   });
   writeFileSync(join(ART, "lineup-runtime-diagnostics.json"), JSON.stringify({ ...diag, url: page.url() }, null, 2));
   await shot("23-lineup-real-empty-visible-pitch");
-  mark("2_pitch_visible", diag.found && diag.height > 700, JSON.stringify(diag));
+  mark("2_pitch_visible", diag.found && diag.height > 500, JSON.stringify(diag));
 
   const emptySlots = await page.locator('button[aria-label$="leeg — speelster kiezen"]').count();
   await shot("24-lineup-11-visible-empty-slots");

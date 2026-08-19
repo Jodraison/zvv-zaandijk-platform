@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FORMATION_4231_SLOTS, type FormationSlotCode } from "@/lib/match/formation-4231";
@@ -8,10 +8,34 @@ import { validateConfirmedFormation } from "@/lib/match/match-shape";
 import { saveMatchFormationAction } from "@/actions/match-formation";
 import { FormationPitch } from "@/components/match/formation-pitch";
 import { MatchPlayerPicker, type PickerPlayer } from "@/components/admin/match-player-picker";
+import { PlayerPhotoAvatar } from "@/components/players/player-photo-avatar";
 import { sortPlayersBySquadNumber } from "@/lib/players/sort-by-squad-number";
 import { matchWorkflowHref } from "@/lib/match/match-workflow-steps";
 
 type PlayerOpt = PickerPlayer;
+type SelectionTab = "basis" | "bank" | "absent" | "unassigned";
+
+function RowActions({ children }: { children: ReactNode }) {
+  return (
+    <details className="relative shrink-0">
+      <summary
+        className="flex h-8 w-8 cursor-pointer list-none items-center justify-center rounded-lg text-lg leading-none text-zvv-muted hover:bg-zvv-card-mid [&::-webkit-details-marker]:hidden"
+        aria-label="Acties"
+      >
+        ⋮
+      </summary>
+      <div className="absolute right-0 z-20 mt-1 flex min-w-[9rem] flex-col rounded-xl border border-zvv-border bg-white p-1 shadow-lg">
+        {children}
+      </div>
+    </details>
+  );
+}
+
+function actionBtnClass(tone: "default" | "danger" = "default") {
+  return tone === "danger"
+    ? "w-full rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-red-700 hover:bg-red-50"
+    : "w-full rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-zvv-ink hover:bg-zvv-card-mid";
+}
 
 export function MatchFormationEditor({
   matchId,
@@ -32,7 +56,7 @@ export function MatchFormationEditor({
   initialAbsent?: string[];
   initialStatus: "draft" | "confirmed";
   matchStatus: string;
-  guestPanel?: React.ReactNode;
+  guestPanel?: ReactNode;
 }) {
   const router = useRouter();
   const sortedPlayers = useMemo(() => sortPlayersBySquadNumber(players), [players]);
@@ -66,6 +90,7 @@ export function MatchFormationEditor({
   const [message, setMessage] = useState<string | null>(null);
   const [prepComplete, setPrepComplete] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
+  const [tab, setTab] = useState<SelectionTab>("basis");
   const [pending, startTransition] = useTransition();
 
   const used = useMemo(
@@ -79,6 +104,60 @@ export function MatchFormationEditor({
     () => Object.fromEntries(sortedPlayers.map((p) => [p.player_id, p])),
     [sortedPlayers],
   );
+  const starters = FORMATION_4231_SLOTS.flatMap((s) => {
+    const id = slots[s.code];
+    const player = id ? byId[id] : null;
+    return player ? [{ player, slot: s }] : [];
+  });
+  const pitchPlayersById = useMemo(
+    () =>
+      Object.fromEntries(
+        sortedPlayers.map((p) => [
+          p.player_id,
+          {
+            player_id: p.player_id,
+            name: p.name,
+            shirt_number: p.shirt_number,
+            photo_url: p.photo_url ?? null,
+            is_captain: !!p.is_captain,
+            is_vice_captain: !!p.is_vice_captain,
+          },
+        ]),
+      ),
+    [sortedPlayers],
+  );
+
+  function requestFieldPick(playerId: string) {
+    if (freeSlots.length === 0) {
+      setMessage("Alle elf veldplaatsen zijn bezet. Maak eerst een slot leeg.");
+      return;
+    }
+    setFieldPickPlayerId(playerId);
+  }
+
+  function renderPlayerRow(player: PlayerOpt, meta: string | null, actions: ReactNode) {
+    return (
+      <li key={player.player_id} className="flex min-h-[42px] items-center gap-2 rounded-lg px-1 py-0.5">
+        <PlayerPhotoAvatar
+          playerId={player.player_id}
+          name={player.name}
+          photoUrl={player.photo_url}
+          shirtNumber={player.shirt_number}
+          className="h-9 w-9"
+          sizes="36px"
+        />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-zvv-ink">
+            {player.shirt_number != null ? `#${player.shirt_number} ` : ""}
+            {player.name}
+            {player.is_captain ? " · C" : player.is_vice_captain ? " · VC" : ""}
+          </span>
+          {meta ? <span className="block truncate text-[11px] text-zvv-muted">{meta}</span> : null}
+        </span>
+        {actions}
+      </li>
+    );
+  }
 
   function clearFromAll(playerId: string) {
     setSlots((prev) => {
@@ -217,156 +296,192 @@ export function MatchFormationEditor({
         </p>
       ) : null}
 
-      <div className="space-y-6">
-        {/* Pitch eerst — trainers moeten het veld zien zonder te scrollen voorbij bank/lijsten. */}
-        <FormationPitch
-          title=""
-          interactive
-          size="hero"
-          activeSlot={pickerSlot}
-          onSlotClick={(code) => setPickerSlot(code)}
-          slots={slots}
-          playersById={Object.fromEntries(
-            sortedPlayers.map((p) => [
-              p.player_id,
-              {
-                player_id: p.player_id,
-                name: p.name,
-                shirt_number: p.shirt_number,
-                is_captain: !!p.is_captain,
-                is_vice_captain: !!p.is_vice_captain,
-              },
-            ]),
-          )}
-        />
-
-        <div className="flex flex-wrap gap-2 text-sm font-semibold">
-          <span className="rounded-full bg-zvv-primary px-3 py-1.5 text-white">
-            Basis {Object.values(slots).filter(Boolean).length}/11
-          </span>
-          <span className="rounded-full border border-zvv-border bg-white px-3 py-1.5 text-zvv-ink">Bank {bench.length}</span>
-          <span className="rounded-full border border-zvv-border bg-white px-3 py-1.5 text-zvv-ink">Afwezig {absent.length}</span>
-          <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-amber-950">
-            Nog indelen {unassigned.length}
-          </span>
+      <div
+        className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(320px,380px)] xl:items-start"
+        data-lineup-workspace
+      >
+        <div className="min-w-0">
+          <FormationPitch
+            title=""
+            interactive
+            size="workspace"
+            activeSlot={pickerSlot}
+            onSlotClick={(code) => setPickerSlot(code)}
+            slots={slots}
+            playersById={pitchPlayersById}
+          />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <div className="rounded-2xl border border-zvv-border bg-zvv-card-mid/30 p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-semibold text-zvv-ink">Bank</h3>
-              <span className="text-xs text-zvv-muted">{bench.length}</span>
-            </div>
-            <ul className="mt-3 flex flex-wrap gap-2">
-              {sortPlayersBySquadNumber(bench.map((id) => byId[id]!).filter(Boolean)).map((p) => (
-                <li key={p.player_id}>
-                  <div className="flex items-center gap-1 rounded-full border border-zvv-border bg-white pl-2.5 pr-1 py-1 text-xs font-semibold">
-                    <span>#{p.shirt_number ?? "—"} {p.name.split(" ").slice(-1)[0]}</span>
-                    <button
-                      type="button"
-                      className="rounded-full px-2 py-0.5 text-zvv-primary hover:bg-zvv-primary-muted"
-                      onClick={() => {
-                        if (freeSlots.length === 0) {
-                          setMessage("Alle elf veldplaatsen zijn bezet.");
-                          return;
-                        }
-                        setFieldPickPlayerId(p.player_id);
-                      }}
-                      title="Op veld"
-                    >
-                      Veld
-                    </button>
-                    <button type="button" className="rounded-full px-2 py-0.5 text-zvv-muted hover:bg-zvv-card-mid" onClick={() => moveToAbsent(p.player_id)} title="Naar afwezig">
-                      →A
-                    </button>
-                    <button type="button" className="rounded-full px-2 py-0.5 text-red-700 hover:bg-red-50" onClick={() => clearFromAll(p.player_id)} title="Nog indelen">
-                      ×
-                    </button>
-                  </div>
-                </li>
-              ))}
-              {bench.length === 0 ? <li className="text-sm text-zvv-muted">Nog niemand op de bank.</li> : null}
-            </ul>
-          </div>
-
-          <div className="rounded-2xl border border-zvv-border bg-white p-4">
-            <div className="flex items-center justify-between gap-2">
-              <h3 className="font-semibold text-zvv-ink">Afwezig</h3>
-              <span className="text-xs text-zvv-muted">{absent.length}</span>
-            </div>
-            <ul className="mt-3 space-y-1">
-              {sortPlayersBySquadNumber(absent.map((id) => byId[id]!).filter(Boolean)).map((p) => (
-                <li key={p.player_id} className="flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-zvv-card-mid/50">
-                  <span>
-                    #{p.shirt_number ?? "—"} {p.name}
-                  </span>
-                  <button type="button" className="text-xs font-semibold text-zvv-primary" onClick={() => moveToBench(p.player_id)}>
-                    Naar bank
+        <aside
+          className="xl:sticky xl:top-24"
+          data-testid="lineup-selection-panel"
+          data-selection-panel
+        >
+          <div className="flex flex-col overflow-hidden rounded-2xl border border-zvv-border bg-white xl:max-h-[min(780px,62vh)]">
+            <div className="border-b border-zvv-border px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-primary">Selectie</p>
+              <div className="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold">
+                {(
+                  [
+                    ["basis", `Basis (${starters.length})`, false],
+                    ["bank", `Bank (${bench.length})`, false],
+                    ["absent", `Afwezig (${absent.length})`, false],
+                    ["unassigned", `Nog indelen (${unassigned.length})`, unassigned.length > 0],
+                  ] as const
+                ).map(([id, label, warn]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    data-selection-tab={id}
+                    aria-pressed={tab === id}
+                    onClick={() => setTab(id)}
+                    className={
+                      tab === id
+                        ? "rounded-full bg-zvv-primary px-2.5 py-1 text-white"
+                        : warn
+                          ? "rounded-full border border-amber-300 bg-amber-50 px-2.5 py-1 text-amber-950"
+                          : "rounded-full border border-zvv-border bg-white px-2.5 py-1 text-zvv-ink"
+                    }
+                  >
+                    {label}
                   </button>
-                </li>
-              ))}
-              {absent.length === 0 ? <li className="text-sm text-zvv-muted">Niemand afwezig.</li> : null}
-            </ul>
-          </div>
-
-          {unassigned.length > 0 ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50/70 p-4">
-              <div className="flex items-center justify-between gap-2">
-                <h3 className="font-semibold text-amber-950">Nog indelen</h3>
-                <span className="text-xs text-amber-900">{unassigned.length}</span>
-              </div>
-              <ul className="mt-3 space-y-1">
-                {unassigned.map((p) => (
-                  <li key={p.player_id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/80 px-2 py-1.5 text-sm">
-                    <span>
-                      #{p.shirt_number ?? "—"} {p.name}
-                      {p.is_captain ? " · C" : p.is_vice_captain ? " · VC" : ""}
-                    </span>
-                    <span className="flex flex-wrap gap-1">
-                      <button
-                        type="button"
-                        className="rounded-lg border border-zvv-primary/40 bg-zvv-primary-muted px-2 py-1 text-xs font-semibold text-zvv-primary"
-                        onClick={() => {
-                          if (freeSlots.length === 0) {
-                            setMessage("Alle elf veldplaatsen zijn bezet. Maak eerst een slot leeg.");
-                            return;
-                          }
-                          setFieldPickPlayerId(p.player_id);
-                        }}
-                      >
-                        Op veld
-                      </button>
-                      <button type="button" className="rounded-lg border border-zvv-border px-2 py-1 text-xs font-semibold" onClick={() => moveToBench(p.player_id)}>
-                        Bank
-                      </button>
-                      <button type="button" className="rounded-lg border border-zvv-border px-2 py-1 text-xs font-semibold" onClick={() => moveToAbsent(p.player_id)}>
-                        Afwezig
-                      </button>
-                    </span>
-                  </li>
                 ))}
-              </ul>
+              </div>
             </div>
-          ) : (
-            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-              Iedereen is ingedeeld: basis · bank · afwezig.
-            </p>
-          )}
 
-          {guestPanel ? (
-            <div className="rounded-2xl border border-dashed border-zvv-primary/35 p-3">
-              <button
-                type="button"
-                className="flex w-full items-center justify-between text-left text-sm font-semibold text-zvv-primary"
-                onClick={() => setGuestOpen((v) => !v)}
-              >
-                <span>+ Gastspeelster toevoegen</span>
-                <span className="text-xs font-normal text-zvv-muted">{guestOpen ? "Inklappen" : "Openen"}</span>
-              </button>
-              {guestOpen ? <div className="mt-3">{guestPanel}</div> : null}
+            <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+              {tab === "basis" ? (
+                <ul className="space-y-0.5">
+                  {starters.map(({ player, slot }) =>
+                    renderPlayerRow(
+                      player,
+                      slot.code,
+                      <RowActions>
+                        <button type="button" className={actionBtnClass()} onClick={() => setPickerSlot(slot.code)}>
+                          Wissel
+                        </button>
+                        <button type="button" className={actionBtnClass()} onClick={() => moveToBench(player.player_id)}>
+                          Bank
+                        </button>
+                        <button type="button" className={actionBtnClass()} onClick={() => moveToAbsent(player.player_id)}>
+                          Afwezig
+                        </button>
+                        <button
+                          type="button"
+                          className={actionBtnClass("danger")}
+                          onClick={() => clearFromAll(player.player_id)}
+                        >
+                          Nog indelen
+                        </button>
+                      </RowActions>,
+                    ),
+                  )}
+                  {starters.length === 0 ? (
+                    <li className="px-1 py-3 text-sm text-zvv-muted">
+                      Nog geen speelsters op het veld. Klik een positie.
+                    </li>
+                  ) : null}
+                </ul>
+              ) : null}
+
+              {tab === "bank" ? (
+                <ul className="space-y-0.5">
+                  {sortPlayersBySquadNumber(bench.map((id) => byId[id]!).filter(Boolean)).map((p) =>
+                    renderPlayerRow(
+                      p,
+                      "Bank",
+                      <RowActions>
+                        <button type="button" className={actionBtnClass()} onClick={() => requestFieldPick(p.player_id)}>
+                          Op veld
+                        </button>
+                        <button type="button" className={actionBtnClass()} onClick={() => moveToAbsent(p.player_id)}>
+                          Afwezig
+                        </button>
+                        <button
+                          type="button"
+                          className={actionBtnClass("danger")}
+                          onClick={() => clearFromAll(p.player_id)}
+                        >
+                          Nog indelen
+                        </button>
+                      </RowActions>,
+                    ),
+                  )}
+                  {bench.length === 0 ? <li className="px-1 py-3 text-sm text-zvv-muted">Nog niemand op de bank.</li> : null}
+                </ul>
+              ) : null}
+
+              {tab === "absent" ? (
+                <ul className="space-y-0.5">
+                  {sortPlayersBySquadNumber(absent.map((id) => byId[id]!).filter(Boolean)).map((p) =>
+                    renderPlayerRow(
+                      p,
+                      "Afwezig",
+                      <RowActions>
+                        <button type="button" className={actionBtnClass()} onClick={() => requestFieldPick(p.player_id)}>
+                          Op veld
+                        </button>
+                        <button type="button" className={actionBtnClass()} onClick={() => moveToBench(p.player_id)}>
+                          Bank
+                        </button>
+                        <button
+                          type="button"
+                          className={actionBtnClass("danger")}
+                          onClick={() => clearFromAll(p.player_id)}
+                        >
+                          Nog indelen
+                        </button>
+                      </RowActions>,
+                    ),
+                  )}
+                  {absent.length === 0 ? <li className="px-1 py-3 text-sm text-zvv-muted">Niemand afwezig.</li> : null}
+                </ul>
+              ) : null}
+
+              {tab === "unassigned" ? (
+                unassigned.length > 0 ? (
+                  <ul className="space-y-0.5">
+                    {unassigned.map((p) =>
+                      renderPlayerRow(
+                        p,
+                        p.position_label || (p.is_guest ? "Gast" : "Nog indelen"),
+                        <RowActions>
+                          <button type="button" className={actionBtnClass()} onClick={() => requestFieldPick(p.player_id)}>
+                            Op veld
+                          </button>
+                          <button type="button" className={actionBtnClass()} onClick={() => moveToBench(p.player_id)}>
+                            Bank
+                          </button>
+                          <button type="button" className={actionBtnClass()} onClick={() => moveToAbsent(p.player_id)}>
+                            Afwezig
+                          </button>
+                        </RowActions>,
+                      ),
+                    )}
+                  </ul>
+                ) : (
+                  <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
+                    Iedereen is ingedeeld: basis · bank · afwezig.
+                  </p>
+                )
+              ) : null}
             </div>
-          ) : null}
-        </div>
+
+            {guestPanel ? (
+              <div className="border-t border-dashed border-zvv-primary/35 p-3">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between text-left text-sm font-semibold text-zvv-primary"
+                  onClick={() => setGuestOpen((v) => !v)}
+                >
+                  <span>+ Gastspeelster toevoegen</span>
+                  <span className="text-xs font-normal text-zvv-muted">{guestOpen ? "Inklappen" : "Openen"}</span>
+                </button>
+                {guestOpen ? <div className="mt-3">{guestPanel}</div> : null}
+              </div>
+            ) : null}
+          </div>
+        </aside>
       </div>
 
       <MatchPlayerPicker

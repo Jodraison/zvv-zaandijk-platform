@@ -6,6 +6,7 @@ import {
   formatPlayerOptionLabel,
   sortPlayersBySquadNumber,
 } from "@/lib/players/sort-by-squad-number";
+import { PlayerPhotoAvatar } from "@/components/players/player-photo-avatar";
 
 export type PickerPlayer = {
   player_id: string;
@@ -15,6 +16,7 @@ export type PickerPlayer = {
   is_guest?: boolean;
   is_captain?: boolean;
   is_vice_captain?: boolean;
+  photo_url?: string | null;
 };
 
 export function MatchPlayerPicker({
@@ -112,9 +114,14 @@ export function MatchPlayerPicker({
                     disabled ? "opacity-40" : "hover:bg-zvv-primary-muted",
                   )}
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-zvv-card-mid text-sm font-bold text-zvv-ink">
-                    {p.shirt_number ?? "—"}
-                  </span>
+                  <PlayerPhotoAvatar
+                    playerId={p.player_id}
+                    name={p.name}
+                    photoUrl={p.photo_url}
+                    shirtNumber={p.shirt_number}
+                    className="h-9 w-9"
+                    sizes="36px"
+                  />
                   <span className="min-w-0">
                     <span className="block truncate font-semibold text-zvv-ink">{formatPlayerOptionLabel(p)}</span>
                     <span className="block text-xs text-zvv-muted">

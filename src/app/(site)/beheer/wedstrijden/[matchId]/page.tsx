@@ -94,6 +94,7 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
       .filter((mem) => mem.season_id === m.season_id)
       .map((mem) => [mem.player_id, mem]),
   );
+  const photoByPlayerId = new Map(db.players.map((p) => [p.id, p.photo_url ?? null]));
   const formationPlayers = sortPlayersBySquadNumber(
     members.map((x) => {
       const mem = membershipByPlayer.get(x.player_id);
@@ -105,6 +106,7 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
         is_guest: x.is_guest,
         is_captain: !!mem?.is_captain,
         is_vice_captain: !!mem?.is_vice_captain,
+        photo_url: photoByPlayerId.get(x.player_id) ?? null,
       };
     }),
   );

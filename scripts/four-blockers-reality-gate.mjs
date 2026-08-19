@@ -201,7 +201,7 @@ try {
   writeFileSync(join(ART, "lineup-computed-layout-after.json"), JSON.stringify(lineupDiag, null, 2));
   await shot("11-real-route-empty-pitch");
   await shot("12-eleven-empty-slots");
-  const pitchOk = lineupDiag.width > 600 && lineupDiag.height > 700 && lineupDiag.emptySlots === 11;
+  const pitchOk = lineupDiag.width > 600 && lineupDiag.height > 500 && lineupDiag.emptySlots === 11;
   record("Leeg 1-4-2-3-1 veld", JSON.stringify(lineupDiag), "11-12", pitchOk);
   if (!pitchOk) failed = true;
   record("Op veld knoppen", String(lineupDiag.opVeldButtons), "12", lineupDiag.opVeldButtons >= 1);

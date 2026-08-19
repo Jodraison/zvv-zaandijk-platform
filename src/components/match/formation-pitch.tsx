@@ -6,6 +6,7 @@ import {
   FORMATION_DISPLAY,
   type FormationSlotCode,
 } from "@/lib/match/formation-4231";
+import { PlayerPhotoAvatar } from "@/components/players/player-photo-avatar";
 
 export type PitchOccupant = {
   player_id: string;
@@ -16,17 +17,10 @@ export type PitchOccupant = {
   is_vice_captain?: boolean;
 };
 
-function shortName(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  if (parts.length <= 1) return parts[0] ?? "—";
-  return parts[parts.length - 1]!;
-}
-
-function initials(name: string): string {
+function pitchDisplayName(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-  return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
+  if (parts.length <= 1) return parts[0] ?? "—";
+  return `${parts[0]} ${parts[parts.length - 1]}`;
 }
 
 /**
@@ -50,7 +44,7 @@ export function FormationPitch({
   interactive?: boolean;
   onSlotClick?: (code: FormationSlotCode) => void;
   activeSlot?: FormationSlotCode | null;
-  size?: "default" | "hero" | "compact";
+  size?: "default" | "hero" | "compact" | "workspace";
 }) {
   // Fail-safe: expliciete width + height + minHeight (absolute children mogen parent niet laten collapsen).
   const boxStyle =
@@ -61,6 +55,13 @@ export function FormationPitch({
           minHeight: "480px",
           maxWidth: "100%",
         } as const)
+      : size === "workspace"
+        ? ({
+            width: "100%",
+            height: "clamp(560px, 62vh, 780px)",
+            minHeight: "560px",
+            maxWidth: "100%",
+          } as const)
       : size === "hero"
         ? ({
             width: "min(100%, 760px)",
@@ -78,7 +79,9 @@ export function FormationPitch({
   const chipSize =
     size === "compact"
       ? "h-11 w-11 text-sm"
-      : "h-14 w-14 text-base md:h-16 md:w-16 md:text-lg";
+      : size === "workspace"
+        ? "h-12 w-12 text-sm xl:h-14 xl:w-14 xl:text-base"
+        : "h-14 w-14 text-base md:h-16 md:w-16 md:text-lg";
 
   return (
     <section className={cn("space-y-3", className)}>
@@ -158,20 +161,43 @@ export function FormationPitch({
               p?.is_captain ? "C" : p?.is_vice_captain ? "VC" : null;
             const chip = (
               <>
-                <span
-                  className={cn(
-                    "relative flex items-center justify-center rounded-full border-[2.5px] font-bold shadow-lg",
-                    chipSize,
-                    p
-                      ? "border-white bg-zvv-primary text-white"
-                      : "border-dashed border-white/70 bg-black/35 text-white",
+                <span className="relative">
+                  {p ? (
+                    <span
+                      className={cn(
+                        "relative block overflow-hidden rounded-full border-[2.5px] border-white shadow-[0_6px_14px_rgba(0,0,0,0.35)]",
+                        chipSize,
+                      )}
+                    >
+                      <PlayerPhotoAvatar
+                        playerId={p.player_id}
+                        name={p.name}
+                        photoUrl={p.photo_url}
+                        shirtNumber={p.shirt_number}
+                        className="h-full w-full"
+                        sizes="64px"
+                        fallbackTone="field"
+                      />
+                    </span>
+                  ) : (
+                    <span
+                      className={cn(
+                        "relative flex items-center justify-center rounded-full border-[2.5px] border-dashed border-white/70 bg-black/35 font-bold text-white shadow-lg",
+                        chipSize,
+                      )}
+                    >
+                      +
+                    </span>
                   )}
-                >
-                  {p ? (p.shirt_number != null ? `#${p.shirt_number}` : initials(p.name)) : "+"}
+                  {p && p.shirt_number != null ? (
+                    <span className="absolute -bottom-0.5 -right-1 z-10 min-w-[1.15rem] rounded-full bg-white px-1 text-center text-[10px] font-black leading-4 text-zvv-ink shadow">
+                      {p.shirt_number}
+                    </span>
+                  ) : null}
                   {leadership ? (
                     <span
                       className={cn(
-                        "absolute -right-1 -top-1 rounded px-1 text-[9px] font-black leading-tight shadow",
+                        "absolute -right-1 -top-1 z-10 rounded px-1 text-[9px] font-black leading-tight shadow",
                         leadership === "C"
                           ? "bg-amber-300 text-amber-950"
                           : "bg-slate-200 text-slate-900",
@@ -182,7 +208,7 @@ export function FormationPitch({
                   ) : null}
                 </span>
                 <span className="mt-1 max-w-[6.5rem] truncate text-center text-xs font-semibold leading-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] md:max-w-[7.5rem] md:text-sm">
-                  {p ? shortName(p.name) : "Kies speelster"}
+                  {p ? pitchDisplayName(p.name) : "Kies speelster"}
                 </span>
                 <span className="text-[11px] font-bold uppercase tracking-[0.12em] text-white/85 md:text-xs">
                   {slot.code}

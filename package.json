@@ -27,6 +27,7 @@
     "test:football-operations-final": "tsx src/lib/football-operations-final.test.ts",
     "test:real-workflow-integration": "tsx src/lib/real-workflow-integration.test.ts",
     "test:functional-chain-recovery": "tsx src/lib/functional-chain-recovery.test.ts",
+    "test:lineup-workspace-final": "tsx src/lib/match/lineup-workspace-final.test.ts",
     "test:match-workflow-ux-final": "tsx src/lib/match-workflow-ux-final.test.ts",
     "test:matchday-reality-public-final": "tsx src/lib/matchday-reality-public-final.test.ts",
     "test:one-working-match-flow": "tsx src/lib/one-working-match-flow.test.ts",
