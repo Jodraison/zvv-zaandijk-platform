@@ -7,6 +7,7 @@ import { resolveAuthContext, roleHasCapability } from "@/lib/auth/capabilities";
 import { isTrainingSessionId } from "@/lib/training/training-attendance-workspace";
 import { existingTrainingDateKeys, planRegularTrainingSessions } from "@/lib/training/regular-training-calendar";
 import { ensureRegularTrainingSessionsAction } from "@/actions/training";
+import { buildTrainingPerformanceCenter } from "@/lib/training/training-performance";
 
 type Props = { searchParams: Promise<{ season?: string; session?: string; sid?: string }> };
 
@@ -57,6 +58,7 @@ export default async function BeheerTrainingPage({ searchParams }: Props) {
       session_id: a.session_id,
       player_id: a.player_id,
       present: !!a.present,
+      note: a.note ?? null,
     }));
 
   return (
@@ -79,6 +81,14 @@ export default async function BeheerTrainingPage({ searchParams }: Props) {
           sessions={sessions}
           attendance={attendance}
           canDeleteSessions={canDeleteSessions}
+          performance={(() => {
+            const center = buildTrainingPerformanceCenter(db, seasonId);
+            return {
+              trend: center.trend,
+              adminRanking: center.adminRanking,
+              withoutReasonCount: center.kpis.withoutReasonCount,
+            };
+          })()}
         />
       </Suspense>
     </div>

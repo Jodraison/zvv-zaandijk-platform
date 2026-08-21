@@ -13,6 +13,7 @@ import {
 import { assertCanPersistCompletedAttendance } from "@/lib/training/training-status";
 import { resolveSessionForAttendanceSave } from "@/lib/training/training-attendance-workspace";
 import { ensureRegularTrainingSessionsForSeason } from "@/lib/training/regular-training-calendar";
+import { isAbsenceReason, serializeAbsenceReason } from "@/lib/training/absence-reason";
 import type { z } from "zod";
 
 function parseTrainingSessionForm(formData: FormData) {
@@ -190,7 +191,7 @@ export async function saveTrainingControlCenterAction(raw: {
   session_date_iso: string; // YYYY-MM-DD
   session_id?: string;
   session_status: "completed" | "cancelled";
-  rows: { player_id: string; present: boolean }[];
+  rows: { player_id: string; present: boolean; absence_reason?: string | null }[];
 }): Promise<
   | {
       ok: true;
@@ -300,18 +301,30 @@ export async function saveTrainingControlCenterAction(raw: {
           return;
         }
 
-        const byPlayer = new Map<string, boolean>();
+        const byPlayer = new Map<string, { present: boolean; absence_reason?: string | null }>();
         for (const row of raw.rows ?? []) {
           if (!memberSet.has(row.player_id)) continue;
-          byPlayer.set(row.player_id, !!row.present);
+          byPlayer.set(row.player_id, { present: !!row.present, absence_reason: row.absence_reason });
         }
         db.training_attendance = db.training_attendance.filter((a) => a.session_id !== sessionId);
         for (const mem of members) {
+          const incoming = byPlayer.get(mem.player_id);
+          const present = incoming?.present ?? false;
+          const prev = beforeRows.find((r) => r.player_id === mem.player_id);
+          let note: string | null = null;
+          if (!present) {
+            const sent = incoming && "absence_reason" in incoming ? incoming.absence_reason : undefined;
+            if (sent !== undefined) {
+              note = serializeAbsenceReason(false, isAbsenceReason(sent) ? sent : "no_reason");
+            } else {
+              note = prev?.note ?? null;
+            }
+          }
           db.training_attendance.push({
             session_id: sessionId,
             player_id: mem.player_id,
-            present: byPlayer.get(mem.player_id) ?? false,
-            note: null,
+            present,
+            note,
           });
         }
         verifyTrainingIntegrity(db, sessionId, seasonId, "completed", members.length);

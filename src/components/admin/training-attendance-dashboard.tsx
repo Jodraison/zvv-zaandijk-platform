@@ -2,15 +2,23 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import {
   cancelTrainingSessionByIdAction,
   deleteTrainingSessionAction,
   saveTrainingControlCenterAction,
 } from "@/actions/training";
+import { AbsenceReasonChips } from "@/components/training/absence-reason-chips";
+import { SessionTrendList } from "@/components/training/session-trend-list";
+import { AdminPlayerAbsenceDetailList } from "@/components/admin/admin-player-absence-detail";
+import {
+  ABSENCE_REASON_LABELS_NL,
+  parseAbsenceReason,
+  type AbsenceReason,
+} from "@/lib/training/absence-reason";
+import type { AdminPlayerAttendanceDetail, SessionTrendRow } from "@/lib/training/training-performance";
 import type { TrainingVerificationPayload } from "@/lib/admin/verification-types";
 import { cn } from "@/lib/utils";
-import { formatDateNL, formatDateTimeNL, formatHumanDateNL } from "@/lib/utils/format-date";
+import { formatDateTimeNL, formatHumanDateNL } from "@/lib/utils/format-date";
 import { TrainingNewSessionForm } from "@/components/admin/training-new-session-form";
 import { PlayerPhotoAvatar } from "@/components/players/player-photo-avatar";
 import {
@@ -28,7 +36,6 @@ import {
   trainingAttendanceIsReadOnly,
 } from "@/lib/training/training-attendance-workspace";
 import { refreshAfterAdminSave } from "@/lib/admin-refresh";
-import { ChartErrorBoundary } from "@/components/admin/chart-error-boundary";
 
 type PlayerRow = {
   player_id: string;
@@ -51,17 +58,20 @@ type AttendanceRow = {
   session_id: string;
   player_id: string;
   present: boolean;
+  note?: string | null;
 };
 
 type SessionDraft = {
   presence: Map<string, boolean>;
+  reasons: Map<string, AbsenceReason | null>;
   baseline: Map<string, boolean>;
+  baselineReasons: Map<string, AbsenceReason | null>;
   status: "completed" | "cancelled";
   lastVerified: TrainingVerificationPayload | null;
   lastError: string | null;
 };
 
-function mapEq(a: Map<string, boolean>, b: Map<string, boolean>) {
+function mapEq<T>(a: Map<string, T>, b: Map<string, T>) {
   if (a.size !== b.size) return false;
   for (const [k, v] of a) {
     if (b.get(k) !== v) return false;
@@ -75,12 +85,18 @@ export function TrainingAttendanceDashboard({
   sessions,
   attendance,
   canDeleteSessions = false,
+  performance,
 }: {
   seasonId: string;
   players: PlayerRow[];
   sessions: SessionRow[];
   attendance: AttendanceRow[];
   canDeleteSessions?: boolean;
+  performance?: {
+    trend: SessionTrendRow[];
+    adminRanking: AdminPlayerAttendanceDetail[];
+    withoutReasonCount: number;
+  };
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -91,7 +107,6 @@ export function TrainingAttendanceDashboard({
   const [editing, setEditing] = useState(false);
   const [earlierExpanded, setEarlierExpanded] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
-  const [chartReady, setChartReady] = useState(false);
   const [missingSid, setMissingSid] = useState(false);
 
   const sortedPlayers = useMemo(
@@ -150,7 +165,11 @@ export function TrainingAttendanceDashboard({
 
   const createDraftFromPersisted = (sessionId: string): SessionDraft => {
     const map = new Map<string, boolean>();
-    for (const p of sortedPlayers) map.set(p.player_id, false);
+    const reasons = new Map<string, AbsenceReason | null>();
+    for (const p of sortedPlayers) {
+      map.set(p.player_id, false);
+      reasons.set(p.player_id, null);
+    }
     const sess = sessionsById.get(sessionId) ?? null;
     const isFuture = sess ? new Date(sess.session_at).getTime() > Date.now() : false;
     const status: "completed" | "cancelled" =
@@ -162,13 +181,21 @@ export function TrainingAttendanceDashboard({
           if (rows.has(p.player_id)) map.set(p.player_id, !!rows.get(p.player_id));
         }
       }
+      for (const a of attendance.filter((r) => r.session_id === sess.id)) {
+        const present = map.get(a.player_id) ?? false;
+        reasons.set(a.player_id, parseAbsenceReason(a.note ?? null, present));
+      }
     }
-    return { presence: new Map(map), baseline: new Map(map), status, lastVerified: null, lastError: null };
+    return {
+      presence: new Map(map),
+      reasons: new Map(reasons),
+      baseline: new Map(map),
+      baselineReasons: new Map(reasons),
+      status,
+      lastVerified: null,
+      lastError: null,
+    };
   };
-
-  useEffect(() => {
-    setChartReady(true);
-  }, []);
 
   useEffect(() => {
     if (selectionInitialized) return;
@@ -223,7 +250,9 @@ export function TrainingAttendanceDashboard({
   const presentCount = [...(activeDraft?.presence ?? new Map<string, boolean>()).values()].filter(Boolean).length;
   const totalCount = sortedPlayers.length;
   const progress = totalCount ? Math.round((presentCount / totalCount) * 100) : 0;
-  const dirty = !!activeDraft && !mapEq(activeDraft.presence, activeDraft.baseline);
+  const dirty =
+    !!activeDraft &&
+    (!mapEq(activeDraft.presence, activeDraft.baseline) || !mapEq(activeDraft.reasons, activeDraft.baselineReasons));
   const dirtySinceVerified = dirty && !!activeDraft?.lastVerified;
   const locMeta = parseTrainingLocationMeta(activeSession?.location);
 
@@ -241,10 +270,14 @@ export function TrainingAttendanceDashboard({
     const statusAtSave = activeStatus;
     const draftAtSave = activeDraft;
     startTransition(async () => {
-      const rows = sortedPlayers.map((p) => ({
-        player_id: p.player_id,
-        present: draftAtSave.presence.get(p.player_id) ?? false,
-      }));
+      const rows = sortedPlayers.map((p) => {
+        const present = draftAtSave.presence.get(p.player_id) ?? false;
+        return {
+          player_id: p.player_id,
+          present,
+          absence_reason: present ? null : (draftAtSave.reasons.get(p.player_id) ?? "no_reason"),
+        };
+      });
       const res = await saveTrainingControlCenterAction({
         season_id: seasonId,
         session_id: idAtSave,
@@ -274,10 +307,15 @@ export function TrainingAttendanceDashboard({
 
   const setAll = (v: boolean) => {
     if (!selectedSessionId) return;
+    const current = draftsBySessionId[selectedSessionId] ?? createDraftFromPersisted(selectedSessionId);
     const n = new Map<string, boolean>();
-    for (const p of sortedPlayers) n.set(p.player_id, v);
+    const reasons = new Map<string, AbsenceReason | null>();
+    for (const p of sortedPlayers) {
+      n.set(p.player_id, v);
+      reasons.set(p.player_id, v ? null : "no_reason");
+    }
     setDraftsBySessionId({
-      [selectedSessionId]: { ...createDraftFromPersisted(selectedSessionId), presence: n, lastError: null },
+      [selectedSessionId]: { ...current, presence: n, reasons, lastError: null },
     });
   };
 
@@ -312,10 +350,14 @@ export function TrainingAttendanceDashboard({
         refreshAfterAdminSave(router);
         return;
       }
-      const rows = sortedPlayers.map((p) => ({
-        player_id: p.player_id,
-        present: draftAtSave.presence.get(p.player_id) ?? false,
-      }));
+      const rows = sortedPlayers.map((p) => {
+        const present = draftAtSave.presence.get(p.player_id) ?? false;
+        return {
+          player_id: p.player_id,
+          present,
+          absence_reason: present ? null : (draftAtSave.reasons.get(p.player_id) ?? "no_reason"),
+        };
+      });
       const res = await saveTrainingControlCenterAction({
         season_id: seasonId,
         session_id: idAtSave,
@@ -362,51 +404,6 @@ export function TrainingAttendanceDashboard({
       refreshAfterAdminSave(router);
     });
   };
-
-  const chartRows = useMemo(() => {
-    return earlierItems
-      .filter((i) => i.session.status === "completed" && !i.needsAttendance)
-      .slice(0, 12)
-      .reverse()
-      .map((i) => {
-        const rows = attendanceMap.get(i.session.id);
-        const present = rows ? [...rows.values()].filter(Boolean).length : 0;
-        const total = sortedPlayers.length;
-        const pct = total ? Math.round((present / total) * 1000) / 10 : 0;
-        return {
-          key: i.session.id,
-          shortDate: formatTrainingChipLabel(i.dateKey),
-          fullDate: i.dateKey,
-          present,
-          total,
-          pct,
-        };
-      });
-  }, [attendanceMap, earlierItems, sortedPlayers.length]);
-
-  const rankingRows = useMemo(() => {
-    const sessionIds = new Set(
-      sessions
-        .filter((s) => {
-          const op = resolveTrainingOperationalStatus(s, {
-            attendanceRowCount: attendanceMap.get(s.id)?.size ?? 0,
-            expectedSquadCount: sortedPlayers.length,
-          });
-          return op.countsForAttendance;
-        })
-        .map((s) => s.id),
-    );
-    return sortedPlayers
-      .map((p) => {
-        const rows = attendance.filter((a) => a.player_id === p.player_id && sessionIds.has(a.session_id));
-        const present = rows.filter((r) => r.present).length;
-        const absent = rows.filter((r) => !r.present).length;
-        const total = rows.length;
-        const pct = total ? Math.round((present / total) * 1000) / 10 : 0;
-        return { player: p, present, absent, total, pct };
-      })
-      .sort((a, b) => (b.pct - a.pct) || (b.present - a.present) || a.player.name.localeCompare(b.player.name, "nl"));
-  }, [attendance, attendanceMap, sessions, sortedPlayers]);
 
   const renderListButton = (item: TrainingListItem) => {
     const active = item.session.id === selectedSessionId;
@@ -647,67 +644,93 @@ export function TrainingAttendanceDashboard({
             >
               {sortedPlayers.map((p) => {
                 const present = activeDraft?.presence.get(p.player_id) ?? false;
+                const reason = activeDraft?.reasons.get(p.player_id) ?? null;
                 const setPresent = (value: boolean) => {
                   const base = createDraftFromPersisted(selectedSessionId);
                   const current = draftsBySessionId[selectedSessionId] ?? base;
                   const next = new Map(current.presence);
+                  const nextReasons = new Map(current.reasons);
                   next.set(p.player_id, value);
+                  nextReasons.set(p.player_id, value ? null : (current.reasons.get(p.player_id) ?? "no_reason"));
                   setDraftsBySessionId({
-                    [selectedSessionId]: { ...current, presence: next, lastError: null },
+                    [selectedSessionId]: { ...current, presence: next, reasons: nextReasons, lastError: null },
+                  });
+                };
+                const setReason = (nextReason: AbsenceReason) => {
+                  const current = draftsBySessionId[selectedSessionId] ?? createDraftFromPersisted(selectedSessionId);
+                  const nextReasons = new Map(current.reasons);
+                  nextReasons.set(p.player_id, nextReason);
+                  setDraftsBySessionId({
+                    [selectedSessionId]: { ...current, reasons: nextReasons, lastError: null },
                   });
                 };
                 return (
                   <div
                     key={`${selectedSessionId}-${p.player_id}`}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl border px-3 py-2",
+                      "rounded-xl border px-3 py-2",
                       isCancelled
                         ? "border-zvv-border bg-zvv-card-mid"
                         : present
                           ? "border-emerald-200 bg-emerald-50/70"
-                          : "border-zvv-border bg-white",
+                          : "border-rose-200 bg-rose-50/50",
                     )}
                   >
-                    <PlayerPhotoAvatar
-                      playerId={p.player_id}
-                      name={p.name}
-                      photoUrl={p.photo_url}
-                      shirtNumber={p.shirt_number}
-                      className="h-9 w-9"
-                      sizes="36px"
-                    />
-                    <p className="min-w-0 flex-1 text-sm font-semibold text-zvv-ink">
-                      {p.shirt_number != null ? <span className="mr-1.5 text-zvv-muted">#{p.shirt_number}</span> : null}
-                      {p.name}
-                    </p>
-                    <div className="flex shrink-0 gap-1">
-                      <button
-                        type="button"
-                        disabled={isCancelled}
-                        onClick={() => setPresent(true)}
-                        className={cn(
-                          "rounded-lg px-2.5 py-1.5 text-xs font-semibold",
-                          present
-                            ? "bg-emerald-600 text-white"
-                            : "border border-zvv-border bg-white text-zvv-muted hover:border-emerald-300 hover:text-emerald-800",
-                        )}
-                      >
-                        Aanwezig
-                      </button>
-                      <button
-                        type="button"
-                        disabled={isCancelled}
-                        onClick={() => setPresent(false)}
-                        className={cn(
-                          "rounded-lg px-2.5 py-1.5 text-xs font-semibold",
-                          !present
-                            ? "bg-slate-700 text-white"
-                            : "border border-zvv-border bg-white text-zvv-muted hover:border-slate-300 hover:text-slate-800",
-                        )}
-                      >
-                        Afwezig
-                      </button>
+                    <div className="flex items-center gap-3">
+                      <PlayerPhotoAvatar
+                        playerId={p.player_id}
+                        name={p.name}
+                        photoUrl={p.photo_url}
+                        shirtNumber={p.shirt_number}
+                        className="h-9 w-9"
+                        sizes="36px"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-zvv-ink">
+                          {p.shirt_number != null ? <span className="mr-1.5 text-zvv-muted">#{p.shirt_number}</span> : null}
+                          {p.name}
+                        </p>
+                        <p
+                          className={cn(
+                            "mt-0.5 text-[11px] font-bold uppercase tracking-wider",
+                            present ? "text-emerald-800" : "text-rose-800",
+                          )}
+                        >
+                          {present ? "Aanwezig" : `Afwezig · ${reason ? ABSENCE_REASON_LABELS_NL[reason] : "Geen reden"}`}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          disabled={isCancelled}
+                          onClick={() => setPresent(true)}
+                          className={cn(
+                            "rounded-lg px-2.5 py-1.5 text-xs font-semibold",
+                            present
+                              ? "bg-emerald-600 text-white"
+                              : "border border-zvv-border bg-white text-zvv-muted hover:border-emerald-300 hover:text-emerald-800",
+                          )}
+                        >
+                          Aanwezig
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isCancelled}
+                          onClick={() => setPresent(false)}
+                          className={cn(
+                            "rounded-lg px-2.5 py-1.5 text-xs font-semibold",
+                            !present
+                              ? "bg-slate-800 text-white"
+                              : "border border-zvv-border bg-white text-zvv-muted hover:border-slate-300 hover:text-slate-800",
+                          )}
+                        >
+                          Afwezig
+                        </button>
+                      </div>
                     </div>
+                    {!present ? (
+                      <AbsenceReasonChips value={reason} onChange={setReason} disabled={isCancelled} />
+                    ) : null}
                   </div>
                 );
               })}
@@ -720,62 +743,29 @@ export function TrainingAttendanceDashboard({
         </div>
       )}
 
-      <div className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
-        <h3 className="font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
-          Ranglijst aanwezigheid
-        </h3>
-        <div className="mt-4 h-64 rounded-xl border border-zvv-border p-3">
-          <ChartErrorBoundary>
-            {chartReady && chartRows.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
-                <BarChart data={chartRows}>
-                  <XAxis dataKey="shortDate" tick={{ fontSize: 12 }} interval={0} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-                  <Tooltip
-                    formatter={(v: number) => [`${v}%`, "Aanwezigheid"]}
-                    labelFormatter={(_l, ps) => {
-                      const row = ps?.[0]?.payload as { fullDate: string; present: number; total: number } | undefined;
-                      return row ? `${formatDateNL(row.fullDate)} • ${row.present}/${row.total}` : "";
-                    }}
-                  />
-                  <Bar dataKey="pct" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="flex h-full items-center justify-center text-sm text-zvv-muted">
-                {chartRows.length ? "Grafiek laden…" : "Nog geen geregistreerde sessies om te plotten."}
-              </p>
-            )}
-          </ChartErrorBoundary>
-          <p className="mt-2 text-xs text-zvv-muted">{chartRows.length} geregistreerde sessies geplot</p>
-        </div>
-
-        <div className="mt-4 overflow-x-auto rounded-xl border border-zvv-border">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-zvv-card-mid text-xs uppercase tracking-wide text-zvv-muted">
-              <tr>
-                <th className="px-3 py-2 text-left">#</th>
-                <th className="px-3 py-2 text-left">Speelster</th>
-                <th className="px-3 py-2 text-right">Aanwezig</th>
-                <th className="px-3 py-2 text-right">Afwezig</th>
-                <th className="px-3 py-2 text-right">Totaal</th>
-                <th className="px-3 py-2 text-right">%</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankingRows.map((r, i) => (
-                <tr key={r.player.player_id} className="border-t border-zvv-border">
-                  <td className="px-3 py-2">{i + 1}</td>
-                  <td className="px-3 py-2 font-medium text-zvv-ink">{r.player.name}</td>
-                  <td className="px-3 py-2 text-right">{r.present}</td>
-                  <td className="px-3 py-2 text-right">{r.absent}</td>
-                  <td className="px-3 py-2 text-right">{r.total}</td>
-                  <td className="px-3 py-2 text-right font-semibold text-zvv-ink">{r.pct}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
+          <p className="club-page-eyebrow">Opkomst</p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
+            Opkomst per training
+          </h3>
+          <div className="mt-4">
+            <SessionTrendList rows={performance?.trend ?? []} />
+          </div>
+        </section>
+        <section className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
+          <p className="club-page-eyebrow">Beheer</p>
+          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
+            Speelsterdetail
+          </h3>
+          <p className="mt-1 text-sm text-zvv-muted">Tik een speelster voor redenverdeling. Alleen zichtbaar in beheer.</p>
+          <p className="mt-2 text-sm font-semibold text-amber-900">
+            Zonder reden: {performance?.withoutReasonCount ?? 0}
+          </p>
+          <div className="mt-3">
+            <AdminPlayerAbsenceDetailList rows={performance?.adminRanking ?? []} />
+          </div>
+        </section>
       </div>
 
       <div className="sticky bottom-3 z-20 rounded-2xl border border-zvv-border bg-white/95 p-3 shadow-lg backdrop-blur">
