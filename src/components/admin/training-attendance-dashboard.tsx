@@ -12,7 +12,9 @@ import type { TrainingVerificationPayload } from "@/lib/admin/verification-types
 import { cn } from "@/lib/utils";
 import { formatDateNL, formatDateTimeNL, formatHumanDateNL } from "@/lib/utils/format-date";
 import { TrainingNewSessionForm } from "@/components/admin/training-new-session-form";
+import { PlayerPhotoAvatar } from "@/components/players/player-photo-avatar";
 import {
+  buildTrainingEndIso,
   classifyTrainingSessions,
   formatTrainingChipLabel,
   parseTrainingLocationMeta,
@@ -21,13 +23,19 @@ import {
   type TrainingListItem,
 } from "@/lib/training/manual-training";
 import { resolveTrainingOperationalStatus } from "@/lib/training/training-status";
+import {
+  resolveTrainingWorkspaceSelection,
+  trainingAttendanceIsReadOnly,
+} from "@/lib/training/training-attendance-workspace";
 import { refreshAfterAdminSave } from "@/lib/admin-refresh";
+import { ChartErrorBoundary } from "@/components/admin/chart-error-boundary";
 
 type PlayerRow = {
   player_id: string;
   name: string;
   shirt_number: number | null;
   position: string | null;
+  photo_url?: string | null;
   is_guest?: boolean;
 };
 
@@ -83,6 +91,8 @@ export function TrainingAttendanceDashboard({
   const [editing, setEditing] = useState(false);
   const [earlierExpanded, setEarlierExpanded] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [chartReady, setChartReady] = useState(false);
+  const [missingSid, setMissingSid] = useState(false);
 
   const sortedPlayers = useMemo(
     () =>
@@ -157,22 +167,22 @@ export function TrainingAttendanceDashboard({
   };
 
   useEffect(() => {
+    setChartReady(true);
+  }, []);
+
+  useEffect(() => {
     if (selectionInitialized) return;
-    const sid = (searchParams.get("sid") ?? "").trim();
-    const dateQp = (searchParams.get("session") ?? "").trim();
-    if (sid && sessionsById.has(sid)) {
-      setSelectedSessionId(sid);
-    } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateQp)) {
-      const hit =
-        listItems.find((i) => i.dateKey === dateQp && i.needsAttendance) ??
-        listItems.find((i) => i.dateKey === dateQp) ??
-        null;
-      setSelectedSessionId(hit?.session.id ?? openItems[0]?.session.id ?? listItems[0]?.session.id ?? "");
-    } else {
-      setSelectedSessionId(openItems[0]?.session.id ?? upcomingItems[0]?.session.id ?? listItems[0]?.session.id ?? "");
-    }
+    const resolved = resolveTrainingWorkspaceSelection({
+      sid: searchParams.get("sid"),
+      dateKey: searchParams.get("session"),
+      sessions,
+      dateKeys: listItems.map((i) => ({ id: i.session.id, dateKey: i.dateKey, prefer: i.needsAttendance })),
+      fallbackIds: [openItems[0]?.session.id ?? "", upcomingItems[0]?.session.id ?? "", listItems[0]?.session.id ?? ""],
+    });
+    setSelectedSessionId(resolved.sessionId);
+    setMissingSid(resolved.missingSid);
     setSelectionInitialized(true);
-  }, [searchParams, selectionInitialized, sessionsById, listItems, openItems, upcomingItems]);
+  }, [searchParams, selectionInitialized, sessions, listItems, openItems, upcomingItems]);
 
   const selectSession = (sessionId: string) => {
     setSelectedSessionId(sessionId);
@@ -201,7 +211,7 @@ export function TrainingAttendanceDashboard({
     : null;
   const activeStatus: "completed" | "cancelled" =
     activeDraft?.status ?? (activeSession?.status === "cancelled" ? "cancelled" : "completed");
-  const isCancelled = activeStatus === "cancelled";
+  const isCancelled = activeStatus === "cancelled" || trainingAttendanceIsReadOnly(activeSession?.status);
 
   const opStatus = activeSession
     ? resolveTrainingOperationalStatus(activeSession, {
@@ -237,6 +247,7 @@ export function TrainingAttendanceDashboard({
       }));
       const res = await saveTrainingControlCenterAction({
         season_id: seasonId,
+        session_id: idAtSave,
         session_date_iso: dateAtSave,
         session_status: statusAtSave,
         rows,
@@ -307,6 +318,7 @@ export function TrainingAttendanceDashboard({
       }));
       const res = await saveTrainingControlCenterAction({
         season_id: seasonId,
+        session_id: idAtSave,
         session_date_iso: dateAtSave,
         session_status: status,
         rows,
@@ -431,6 +443,11 @@ export function TrainingAttendanceDashboard({
 
   return (
     <div className="space-y-6">
+      {missingSid ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Deze trainingssessie is niet gevonden. Kies een bestaande sessie of voeg een extra trainingsdag toe.
+        </div>
+      ) : null}
       <header className="rounded-2xl border border-zvv-border bg-gradient-to-br from-white to-zvv-card-mid/30 p-5 shadow-sm">
         <p className="club-page-eyebrow">Training beheer</p>
         <h2 className="mt-2 font-[family-name:var(--font-display)] text-3xl tracking-wide text-zvv-ink">
@@ -493,7 +510,7 @@ export function TrainingAttendanceDashboard({
         <div className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wider text-zvv-muted">Geselecteerde sessie</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-zvv-muted">Training aanwezigheid</p>
               <div className="mt-1 flex flex-wrap items-center gap-2">
                 <h3 className="text-2xl font-semibold text-zvv-ink">
                   {formatHumanDateNL(activeSession.session_at, { includeYear: true })}
@@ -505,7 +522,14 @@ export function TrainingAttendanceDashboard({
                 ) : null}
               </div>
               <p className="mt-1 text-sm text-zvv-muted">
-                {activeSession.title ?? "Training"} · {trainingTimeLabelAmsterdam(activeSession.session_at)}
+                {(() => {
+                  try {
+                    return trainingTimeLabelAmsterdam(activeSession.session_at, buildTrainingEndIso(activeDateKey, locMeta.end));
+                  } catch {
+                    return trainingTimeLabelAmsterdam(activeSession.session_at);
+                  }
+                })()}
+                {activeSession.title ? ` · ${activeSession.title}` : ""}
               </p>
               {opStatus ? (
                 <p className="mt-1 text-sm font-semibold text-zvv-ink">
@@ -623,47 +647,68 @@ export function TrainingAttendanceDashboard({
             >
               {sortedPlayers.map((p) => {
                 const present = activeDraft?.presence.get(p.player_id) ?? false;
+                const setPresent = (value: boolean) => {
+                  const base = createDraftFromPersisted(selectedSessionId);
+                  const current = draftsBySessionId[selectedSessionId] ?? base;
+                  const next = new Map(current.presence);
+                  next.set(p.player_id, value);
+                  setDraftsBySessionId({
+                    [selectedSessionId]: { ...current, presence: next, lastError: null },
+                  });
+                };
                 return (
-                  <button
+                  <div
                     key={`${selectedSessionId}-${p.player_id}`}
-                    type="button"
-                    onClick={() => {
-                      const base = createDraftFromPersisted(selectedSessionId);
-                      const current = draftsBySessionId[selectedSessionId] ?? base;
-                      const next = new Map(current.presence);
-                      next.set(p.player_id, !present);
-                      setDraftsBySessionId({
-                        [selectedSessionId]: { ...current, presence: next, lastError: null },
-                      });
-                    }}
                     className={cn(
-                      "w-full rounded-xl border px-3 py-2 text-left transition",
+                      "flex items-center gap-3 rounded-xl border px-3 py-2",
                       isCancelled
                         ? "border-zvv-border bg-zvv-card-mid"
                         : present
                           ? "border-emerald-200 bg-emerald-50/70"
-                          : "border-zvv-border bg-zvv-card-mid",
+                          : "border-zvv-border bg-white",
                     )}
                   >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-zvv-ink">
-                        {p.shirt_number != null ? `#${p.shirt_number} ` : ""}
-                        {p.name}
-                      </p>
-                      <span
+                    <PlayerPhotoAvatar
+                      playerId={p.player_id}
+                      name={p.name}
+                      photoUrl={p.photo_url}
+                      shirtNumber={p.shirt_number}
+                      className="h-9 w-9"
+                      sizes="36px"
+                    />
+                    <p className="min-w-0 flex-1 text-sm font-semibold text-zvv-ink">
+                      {p.shirt_number != null ? <span className="mr-1.5 text-zvv-muted">#{p.shirt_number}</span> : null}
+                      {p.name}
+                    </p>
+                    <div className="flex shrink-0 gap-1">
+                      <button
+                        type="button"
+                        disabled={isCancelled}
+                        onClick={() => setPresent(true)}
                         className={cn(
-                          "rounded-full px-2 py-1 text-xs font-semibold",
-                          isCancelled
-                            ? "bg-zvv-card-mid text-zvv-muted"
-                            : present
-                              ? "bg-emerald-100 text-emerald-800"
-                              : "bg-zvv-card-mid text-zvv-muted",
+                          "rounded-lg px-2.5 py-1.5 text-xs font-semibold",
+                          present
+                            ? "bg-emerald-600 text-white"
+                            : "border border-zvv-border bg-white text-zvv-muted hover:border-emerald-300 hover:text-emerald-800",
                         )}
                       >
-                        {present ? "Aanwezig" : "Afwezig"}
-                      </span>
+                        Aanwezig
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isCancelled}
+                        onClick={() => setPresent(false)}
+                        className={cn(
+                          "rounded-lg px-2.5 py-1.5 text-xs font-semibold",
+                          !present
+                            ? "bg-slate-700 text-white"
+                            : "border border-zvv-border bg-white text-zvv-muted hover:border-slate-300 hover:text-slate-800",
+                        )}
+                      >
+                        Afwezig
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -680,20 +725,28 @@ export function TrainingAttendanceDashboard({
           Ranglijst aanwezigheid
         </h3>
         <div className="mt-4 h-64 rounded-xl border border-zvv-border p-3">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartRows}>
-              <XAxis dataKey="shortDate" tick={{ fontSize: 12 }} interval={0} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
-              <Tooltip
-                formatter={(v: number) => [`${v}%`, "Aanwezigheid"]}
-                labelFormatter={(_l, ps) => {
-                  const row = ps?.[0]?.payload as { fullDate: string; present: number; total: number } | undefined;
-                  return row ? `${formatDateNL(row.fullDate)} • ${row.present}/${row.total}` : "";
-                }}
-              />
-              <Bar dataKey="pct" fill="#22c55e" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          <ChartErrorBoundary>
+            {chartReady && chartRows.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
+                <BarChart data={chartRows}>
+                  <XAxis dataKey="shortDate" tick={{ fontSize: 12 }} interval={0} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 12 }} />
+                  <Tooltip
+                    formatter={(v: number) => [`${v}%`, "Aanwezigheid"]}
+                    labelFormatter={(_l, ps) => {
+                      const row = ps?.[0]?.payload as { fullDate: string; present: number; total: number } | undefined;
+                      return row ? `${formatDateNL(row.fullDate)} • ${row.present}/${row.total}` : "";
+                    }}
+                  />
+                  <Bar dataKey="pct" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="flex h-full items-center justify-center text-sm text-zvv-muted">
+                {chartRows.length ? "Grafiek laden…" : "Nog geen geregistreerde sessies om te plotten."}
+              </p>
+            )}
+          </ChartErrorBoundary>
           <p className="mt-2 text-xs text-zvv-muted">{chartRows.length} geregistreerde sessies geplot</p>
         </div>
 
@@ -740,9 +793,9 @@ export function TrainingAttendanceDashboard({
             type="button"
             onClick={() => save(false)}
             className="club-btn-primary"
-            disabled={saving || isCancelled || !dirty || !activeSession}
+            disabled={saving || isCancelled || !activeSession}
           >
-            {saving ? "Opslaan..." : "Opslaan"}
+            {saving ? "Opslaan..." : "Aanwezigheid opslaan"}
           </button>
           <button
             type="button"

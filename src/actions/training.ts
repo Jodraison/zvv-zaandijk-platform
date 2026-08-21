@@ -11,7 +11,7 @@ import {
   trainingKickoffIso,
 } from "@/lib/season/season-operations-2026-27";
 import { assertCanPersistCompletedAttendance } from "@/lib/training/training-status";
-import { trainingDateKeyAmsterdam } from "@/lib/training/manual-training";
+import { resolveSessionForAttendanceSave } from "@/lib/training/training-attendance-workspace";
 import type { z } from "zod";
 
 function parseTrainingSessionForm(formData: FormData) {
@@ -187,6 +187,7 @@ export async function setTrainingSessionStatusAction(raw: {
 export async function saveTrainingControlCenterAction(raw: {
   season_id: string;
   session_date_iso: string; // YYYY-MM-DD
+  session_id?: string;
   session_status: "completed" | "cancelled";
   rows: { player_id: string; present: boolean }[];
 }): Promise<
@@ -243,9 +244,11 @@ export async function saveTrainingControlCenterAction(raw: {
         if (!dateGate.ok) throw new Error(dateGate.error);
         const ops = getSeasonOperations(seasonId);
         const wantedAt = ops ? trainingKickoffIso(dateIso, ops) : `${dateIso}T18:00:00.000Z`;
-        const existing = db.training_sessions.find(
-          (s) => s.season_id === seasonId && trainingDateKeyAmsterdam(s.session_at) === dateIso,
-        );
+        const requestedId = String(raw.session_id ?? "").trim();
+        const existing = resolveSessionForAttendanceSave(db.training_sessions, seasonId, dateIso, requestedId);
+        if (requestedId && !existing) {
+          throw new Error("Trainingssessie niet gevonden.");
+        }
         if (existing) {
           sessionId = existing.id;
           auditAction = "update";

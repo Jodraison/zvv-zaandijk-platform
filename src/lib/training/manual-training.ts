@@ -41,17 +41,29 @@ export function trainingDateKeyAmsterdam(sessionAt: string): string {
 }
 
 export function trainingTimeLabelAmsterdam(sessionAt: string, endAt?: string | null): string {
-  const fmt = (iso: string) =>
-    new Intl.DateTimeFormat("nl-NL", {
-      timeZone: "Europe/Amsterdam",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    }).format(new Date(iso));
+  const fmt = (iso: string) => {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return "—";
+    try {
+      return new Intl.DateTimeFormat("nl-NL", {
+        timeZone: "Europe/Amsterdam",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(d);
+    } catch {
+      return "—";
+    }
+  };
   const start = fmt(sessionAt);
-  if (endAt) return `${start}–${fmt(endAt)}`;
-  const endIso = new Date(new Date(sessionAt).getTime() + 60 * 60_000).toISOString();
-  return `${start}–${fmt(endIso)}`;
+  if (start === "—") return "—";
+  if (endAt) {
+    const end = fmt(endAt);
+    return end === "—" ? start : `${start}–${end}`;
+  }
+  const startMs = new Date(sessionAt).getTime();
+  if (Number.isNaN(startMs)) return start;
+  return `${start}–${fmt(new Date(startMs + 60 * 60_000).toISOString())}`;
 }
 
 export function buildTrainingKickoffIso(dateYmd: string, startHhMm: string): string {
@@ -64,12 +76,17 @@ export function buildTrainingEndIso(dateYmd: string, endHhMm: string): string {
 
 /** Compact label: "ma 10 aug" */
 export function formatTrainingChipLabel(dateKey: string): string {
-  const d = new Date(`${dateKey}T12:00:00`);
-  return new Intl.DateTimeFormat("nl-NL", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  }).format(d);
+  const d = new Date(/^\d{4}-\d{2}-\d{2}$/.test(dateKey) ? `${dateKey}T12:00:00` : dateKey);
+  if (Number.isNaN(d.getTime())) return dateKey || "—";
+  try {
+    return new Intl.DateTimeFormat("nl-NL", {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }).format(d);
+  } catch {
+    return dateKey || "—";
+  }
 }
 
 export function classifyTrainingSessions(
@@ -98,7 +115,12 @@ export function classifyTrainingSessions(
     else bucket = "earlier";
 
     const loc = parseTrainingLocationMeta(session.location);
-    const endIso = buildTrainingEndIso(dateKey, loc.end);
+    let endIso: string | undefined;
+    try {
+      endIso = buildTrainingEndIso(dateKey, loc.end);
+    } catch {
+      endIso = undefined;
+    }
     return {
       session,
       dateKey,

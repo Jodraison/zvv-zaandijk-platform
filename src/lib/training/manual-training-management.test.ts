@@ -283,4 +283,35 @@ function emptyDb(): ClubDatabase {
   console.log("ok stats contract");
 }
 
+{
+  const now = new Date("2026-08-21T12:00:00+02:00");
+  const historical: TrainingSession = {
+    id: "435d378b-de48-4b2b-81ea-74d2ede40950",
+    season_id: SEASON_2026_27_ID,
+    title: "Training",
+    session_at: "2026-08-17T18:00:00.000Z",
+    location: null,
+    status: "scheduled",
+  };
+  const extra: TrainingSession = {
+    id: "extra-day",
+    season_id: SEASON_2026_27_ID,
+    title: "Extra training",
+    session_at: clubLocalDateTimeToIso("2026-08-18", "19:30"),
+    location: "19:30–20:45 · extra",
+    status: "scheduled",
+  };
+  const items = classifyTrainingSessions([historical, extra], [], 2, now);
+  assert.equal(items.find((i) => i.session.id === historical.id)?.bucket, "open");
+  assert.equal(items.find((i) => i.session.id === extra.id)?.bucket, "open");
+  const broken = classifyTrainingSessions(
+    [{ ...historical, id: "bad", session_at: "niet-geldig" }],
+    [],
+    2,
+    now,
+  );
+  assert.equal(broken.length, 1);
+  console.log("ok historical + extra day remain open / bad date does not throw");
+}
+
 console.log("PASS test:manual-training-management");
