@@ -16,7 +16,9 @@ import {
   sortCockpitCards,
   type CockpitCardModel,
 } from "@/components/admin/operations/operations-cockpit";
-import { getSeasonOperations, todayInClubTz } from "@/lib/season/season-operations-2026-27";
+import { getSeasonOperations, isTodayInClubTimezone, todayInClubTz } from "@/lib/season/season-operations-2026-27";
+import { existingTrainingDateKeys, planRegularTrainingSessions } from "@/lib/training/regular-training-calendar";
+import { ensureRegularTrainingSessionsAction } from "@/actions/training";
 import { resolveAuthContext, roleLabelNl } from "@/lib/auth/capabilities";
 import { resolveTrainingOperationalStatus } from "@/lib/training/training-status";
 import { evaluateProfileCompleteness } from "@/lib/players/profile-completeness";
@@ -29,8 +31,14 @@ type Props = { searchParams: Promise<{ season?: string }> };
 
 export default async function BeheerHomePage({ searchParams }: Props) {
   const sp = await searchParams;
-  const db = await readDb();
+  let db = await readDb();
   const seasonId = await readResolvedSeasonId(db, sp.season);
+  const planned = planRegularTrainingSessions(seasonId);
+  const haveDates = existingTrainingDateKeys(db.training_sessions, seasonId);
+  if (planned.some((p) => !haveDates.has(p.dateKey))) {
+    await ensureRegularTrainingSessionsAction(seasonId);
+    db = await readDb();
+  }
   const season = db.seasons.find((s) => s.id === seasonId);
   const now = new Date();
   const ops = getSeasonOperations(seasonId);
@@ -180,13 +188,15 @@ export default async function BeheerHomePage({ searchParams }: Props) {
           : fitness.kind === "overdue_expected"
             ? "Aan de beurt"
             : "Gepland",
-      urgency: fitness.kind === "draft" ? "today" : fitnessCd.urgency,
+      urgency: isTodayInClubTimezone(fitness.date, now) ? "today" : fitnessCd.urgency,
       actionHref:
         fitness.kind === "draft" && fitness.plannedSession
           ? withSeason(`/beheer/fitheid/${fitness.plannedSession.id}`, seasonId)
           : withSeason("/beheer/fitheid/nieuw", seasonId),
       actionLabel: "Open fitheid",
-      sortRank: cockpitSortRank({ urgency: fitness.kind === "draft" ? "today" : fitnessCd.urgency }),
+      sortRank: cockpitSortRank({
+        urgency: isTodayInClubTimezone(fitness.date, now) ? "today" : fitnessCd.urgency,
+      }),
     },
   ];
 

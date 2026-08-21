@@ -5,13 +5,21 @@ import { TrainingAttendanceDashboard } from "@/components/admin/training-attenda
 import { AdminPageHeader } from "@/components/admin/shell/admin-ui";
 import { resolveAuthContext, roleHasCapability } from "@/lib/auth/capabilities";
 import { isTrainingSessionId } from "@/lib/training/training-attendance-workspace";
+import { existingTrainingDateKeys, planRegularTrainingSessions } from "@/lib/training/regular-training-calendar";
+import { ensureRegularTrainingSessionsAction } from "@/actions/training";
 
 type Props = { searchParams: Promise<{ season?: string; session?: string; sid?: string }> };
 
 export default async function BeheerTrainingPage({ searchParams }: Props) {
   const sp = await searchParams ?? {};
-  const db = await readDb();
+  let db = await readDb();
   const seasonId = await readResolvedSeasonId(db, sp.season);
+  const planned = planRegularTrainingSessions(seasonId);
+  const haveDates = existingTrainingDateKeys(db.training_sessions, seasonId);
+  if (planned.some((p) => !haveDates.has(p.dateKey))) {
+    await ensureRegularTrainingSessionsAction(seasonId);
+    db = await readDb();
+  }
   const auth = await resolveAuthContext();
   const canDeleteSessions = !!auth && roleHasCapability(auth.role, "system_admin");
   const requestedSid = String(sp.sid ?? "").trim();

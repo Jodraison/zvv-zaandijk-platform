@@ -2,6 +2,7 @@
  * Centrale Football Operations countdown — één bron voor wedstrijd, training, fitheid.
  * Gebruik `now` injecteerbaar (tests). Client: alleen na mount label tonen om hydration te vermijden.
  */
+import { clubDateKeyAmsterdam, todayInClubTz } from "@/lib/season/season-operations-2026-27";
 
 export type CountdownState = "future" | "tomorrow" | "today" | "soon" | "live" | "past" | "missing";
 export type CountdownUrgency = "neutral" | "upcoming" | "today" | "overdue";
@@ -34,8 +35,11 @@ export function parseOperationsInstant(input: string | null | undefined): Date |
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-function startOfLocalDay(d: Date): Date {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+function clubCalendarDayDiff(fromYmd: string, toYmd: string): number {
+  const a = new Date(`${fromYmd}T12:00:00.000Z`).getTime();
+  const b = new Date(`${toYmd}T12:00:00.000Z`).getTime();
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.NaN;
+  return Math.round((b - a) / DAY);
 }
 
 function plural(n: number, one: string, many: string) {
@@ -125,9 +129,9 @@ export function computeCountdown(
     };
   }
 
-  const nowDay = startOfLocalDay(now);
-  const targetDay = startOfLocalDay(target);
-  const dayDiff = Math.round((targetDay.getTime() - nowDay.getTime()) / DAY);
+  const nowDay = todayInClubTz(now);
+  const targetDay = clubDateKeyAmsterdam(targetInput ?? target);
+  const dayDiff = clubCalendarDayDiff(nowDay, targetDay);
 
   if (dayDiff === 0) {
     return {

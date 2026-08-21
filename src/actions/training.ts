@@ -12,6 +12,7 @@ import {
 } from "@/lib/season/season-operations-2026-27";
 import { assertCanPersistCompletedAttendance } from "@/lib/training/training-status";
 import { resolveSessionForAttendanceSave } from "@/lib/training/training-attendance-workspace";
+import { ensureRegularTrainingSessionsForSeason } from "@/lib/training/regular-training-calendar";
 import type { z } from "zod";
 
 function parseTrainingSessionForm(formData: FormData) {
@@ -640,4 +641,32 @@ export async function cancelUpcomingTrainingAction(raw: {
     session_id: sessionId,
     message: "Training is afgelast. Ze blijft zichtbaar in de planning; aanwezigheid is niet nodig.",
   };
+}
+
+/** Idempotent: materialiseer ontbrekende ma/wo-sessies. Overschrijft niets. */
+export async function ensureRegularTrainingSessionsAction(
+  seasonId: string,
+): Promise<{ ok: true; inserted: number } | { ok: false; error: string }> {
+  const id = String(seasonId ?? "").trim();
+  if (!id) return { ok: false, error: "Seizoen ontbreekt." };
+  let inserted = 0;
+  try {
+    await mutateDb(
+      (db) => {
+        const result = ensureRegularTrainingSessionsForSeason(db.training_sessions, id, db.training_attendance);
+        db.training_sessions = result.sessions;
+        inserted = result.inserted.length;
+      },
+      {
+        action: "training_regular_calendar_ensure",
+        entity: "training_session",
+        entity_id: id,
+        capability: "manage_training",
+        after_snapshot: () => ({ inserted }),
+      },
+    );
+  } catch (e) {
+    return { ok: false, error: normalizeMutationError(e instanceof Error ? e.message : "Kalender bijwerken mislukt.") };
+  }
+  return { ok: true, inserted };
 }

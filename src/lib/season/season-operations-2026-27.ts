@@ -166,17 +166,15 @@ export function nextScheduledTrainingMoment(
 
 export function generateMonWedDates(startOn: string, endOn: string): string[] {
   const out: string[] = [];
-  const cur = new Date(`${startOn}T12:00:00`);
-  const end = new Date(`${endOn}T12:00:00`);
-  while (cur <= end) {
-    const day = cur.getDay();
+  const start = new Date(`${startOn}T12:00:00.000Z`);
+  const end = new Date(`${endOn}T12:00:00.000Z`);
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return out;
+  for (let t = start.getTime(); t <= end.getTime(); t += 86_400_000) {
+    const cur = new Date(t);
+    const day = cur.getUTCDay();
     if (day === 1 || day === 3) {
-      const y = cur.getFullYear();
-      const m = String(cur.getMonth() + 1).padStart(2, "0");
-      const d = String(cur.getDate()).padStart(2, "0");
-      out.push(`${y}-${m}-${d}`);
+      out.push(cur.toISOString().slice(0, 10));
     }
-    cur.setDate(cur.getDate() + 1);
   }
   return out;
 }
@@ -230,4 +228,22 @@ export function todayInClubTz(now = new Date()): string {
   const m = parts.find((p) => p.type === "month")?.value;
   const d = parts.find((p) => p.type === "day")?.value;
   return `${y}-${m}-${d}`;
+}
+
+/** Kalenderdag in Europe/Amsterdam. Date-only YYYY-MM-DD blijft die clubdag. */
+export function clubDateKeyAmsterdam(input: string | Date | number): string {
+  if (typeof input === "string") {
+    const s = input.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? s.slice(0, 10) : todayInClubTz(d);
+  }
+  if (input instanceof Date) return todayInClubTz(input);
+  return todayInClubTz(new Date(input));
+}
+
+/** True alleen als target en now dezelfde Amsterdam-kalenderdag zijn. */
+export function isTodayInClubTimezone(targetDate: string | Date | number | null | undefined, now = new Date()): boolean {
+  if (targetDate == null || targetDate === "") return false;
+  return clubDateKeyAmsterdam(targetDate) === todayInClubTz(now);
 }

@@ -19,6 +19,7 @@
     "test:season-operations": "tsx src/lib/season/season-operations.test.ts",
     "test:manual-training-management": "tsx src/lib/training/manual-training-management.test.ts",
     "test:training-attendance-recovery": "tsx src/lib/training/training-attendance-recovery.test.ts",
+    "test:training-calendar-date-recovery": "tsx src/lib/training/training-calendar-date-recovery.test.ts",
     "test:schedule-and-planning-reality": "tsx src/lib/schedule-and-planning-reality.test.ts",
     "reconcile:season-2026-27-schedule": "tsx scripts/reconcile-season-2026-27-schedule-reality.ts",
     "reconcile:manual-training-aug": "tsx scripts/reconcile-manual-training-aug-2026.ts",
