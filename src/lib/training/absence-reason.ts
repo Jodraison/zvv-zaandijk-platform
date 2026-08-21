@@ -1,6 +1,6 @@
 /** Canonieke afwezigheidsredenen. Persistatie: training_attendance.note. */
 
-export const ABSENCE_REASONS = ["private", "sick", "injured", "work_school", "no_reason"] as const;
+export const ABSENCE_REASONS = ["private", "sick", "injured", "work_school", "vacation", "no_reason"] as const;
 export type AbsenceReason = (typeof ABSENCE_REASONS)[number];
 
 export const ABSENCE_REASON_LABELS_NL: Record<AbsenceReason, string> = {
@@ -8,6 +8,7 @@ export const ABSENCE_REASON_LABELS_NL: Record<AbsenceReason, string> = {
   sick: "Ziek",
   injured: "Geblesseerd",
   work_school: "Werk/School",
+  vacation: "Vakantie",
   no_reason: "Geen reden",
 };
 
@@ -35,7 +36,7 @@ export function absenceReasonLabelNl(reason: AbsenceReason | null | undefined): 
 }
 
 export function emptyAbsenceCounts(): Record<AbsenceReason, number> {
-  return { private: 0, sick: 0, injured: 0, work_school: 0, no_reason: 0 };
+  return { private: 0, sick: 0, injured: 0, work_school: 0, vacation: 0, no_reason: 0 };
 }
 
 export function incrementAbsenceCount(counts: Record<AbsenceReason, number>, reason: AbsenceReason) {
