@@ -17,6 +17,9 @@ import {
   publicTrainingPerformanceView,
   sortAttendanceRanking,
 } from "@/lib/training/training-performance";
+import { attendanceSessionCountLabel } from "@/components/training/player-attendance-rank";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import type { ClubDatabase } from "@/types";
 
 assert.deepEqual([...ABSENCE_REASONS], ["private", "sick", "injured", "work_school", "vacation", "no_reason"]);
@@ -124,6 +127,64 @@ function emptyDb(): ClubDatabase {
   ]);
   assert.equal(sorted[0]!.shirt_number, 1);
   assert.equal(sorted[1]!.shirt_number, 2);
+}
+
+{
+  assert.equal(attendanceSessionCountLabel(4, 4), "4 van 4 trainingen");
+  assert.equal(attendanceSessionCountLabel(1, 4), "1 van 4 trainingen");
+  const src = readFileSync(join(process.cwd(), "src/components/training/player-attendance-rank.tsx"), "utf8");
+  assert.match(src, /md:grid-cols-2/);
+  assert.match(src, /h-12 w-12 md:h-14 md:w-14/);
+  assert.match(src, /photo_url/);
+  assert.match(src, /PlayerPhotoAvatar/);
+  assert.doesNotMatch(src, /Zeer constant|STERK|Wisselend|Beperkte aanwezigheid|attendanceTierLabelNl/);
+  assert.match(src, /data-layout="cards"/);
+}
+
+{
+  const db = emptyDb();
+  db.players = Array.from({ length: 21 }, (_, i) => ({
+    id: `p${i + 1}`,
+    full_name: `Speelster ${i + 1}`,
+    photo_url: i === 0 ? "https://example.com/a.jpg" : null,
+    is_guest: false,
+    initials: null,
+    bio: null,
+    preferred_foot: null,
+    strengths: null,
+    role_label: null,
+    tagline: null,
+    card_note: null,
+  }));
+  db.player_season_memberships = db.players.map((p, i) => ({
+    id: `m${i + 1}`,
+    player_id: p.id,
+    season_id: SEASON_2026_27_ID,
+    shirt_number: i + 1,
+    position: "MID" as const,
+    display_position: "8",
+    is_captain: false,
+    is_vice_captain: false,
+    is_guest: false,
+  }));
+  const at = clubLocalDateTimeToIso("2026-08-10", "20:00");
+  db.training_sessions = [
+    { id: "s10", season_id: SEASON_2026_27_ID, title: "Reguliere training", session_at: at, location: "20:00–21:00", status: "completed" },
+  ];
+  db.training_attendance = db.players.map((p, i) => ({
+    session_id: "s10",
+    player_id: p.id,
+    present: i < 11,
+    note: i < 11 ? null : null,
+  }));
+  const center = buildTrainingPerformanceCenter(db, SEASON_2026_27_ID, new Date("2026-08-21T10:00:00+02:00"));
+  const pub = publicTrainingPerformanceView(center);
+  assert.equal(pub.ranking.length, 21);
+  assert.equal(pub.ranking[0]!.photo_url, "https://example.com/a.jpg");
+  assert.equal(pub.ranking[0]!.player_id, "p1");
+  assert.equal(pub.ranking.filter((r) => r.photo_url == null).length, 20);
+  assert.ok(pub.ranking.every((r) => !("reasons" in r)));
+  assert.deepEqual([...ABSENCE_REASONS], ["private", "sick", "injured", "work_school", "vacation", "no_reason"]);
 }
 
 console.log("PASS test:training-performance-center");
