@@ -20,6 +20,9 @@ import {
   shortTrainingDayLabel,
   sortAttendanceRanking,
   trainerTrainingPerformanceView,
+  getPlayerAttendanceDistribution,
+  attendanceSlicesWithCount,
+  attendanceDistributionAriaLabel,
 } from "@/lib/training/training-performance";
 import { attendanceSessionCountLabel } from "@/components/training/player-attendance-rank";
 import { readFileSync } from "node:fs";
@@ -156,7 +159,8 @@ function emptyDb(): ClubDatabase {
   assert.equal(attendanceSessionCountLabel(1, 4), "1 van 4 trainingen");
   const src = readFileSync(join(process.cwd(), "src/components/training/player-attendance-rank.tsx"), "utf8");
   assert.match(src, /md:grid-cols-2/);
-  assert.match(src, /h-14 w-14 md:h-16 md:w-16/);
+  assert.match(src, /h-12 w-12 md:h-14 md:w-14/);
+  assert.match(src, /AttendanceDonut/);
   assert.match(src, /trainerView/);
   assert.match(src, /photo_url/);
   assert.match(src, /PlayerPhotoAvatar/);
@@ -307,10 +311,12 @@ function emptyDb(): ClubDatabase {
   assert.match(adminSrc, /player-history-expand/);
   const publicSrc = readFileSync(join(process.cwd(), "src/components/training/player-attendance-rank.tsx"), "utf8");
   assert.doesNotMatch(publicSrc, /ABSENCE_REASON_LABELS_NL|Privé|Geblesseerd|Werk\/School/);
-  assert.match(publicSrc, /trainerView \? trainerSessions/);
-  const chipsSrc = readFileSync(join(process.cwd(), "src/components/training/player-attendance-session-chips.tsx"), "utf8");
-  assert.match(chipsSrc, /ABSENCE_REASON_LABELS_NL/);
-  assert.match(chipsSrc, /Laatste trainingen/);
+  assert.match(publicSrc, /AttendanceDonut/);
+  const detailsSrc = readFileSync(join(process.cwd(), "src/components/training/player-attendance-session-details.tsx"), "utf8");
+  assert.match(detailsSrc, /Bekijk \{sessions\.length\} trainingen/);
+  const donutSrc = readFileSync(join(process.cwd(), "src/components/training/attendance-donut.tsx"), "utf8");
+  assert.match(donutSrc, /aria-label/);
+  assert.match(donutSrc, /attendanceDistributionAriaLabel/);
   const publicPage = readFileSync(join(process.cwd(), "src/app/(site)/training/page.tsx"), "utf8");
   assert.match(publicPage, /Geen persoonlijke afwezigheidsredenen/);
   assert.match(publicPage, /canViewPlayerAbsenceReasons/);
@@ -430,6 +436,71 @@ function emptyDb(): ClubDatabase {
   assert.equal(pub.ranking.find((r) => r.name === "Clara")!.photo_url, "https://example.com/c.jpg");
   const { visible } = recentRegisteredMoments(dionne.recentSessions);
   assert.ok(visible.length <= 6);
+  assert.deepEqual(dionne.distribution, {
+    total: 4,
+    present: 3,
+    private: 0,
+    sick: 0,
+    injured: 0,
+    work_school: 0,
+    vacation: 0,
+    no_reason: 1,
+  });
+  assert.deepEqual(emma.distribution, {
+    total: 4,
+    present: 2,
+    private: 2,
+    sick: 0,
+    injured: 0,
+    work_school: 0,
+    vacation: 0,
+    no_reason: 0,
+  });
+  assert.deepEqual(nienke.distribution, {
+    total: 4,
+    present: 1,
+    private: 0,
+    sick: 1,
+    injured: 0,
+    work_school: 0,
+    vacation: 0,
+    no_reason: 2,
+  });
+  assert.deepEqual(
+    attendanceSlicesWithCount(dionne.distribution).map((s) => s.key),
+    ["present", "no_reason"],
+  );
+  assert.equal(dionne.distribution.total, dionne.recentSessions.length);
+  assert.match(
+    attendanceDistributionAriaLabel(dionne.name, dionne.distribution),
+    /3 aanwezig.*1 geen reden.*totaal 4 trainingen/i,
+  );
+  assert.ok(pub.ranking.every((r) => !("distribution" in r)));
+  assert.equal(JSON.stringify(pub.ranking).includes("distribution"), false);
+}
+
+{
+  const sessions = [
+    { session_id: "a", dateKey: "2026-08-03", attended: true, absenceReason: null },
+    { session_id: "b", dateKey: "2026-08-05", attended: false, absenceReason: "private" as const },
+    { session_id: "c", dateKey: "2026-08-10", attended: false, absenceReason: "sick" as const },
+    { session_id: "d", dateKey: "2026-08-12", attended: false, absenceReason: "injured" as const },
+    { session_id: "e", dateKey: "2026-08-17", attended: false, absenceReason: "work_school" as const },
+    { session_id: "f", dateKey: "2026-08-19", attended: false, absenceReason: "vacation" as const },
+    { session_id: "g", dateKey: "2026-08-20", attended: false, absenceReason: "no_reason" as const },
+  ];
+  const dist = getPlayerAttendanceDistribution(sessions);
+  assert.equal(dist.total, 7);
+  assert.equal(dist.present, 1);
+  assert.equal(dist.private, 1);
+  assert.equal(dist.sick, 1);
+  assert.equal(dist.injured, 1);
+  assert.equal(dist.work_school, 1);
+  assert.equal(dist.vacation, 1);
+  assert.equal(dist.no_reason, 1);
+  assert.equal(attendanceSlicesWithCount(dist).length, 7);
+  assert.ok(attendanceSlicesWithCount({ ...dist, vacation: 0, private: 0 }).every((s) => s.count > 0));
+  assert.ok(!attendanceSlicesWithCount({ ...dist, vacation: 0 }).some((s) => s.key === "vacation"));
 }
 
 console.log("PASS test:training-performance-center");

@@ -251,14 +251,71 @@ export function buildTrainingPerformanceCenter(
 
 export type PublicPlayerTrainingCardModel = PublicPlayerAttendanceRow;
 
+export type AttendanceSliceKey = "present" | AbsenceReason;
+
+export type PlayerAttendanceDistribution = {
+  total: number;
+  present: number;
+} & Record<AbsenceReason, number>;
+
+export const ATTENDANCE_SLICE_ORDER: AttendanceSliceKey[] = [
+  "present",
+  "private",
+  "sick",
+  "injured",
+  "work_school",
+  "vacation",
+  "no_reason",
+];
+
+export const ATTENDANCE_SLICE_LABELS_NL: Record<AttendanceSliceKey, string> = {
+  present: "Aanwezig",
+  private: "Privé",
+  sick: "Ziek",
+  injured: "Geblesseerd",
+  work_school: "Werk/School",
+  vacation: "Vakantie",
+  no_reason: "Geen reden",
+};
+
+export function getPlayerAttendanceDistribution(
+  sessions: PlayerTrainingSessionMoment[],
+): PlayerAttendanceDistribution {
+  const dist: PlayerAttendanceDistribution = {
+    total: sessions.length,
+    present: 0,
+    ...emptyAbsenceCounts(),
+  };
+  for (const session of sessions) {
+    if (session.attended) dist.present += 1;
+    else incrementAbsenceCount(dist, session.absenceReason ?? "no_reason");
+  }
+  return dist;
+}
+
+export function attendanceSlicesWithCount(dist: PlayerAttendanceDistribution) {
+  return ATTENDANCE_SLICE_ORDER.map((key) => ({
+    key,
+    label: ATTENDANCE_SLICE_LABELS_NL[key],
+    count: dist[key],
+  })).filter((slice) => slice.count > 0);
+}
+
+export function attendanceDistributionAriaLabel(name: string, dist: PlayerAttendanceDistribution): string {
+  const parts = attendanceSlicesWithCount(dist).map((slice) => `${slice.count} ${slice.label.toLowerCase()}`);
+  return `${name}: ${parts.join(", ")}, totaal ${dist.total} trainingen.`;
+}
+
 export type TrainerPlayerTrainingCardModel = PublicPlayerAttendanceRow & {
   recentSessions: PlayerTrainingSessionMoment[];
+  distribution: PlayerAttendanceDistribution;
 };
 
 export function isTrainerPlayerCard(
-  row: PublicPlayerTrainingCardModel | TrainerPlayerTrainingCardModel,
+  row: PublicPlayerAttendanceRow | PublicPlayerTrainingCardModel | TrainerPlayerTrainingCardModel,
 ): row is TrainerPlayerTrainingCardModel {
-  return Array.isArray((row as TrainerPlayerTrainingCardModel).recentSessions);
+  const candidate = row as TrainerPlayerTrainingCardModel;
+  return Array.isArray(candidate.recentSessions) && candidate.distribution != null && typeof candidate.distribution.total === "number";
 }
 
 /** Publieke payload: geen per-speler redenen of sessiehistorie. */
@@ -285,6 +342,7 @@ export function trainerTrainingPerformanceView(center: TrainingPerformanceCenter
     pct: row.pct,
     tier: row.tier,
     recentSessions: row.sessions,
+    distribution: getPlayerAttendanceDistribution(row.sessions),
   }));
   return {
     trainerView: true as const,

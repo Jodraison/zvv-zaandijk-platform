@@ -8,6 +8,7 @@ import {
 import { SessionTrendList } from "@/components/training/session-trend-list";
 import { PlayerAttendanceRank } from "@/components/training/player-attendance-rank";
 import { AbsenceCategoryBars } from "@/components/training/absence-category-bars";
+import { TeamAbsenceDonut } from "@/components/training/attendance-donut";
 import { canViewPlayerAbsenceReasons, resolveAuthContext } from "@/lib/auth/capabilities";
 
 type Props = { searchParams: Promise<{ season?: string }> };
@@ -85,7 +86,8 @@ export default async function TrainingPage({ searchParams }: Props) {
           Redenen dit seizoen
         </h2>
         <p className="mt-1 text-sm text-zvv-muted">Teamtotalen. Geen namen, geen medische details.</p>
-        <div className="mt-4">
+        <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,16rem)_1fr] md:items-start">
+          <TeamAbsenceDonut counts={absenceTotals} />
           <AbsenceCategoryBars counts={absenceTotals} />
         </div>
       </section>
