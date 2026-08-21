@@ -12,9 +12,12 @@ import {
   serializeAbsenceReason,
 } from "@/lib/training/absence-reason";
 import {
+  ADMIN_TIMELINE_DEFAULT,
   attendanceTier,
   buildTrainingPerformanceCenter,
   publicTrainingPerformanceView,
+  recentRegisteredMoments,
+  shortTrainingDayLabel,
   sortAttendanceRanking,
 } from "@/lib/training/training-performance";
 import { attendanceSessionCountLabel } from "@/components/training/player-attendance-rank";
@@ -107,6 +110,19 @@ function emptyDb(): ClubDatabase {
   assert.equal(center.adminRanking[1]!.reasons.injured, 1);
   assert.equal(center.adminRanking[1]!.reasons.vacation, 1);
   assert.equal(center.adminRanking[1]!.withoutReasonCount, 1);
+  assert.equal(center.adminRanking[0]!.sessions.length, 3);
+  assert.equal(center.adminRanking[0]!.sessions.every((s) => s.attended && s.absenceReason === null), true);
+  assert.deepEqual(
+    center.adminRanking[1]!.sessions.map((s) => [s.dateKey, s.attended, s.absenceReason]),
+    [
+      ["2026-08-10", false, "no_reason"],
+      ["2026-08-12", false, "injured"],
+      ["2026-08-19", false, "vacation"],
+    ],
+  );
+  assert.equal(center.ranking[0]!.present, center.adminRanking[0]!.present);
+  assert.equal(center.ranking[0]!.total, center.adminRanking[0]!.total);
+  assert.equal(center.ranking[0]!.pct, center.adminRanking[0]!.pct);
 
   const pub = publicTrainingPerformanceView(center);
   assert.equal("reasons" in pub.ranking[0]!, false);
@@ -117,6 +133,10 @@ function emptyDb(): ClubDatabase {
   assert.ok(!JSON.stringify(pub.ranking).includes("injured"));
   assert.ok(!JSON.stringify(pub.ranking).includes("vacation"));
   assert.ok(!JSON.stringify(pub.ranking).includes("Bente ziek"));
+  assert.ok(!JSON.stringify(pub.ranking).includes("sessions"));
+  assert.ok(!JSON.stringify(pub.ranking).includes("absenceReason"));
+  assert.ok(!JSON.stringify(pub.ranking).includes("Geblesseerd"));
+  assert.ok(!JSON.stringify(pub.ranking).includes("Vakantie"));
 }
 
 {
@@ -185,6 +205,108 @@ function emptyDb(): ClubDatabase {
   assert.equal(pub.ranking.filter((r) => r.photo_url == null).length, 20);
   assert.ok(pub.ranking.every((r) => !("reasons" in r)));
   assert.deepEqual([...ABSENCE_REASONS], ["private", "sick", "injured", "work_school", "vacation", "no_reason"]);
+}
+
+{
+  const db = emptyDb();
+  const dates = ["2026-08-03", "2026-08-05", "2026-08-10", "2026-08-12", "2026-08-17", "2026-08-19"];
+  const reasons = ["private", "sick", "injured", "work_school", "vacation", null] as const;
+  db.training_sessions = dates.map((d, i) => ({
+    id: `s${i}`,
+    season_id: SEASON_2026_27_ID,
+    title: "Reguliere training",
+    session_at: clubLocalDateTimeToIso(d, "20:00"),
+    location: "20:00–21:00",
+    status: "completed" as const,
+  }));
+  db.training_sessions.push({
+    id: "sfuture",
+    season_id: SEASON_2026_27_ID,
+    title: "Reguliere training",
+    session_at: clubLocalDateTimeToIso("2026-08-24", "20:00"),
+    location: "20:00–21:00",
+    status: "scheduled",
+  });
+  db.training_sessions.push({
+    id: "sunreg",
+    season_id: SEASON_2026_27_ID,
+    title: "Reguliere training",
+    session_at: clubLocalDateTimeToIso("2026-08-20", "20:00"),
+    location: "20:00–21:00",
+    status: "scheduled",
+  });
+  db.training_attendance = [];
+  for (const [i] of dates.entries()) {
+    db.training_attendance.push({ session_id: `s${i}`, player_id: "p1", present: true, note: null });
+    db.training_attendance.push({
+      session_id: `s${i}`,
+      player_id: "p2",
+      present: false,
+      note: reasons[i],
+    });
+  }
+  db.training_attendance.push({ session_id: "sfuture", player_id: "p1", present: false, note: "sick" });
+  db.training_attendance.push({ session_id: "sfuture", player_id: "p2", present: false, note: "sick" });
+  const now = new Date("2026-08-21T10:00:00+02:00");
+  const center = buildTrainingPerformanceCenter(db, SEASON_2026_27_ID, now);
+  const anna = center.adminRanking.find((r) => r.name === "Anna")!;
+  const bente = center.adminRanking.find((r) => r.name === "Bente")!;
+  assert.equal(center.kpis.registeredSessions, 6);
+  assert.equal(anna.sessions.length, 6);
+  assert.equal(anna.present, 6);
+  assert.equal(anna.total, 6);
+  assert.equal(anna.pct, 100);
+  assert.ok(anna.sessions.every((s) => s.attended && s.absenceReason === null));
+  assert.equal(bente.present, 0);
+  assert.equal(bente.total, 6);
+  assert.equal(bente.pct, 0);
+  assert.deepEqual(
+    bente.sessions.map((s) => s.absenceReason),
+    ["private", "sick", "injured", "work_school", "vacation", "no_reason"],
+  );
+  assert.equal(absenceReasonLabelNl(bente.sessions[0]!.absenceReason), "Privé");
+  assert.equal(absenceReasonLabelNl(bente.sessions[1]!.absenceReason), "Ziek");
+  assert.equal(absenceReasonLabelNl(bente.sessions[2]!.absenceReason), "Geblesseerd");
+  assert.equal(absenceReasonLabelNl(bente.sessions[3]!.absenceReason), "Werk/School");
+  assert.equal(absenceReasonLabelNl(bente.sessions[4]!.absenceReason), "Vakantie");
+  assert.equal(absenceReasonLabelNl(bente.sessions[5]!.absenceReason), "Geen reden");
+  assert.ok(!bente.sessions.some((s) => s.session_id === "sfuture" || s.session_id === "sunreg"));
+  assert.ok(!anna.sessions.some((s) => s.dateKey === "2026-08-24"));
+  const pubRow = center.ranking.find((r) => r.name === "Bente")!;
+  assert.equal(pubRow.present, bente.present);
+  assert.equal(pubRow.total, bente.total);
+  assert.equal(pubRow.pct, bente.pct);
+  assert.equal("sessions" in pubRow, false);
+}
+
+{
+  const eight = Array.from({ length: 8 }, (_, i) => ({
+    session_id: `s${i}`,
+    dateKey: `2026-08-${String(i + 3).padStart(2, "0")}`,
+    attended: true,
+    absenceReason: null,
+  }));
+  assert.equal(ADMIN_TIMELINE_DEFAULT, 6);
+  const { visible, hidden } = recentRegisteredMoments(eight);
+  assert.equal(visible.length, 6);
+  assert.equal(hidden.length, 2);
+  assert.equal(visible[0]!.dateKey, "2026-08-05");
+  assert.equal(visible[5]!.dateKey, "2026-08-10");
+  assert.equal(shortTrainingDayLabel("2026-08-17"), "17 aug");
+}
+
+{
+  const adminSrc = readFileSync(join(process.cwd(), "src/components/admin/admin-player-attendance-explain.tsx"), "utf8");
+  assert.match(adminSrc, /Aanwezigheid & redenen/);
+  assert.match(adminSrc, /md:grid-cols-2/);
+  assert.match(adminSrc, /Volledige historie bekijken/);
+  assert.match(adminSrc, /Privé|ABSENCE_REASON_LABELS_NL/);
+  assert.match(adminSrc, /player-history-expand/);
+  const publicSrc = readFileSync(join(process.cwd(), "src/components/training/player-attendance-rank.tsx"), "utf8");
+  assert.doesNotMatch(publicSrc, /ABSENCE_REASON_LABELS_NL|absenceReason|Privé|Geblesseerd|Werk\/School/);
+  const publicPage = readFileSync(join(process.cwd(), "src/app/(site)/training/page.tsx"), "utf8");
+  assert.match(publicPage, /Geen persoonlijke afwezigheidsredenen/);
+  assert.doesNotMatch(publicPage, /adminRanking|sessions\.map/);
 }
 
 console.log("PASS test:training-performance-center");

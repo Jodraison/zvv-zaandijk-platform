@@ -87,6 +87,7 @@ export default async function BeheerTrainingPage({ searchParams }: Props) {
               trend: center.trend,
               adminRanking: center.adminRanking,
               withoutReasonCount: center.kpis.withoutReasonCount,
+              absenceTotals: center.absenceTotals,
             };
           })()}
         />

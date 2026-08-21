@@ -23,10 +23,40 @@ export type PublicPlayerAttendanceRow = {
   tier: AttendanceTier;
 };
 
+export type PlayerTrainingSessionMoment = {
+  session_id: string;
+  dateKey: string;
+  attended: boolean;
+  absenceReason: AbsenceReason | null;
+};
+
 export type AdminPlayerAttendanceDetail = PublicPlayerAttendanceRow & {
   reasons: Record<AbsenceReason, number>;
   withoutReasonCount: number;
+  sessions: PlayerTrainingSessionMoment[];
 };
+
+/** Alias voor de trainer-kaart: zelfde model, per-sessie uitleg. */
+export type PlayerTrainingAttendanceDetail = AdminPlayerAttendanceDetail;
+
+export const ADMIN_TIMELINE_DEFAULT = 6;
+
+export function recentRegisteredMoments<T extends { dateKey: string }>(
+  sessions: T[],
+  limit = ADMIN_TIMELINE_DEFAULT,
+): { visible: T[]; hidden: T[] } {
+  const chrono = [...sessions].sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+  if (chrono.length <= limit) return { visible: chrono, hidden: [] };
+  return { visible: chrono.slice(-limit), hidden: chrono.slice(0, -limit) };
+}
+
+export function shortTrainingDayLabel(dateKey: string): string {
+  const parts = dateKey.split("-");
+  const day = Number(parts[2]);
+  const month = Number(parts[1]);
+  const months = ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+  return `${day} ${months[(month || 1) - 1] ?? ""}`;
+}
 
 export type SessionTrendRow = {
   session_id: string;
@@ -154,6 +184,19 @@ export function buildTrainingPerformanceCenter(
     const total = rows.length;
     const pct = total ? Math.round((present / total) * 1000) / 10 : 0;
     const shirt = Number(m.shirt_number);
+    const sessions: PlayerTrainingSessionMoment[] = counted
+      .map((s) => {
+        const row = rows.find((a) => a.session_id === s.id);
+        if (!row) return null;
+        return {
+          session_id: s.id,
+          dateKey: trainingDateKeyAmsterdam(s.session_at),
+          attended: !!row.present,
+          absenceReason: row.present ? null : (parseAbsenceReason(row.note, false) ?? "no_reason"),
+        };
+      })
+      .filter((moment): moment is PlayerTrainingSessionMoment => moment != null)
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey));
     return {
       player_id: m.player_id,
       name: player?.full_name ?? "—",
@@ -166,6 +209,7 @@ export function buildTrainingPerformanceCenter(
       tier: attendanceTier(pct),
       reasons,
       withoutReasonCount: reasons.no_reason,
+      sessions,
     };
   });
 

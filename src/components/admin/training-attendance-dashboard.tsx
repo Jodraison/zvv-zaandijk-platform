@@ -9,7 +9,7 @@ import {
 } from "@/actions/training";
 import { AbsenceReasonChips } from "@/components/training/absence-reason-chips";
 import { SessionTrendList } from "@/components/training/session-trend-list";
-import { AdminPlayerAbsenceDetailList } from "@/components/admin/admin-player-absence-detail";
+import { AdminPlayerAttendanceExplain } from "@/components/admin/admin-player-attendance-explain";
 import {
   ABSENCE_REASON_LABELS_NL,
   parseAbsenceReason,
@@ -96,6 +96,7 @@ export function TrainingAttendanceDashboard({
     trend: SessionTrendRow[];
     adminRanking: AdminPlayerAttendanceDetail[];
     withoutReasonCount: number;
+    absenceTotals?: Record<AbsenceReason, number>;
   };
 }) {
   const router = useRouter();
@@ -743,30 +744,21 @@ export function TrainingAttendanceDashboard({
         </div>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
-          <p className="club-page-eyebrow">Opkomst</p>
-          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
-            Opkomst per training
-          </h3>
-          <div className="mt-4">
-            <SessionTrendList rows={performance?.trend ?? []} />
-          </div>
-        </section>
-        <section className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
-          <p className="club-page-eyebrow">Beheer</p>
-          <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
-            Speelsterdetail
-          </h3>
-          <p className="mt-1 text-sm text-zvv-muted">Tik een speelster voor redenverdeling. Alleen zichtbaar in beheer.</p>
-          <p className="mt-2 text-sm font-semibold text-amber-900">
-            Zonder reden: {performance?.withoutReasonCount ?? 0}
-          </p>
-          <div className="mt-3">
-            <AdminPlayerAbsenceDetailList rows={performance?.adminRanking ?? []} />
-          </div>
-        </section>
-      </div>
+      <section className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
+        <p className="club-page-eyebrow">Opkomst</p>
+        <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
+          Opkomst per training
+        </h3>
+        <div className="mt-4">
+          <SessionTrendList rows={performance?.trend ?? []} />
+        </div>
+      </section>
+
+      <AdminPlayerAttendanceExplain
+        rows={performance?.adminRanking ?? []}
+        absenceTotals={performance?.absenceTotals}
+        withoutReasonCount={performance?.withoutReasonCount ?? 0}
+      />
 
       <div className="sticky bottom-3 z-20 rounded-2xl border border-zvv-border bg-white/95 p-3 shadow-lg backdrop-blur">
         <div className="flex flex-wrap gap-2">
