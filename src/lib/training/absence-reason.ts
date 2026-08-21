@@ -42,3 +42,15 @@ export function emptyAbsenceCounts(): Record<AbsenceReason, number> {
 export function incrementAbsenceCount(counts: Record<AbsenceReason, number>, reason: AbsenceReason) {
   counts[reason] += 1;
 }
+
+export function absenceMomentWord(n: number): string {
+  return n === 1 ? "moment" : "momenten";
+}
+
+export function absencePlayerWord(n: number): string {
+  return n === 1 ? "speelster" : "speelsters";
+}
+
+export function formatAbsenceMomentsAndPlayers(moments: number, uniquePlayers: number): string {
+  return `${moments} ${absenceMomentWord(moments)} · ${uniquePlayers} ${absencePlayerWord(uniquePlayers)}`;
+}

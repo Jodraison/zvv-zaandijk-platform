@@ -1,8 +1,10 @@
+import { ABSENCE_REASONS, absenceMomentWord } from "@/lib/training/absence-reason";
 import {
   attendanceDistributionAriaLabel,
   attendanceSlicesWithCount,
   type AttendanceSliceKey,
   type PlayerAttendanceDistribution,
+  type TeamAbsenceAnalysis,
 } from "@/lib/training/training-performance";
 
 /** Gedempte sport-dashboardkleuren, ZVV-blauw als werk/school. */
@@ -38,6 +40,7 @@ export function AttendanceDonut({
   centerPrimary,
   centerSecondary,
   ariaLabel,
+  showLegend = true,
 }: {
   name: string;
   pct: number;
@@ -48,6 +51,7 @@ export function AttendanceDonut({
   centerPrimary?: string;
   centerSecondary?: string;
   ariaLabel?: string;
+  showLegend?: boolean;
 }) {
   const slices = attendanceSlicesWithCount(distribution);
   const aria = ariaLabel ?? attendanceDistributionAriaLabel(name, distribution);
@@ -72,39 +76,56 @@ export function AttendanceDonut({
           </span>
         </div>
       </div>
-      <ul className="min-w-0 flex-1 space-y-1" data-testid="player-attendance-legend">
-        {slices.map((slice) => (
-          <li key={slice.key} className="flex items-center justify-between gap-2 text-[12px] leading-tight">
-            <span className="flex min-w-0 items-center gap-1.5">
-              <span
-                aria-hidden
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{ backgroundColor: ATTENDANCE_SLICE_COLORS[slice.key] }}
-              />
-              <span className="truncate text-zvv-ink">{slice.label}</span>
-            </span>
-            <span className="tabular-nums font-semibold text-zvv-ink">{slice.count}</span>
-          </li>
-        ))}
-      </ul>
+      {showLegend ? (
+        <ul className="min-w-0 flex-1 space-y-1" data-testid="player-attendance-legend">
+          {slices.map((slice) => (
+            <li key={slice.key} className="flex items-center justify-between gap-2 text-[12px] leading-tight">
+              <span className="flex min-w-0 items-center gap-1.5">
+                <span
+                  aria-hidden
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ backgroundColor: ATTENDANCE_SLICE_COLORS[slice.key] }}
+                />
+                <span className="truncate text-zvv-ink">{slice.label}</span>
+              </span>
+              <span className="tabular-nums font-semibold text-zvv-ink">{slice.count}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
 
-export function TeamAbsenceDonut({ counts }: { counts: Record<Exclude<AttendanceSliceKey, "present">, number> }) {
+export function TeamAbsenceDonut({
+  counts,
+  analysis,
+}: {
+  counts?: Record<Exclude<AttendanceSliceKey, "present">, number>;
+  analysis?: TeamAbsenceAnalysis;
+}) {
+  const moments = analysis
+    ? Object.fromEntries(ABSENCE_REASONS.map((key) => [key, analysis.byReason[key].moments])) as Record<
+        Exclude<AttendanceSliceKey, "present">,
+        number
+      >
+    : counts;
+  if (!moments) {
+    return <p className="text-sm text-zvv-muted">Nog geen gemiste trainingsmomenten.</p>;
+  }
   const dist: PlayerAttendanceDistribution = {
     total: 0,
     present: 0,
-    private: counts.private,
-    sick: counts.sick,
-    injured: counts.injured,
-    work_school: counts.work_school,
-    vacation: counts.vacation,
-    no_reason: counts.no_reason,
+    private: moments.private,
+    sick: moments.sick,
+    injured: moments.injured,
+    work_school: moments.work_school,
+    vacation: moments.vacation,
+    no_reason: moments.no_reason,
   };
   dist.total = dist.private + dist.sick + dist.injured + dist.work_school + dist.vacation + dist.no_reason;
   if (!dist.total) {
-    return <p className="text-sm text-zvv-muted">Nog geen afwezigheidsredenen.</p>;
+    return <p className="text-sm text-zvv-muted">Nog geen gemiste trainingsmomenten.</p>;
   }
   return (
     <AttendanceDonut
@@ -113,10 +134,11 @@ export function TeamAbsenceDonut({ counts }: { counts: Record<Exclude<Attendance
       present={0}
       total={dist.total}
       distribution={dist}
-      size={120}
+      size={128}
+      showLegend={false}
       centerPrimary={String(dist.total)}
-      centerSecondary="afwezig"
-      ariaLabel={`Team: ${attendanceSlicesWithCount(dist)
+      centerSecondary={`gemiste ${absenceMomentWord(dist.total)}`}
+      ariaLabel={`Team: ${dist.total} gemiste ${absenceMomentWord(dist.total)}. ${attendanceSlicesWithCount(dist)
         .map((slice) => `${slice.count} ${slice.label.toLowerCase()}`)
         .join(", ")}.`}
     />

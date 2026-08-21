@@ -3,6 +3,7 @@ import { sessionsCountingForAttendance } from "@/lib/training/training-status";
 import { planRegularTrainingSessions } from "@/lib/training/regular-training-calendar";
 import { trainingDateKeyAmsterdam } from "@/lib/training/manual-training";
 import {
+  ABSENCE_REASONS,
   type AbsenceReason,
   emptyAbsenceCounts,
   incrementAbsenceCount,
@@ -77,11 +78,75 @@ export type TrainingPerformanceKpis = {
   withoutReasonCount: number;
 };
 
+export type AbsenceReasonMetric = {
+  moments: number;
+  uniquePlayers: number;
+};
+
+export type TeamAbsenceAnalysis = {
+  byReason: Record<AbsenceReason, AbsenceReasonMetric>;
+  totalAbsenceMoments: number;
+  uniquePlayersWithAbsence: number;
+  squadSize: number;
+};
+
+export function emptyAbsenceMetrics(): Record<AbsenceReason, AbsenceReasonMetric> {
+  return {
+    private: { moments: 0, uniquePlayers: 0 },
+    sick: { moments: 0, uniquePlayers: 0 },
+    injured: { moments: 0, uniquePlayers: 0 },
+    work_school: { moments: 0, uniquePlayers: 0 },
+    vacation: { moments: 0, uniquePlayers: 0 },
+    no_reason: { moments: 0, uniquePlayers: 0 },
+  };
+}
+
+/** Teamanalyse: momenten ≠ unieke speelsters. Present telt niet mee. */
+export function analyzeTeamAbsence(
+  rows: Array<{ player_id: string; present: boolean; note?: string | null }>,
+  squadSize = 0,
+): TeamAbsenceAnalysis {
+  const moments = emptyAbsenceCounts();
+  const players: Record<AbsenceReason, Set<string>> = {
+    private: new Set(),
+    sick: new Set(),
+    injured: new Set(),
+    work_school: new Set(),
+    vacation: new Set(),
+    no_reason: new Set(),
+  };
+  const anyAbsent = new Set<string>();
+  for (const row of rows) {
+    if (row.present) continue;
+    const reason = parseAbsenceReason(row.note, false) ?? "no_reason";
+    moments[reason] += 1;
+    players[reason].add(row.player_id);
+    anyAbsent.add(row.player_id);
+  }
+  const byReason = emptyAbsenceMetrics();
+  for (const key of ABSENCE_REASONS) {
+    byReason[key] = { moments: moments[key], uniquePlayers: players[key].size };
+  }
+  return {
+    byReason,
+    totalAbsenceMoments: ABSENCE_REASONS.reduce((n, key) => n + moments[key], 0),
+    uniquePlayersWithAbsence: anyAbsent.size,
+    squadSize,
+  };
+}
+
+export function momentsFromAbsenceAnalysis(analysis: TeamAbsenceAnalysis): Record<AbsenceReason, number> {
+  const counts = emptyAbsenceCounts();
+  for (const key of ABSENCE_REASONS) counts[key] = analysis.byReason[key].moments;
+  return counts;
+}
+
 export type TrainingPerformanceCenter = {
   kpis: TrainingPerformanceKpis;
   trend: SessionTrendRow[];
   ranking: PublicPlayerAttendanceRow[];
   absenceTotals: Record<AbsenceReason, number>;
+  absenceAnalysis: TeamAbsenceAnalysis;
   adminRanking: AdminPlayerAttendanceDetail[];
 };
 
@@ -230,6 +295,11 @@ export function buildTrainingPerformanceCenter(
     ? Math.round((trend.reduce((sum, s) => sum + s.pct, 0) / trend.length) * 10) / 10
     : 0;
   const highestPct = trend.length ? Math.max(...trend.map((s) => s.pct)) : 0;
+  const memberIds = new Set(members.map((m) => m.player_id));
+  const absenceAnalysis = analyzeTeamAbsence(
+    db.training_attendance.filter((a) => countedIds.has(a.session_id) && memberIds.has(a.player_id)),
+    members.length,
+  );
 
   return {
     kpis: {
@@ -245,6 +315,7 @@ export function buildTrainingPerformanceCenter(
     trend,
     ranking,
     absenceTotals,
+    absenceAnalysis,
     adminRanking: sortedAdmin,
   };
 }
@@ -326,6 +397,7 @@ export function publicTrainingPerformanceView(center: TrainingPerformanceCenter)
     trend: center.trend,
     ranking: center.ranking,
     absenceTotals: center.absenceTotals,
+    absenceAnalysis: center.absenceAnalysis,
   };
 }
 
@@ -350,5 +422,6 @@ export function trainerTrainingPerformanceView(center: TrainingPerformanceCenter
     trend: center.trend,
     ranking,
     absenceTotals: center.absenceTotals,
+    absenceAnalysis: center.absenceAnalysis,
   };
 }

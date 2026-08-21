@@ -6,7 +6,10 @@ import assert from "node:assert/strict";
 import { SEASON_2026_27_ID, clubLocalDateTimeToIso } from "@/lib/season/season-operations-2026-27";
 import {
   ABSENCE_REASONS,
+  absenceMomentWord,
+  absencePlayerWord,
   absenceReasonLabelNl,
+  formatAbsenceMomentsAndPlayers,
   isAbsenceReason,
   parseAbsenceReason,
   serializeAbsenceReason,
@@ -23,6 +26,7 @@ import {
   getPlayerAttendanceDistribution,
   attendanceSlicesWithCount,
   attendanceDistributionAriaLabel,
+  analyzeTeamAbsence,
 } from "@/lib/training/training-performance";
 import { attendanceSessionCountLabel } from "@/components/training/player-attendance-rank";
 import { readFileSync } from "node:fs";
@@ -106,6 +110,11 @@ function emptyDb(): ClubDatabase {
   assert.equal(center.absenceTotals.no_reason, 1);
   assert.equal(center.absenceTotals.injured, 1);
   assert.equal(center.absenceTotals.vacation, 1);
+  assert.equal(center.absenceAnalysis.byReason.vacation.moments, 1);
+  assert.equal(center.absenceAnalysis.byReason.vacation.uniquePlayers, 1);
+  assert.equal(center.absenceAnalysis.byReason.injured.moments, 1);
+  assert.equal(center.absenceAnalysis.totalAbsenceMoments, 3);
+  assert.equal(center.absenceAnalysis.uniquePlayersWithAbsence, 1);
   assert.equal(center.ranking[0]!.name, "Anna");
   assert.equal(center.ranking[0]!.present, 3);
   assert.equal(center.ranking[0]!.pct, 100);
@@ -319,10 +328,13 @@ function emptyDb(): ClubDatabase {
   assert.match(donutSrc, /attendanceDistributionAriaLabel/);
   const publicPage = readFileSync(join(process.cwd(), "src/app/(site)/training/page.tsx"), "utf8");
   assert.match(publicPage, /Geen persoonlijke afwezigheidsredenen/);
+  assert.match(publicPage, /Afwezigheidsanalyse/);
+  assert.match(publicPage, /Gemiste trainingsmomenten per reden/);
   assert.match(publicPage, /canViewPlayerAbsenceReasons/);
   assert.match(publicPage, /trainerTrainingPerformanceView/);
   assert.match(publicPage, /force-dynamic/);
   assert.doesNotMatch(publicPage, /adminRanking/);
+  assert.doesNotMatch(publicPage, /full_name|player\.name/);
 }
 
 {
@@ -501,6 +513,66 @@ function emptyDb(): ClubDatabase {
   assert.equal(attendanceSlicesWithCount(dist).length, 7);
   assert.ok(attendanceSlicesWithCount({ ...dist, vacation: 0, private: 0 }).every((s) => s.count > 0));
   assert.ok(!attendanceSlicesWithCount({ ...dist, vacation: 0 }).some((s) => s.key === "vacation"));
+}
+
+{
+  assert.equal(absenceMomentWord(1), "moment");
+  assert.equal(absenceMomentWord(2), "momenten");
+  assert.equal(absencePlayerWord(1), "speelster");
+  assert.equal(absencePlayerWord(2), "speelsters");
+  assert.equal(formatAbsenceMomentsAndPlayers(16, 4), "16 momenten · 4 speelsters");
+  assert.equal(formatAbsenceMomentsAndPlayers(1, 1), "1 moment · 1 speelster");
+}
+
+{
+  const sixInjured = Array.from({ length: 6 }, (_, i) => ({
+    player_id: "a",
+    present: false,
+    note: "injured",
+    session: i,
+  }));
+  const one = analyzeTeamAbsence(sixInjured, 2);
+  assert.equal(one.byReason.injured.moments, 6);
+  assert.equal(one.byReason.injured.uniquePlayers, 1);
+  assert.equal(one.totalAbsenceMoments, 6);
+  assert.equal(one.uniquePlayersWithAbsence, 1);
+  const two = analyzeTeamAbsence(
+    [
+      ...sixInjured,
+      { player_id: "b", present: false, note: "injured" },
+    ],
+    2,
+  );
+  assert.equal(two.byReason.injured.moments, 7);
+  assert.equal(two.byReason.injured.uniquePlayers, 2);
+  assert.equal(two.totalAbsenceMoments, 7);
+  const mixed = analyzeTeamAbsence(
+    [
+      { player_id: "a", present: true, note: null },
+      { player_id: "a", present: false, note: "private" },
+      { player_id: "b", present: false, note: "sick" },
+      { player_id: "c", present: false, note: "work_school" },
+      { player_id: "c", present: false, note: "vacation" },
+      { player_id: "d", present: false, note: null },
+      { player_id: "d", present: false, note: "no_reason" },
+    ],
+    5,
+  );
+  assert.equal(mixed.byReason.private.moments, 1);
+  assert.equal(mixed.byReason.private.uniquePlayers, 1);
+  assert.equal(mixed.byReason.sick.moments, 1);
+  assert.equal(mixed.byReason.work_school.moments, 1);
+  assert.equal(mixed.byReason.vacation.moments, 1);
+  assert.equal(mixed.byReason.no_reason.moments, 2);
+  assert.equal(mixed.byReason.no_reason.uniquePlayers, 1);
+  assert.equal(mixed.totalAbsenceMoments, 6);
+  assert.equal(mixed.uniquePlayersWithAbsence, 4);
+  assert.equal(mixed.squadSize, 5);
+  assert.ok(!("name" in mixed));
+  assert.ok(!JSON.stringify(mixed).includes("Anna"));
+  const presentOnly = analyzeTeamAbsence([{ player_id: "a", present: true, note: "injured" }]);
+  assert.equal(presentOnly.totalAbsenceMoments, 0);
+  assert.equal(presentOnly.byReason.injured.moments, 0);
 }
 
 console.log("PASS test:training-performance-center");

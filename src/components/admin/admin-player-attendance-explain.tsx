@@ -14,6 +14,7 @@ import {
   shortTrainingDayLabel,
   type AdminPlayerAttendanceDetail,
   type PlayerTrainingSessionMoment,
+  type TeamAbsenceAnalysis,
 } from "@/lib/training/training-performance";
 import { cn } from "@/lib/utils";
 
@@ -99,10 +100,12 @@ function PlayerHistoryTimeline({ sessions }: { sessions: PlayerTrainingSessionMo
 export function AdminPlayerAttendanceExplain({
   rows,
   absenceTotals,
+  absenceAnalysis,
   withoutReasonCount = 0,
 }: {
   rows: AdminPlayerAttendanceDetail[];
   absenceTotals?: Record<AbsenceReason, number>;
+  absenceAnalysis?: TeamAbsenceAnalysis;
   withoutReasonCount?: number;
 }) {
   const [band, setBand] = useState<PctBand>("all");
@@ -244,20 +247,21 @@ export function AdminPlayerAttendanceExplain({
         )}
       </section>
 
-      {absenceTotals ? (
+      {absenceAnalysis || absenceTotals ? (
         <section
           data-testid="admin-team-reasons-secondary"
           className="rounded-2xl border border-zvv-border bg-zvv-card-mid/20 p-5 shadow-sm"
         >
           <p className="club-page-eyebrow">Teamanalyse</p>
           <h3 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
-            Redenen dit seizoen
+            Afwezigheidsanalyse
           </h3>
           <p className="mt-1 text-sm text-zvv-muted">
-            Secundair. Teamtotalen — waarom het team trainingen mist. Individuele uitleg staat in de kaarten hierboven.
+            Secundair. Gemiste trainingsmomenten per reden — niet het aantal geblesseerde personen. Individuele uitleg
+            staat in de kaarten hierboven.
           </p>
           <div className="mt-4">
-            <AbsenceCategoryBars counts={absenceTotals} />
+            <AbsenceCategoryBars analysis={absenceAnalysis} counts={absenceTotals} />
           </div>
         </section>
       ) : null}

@@ -34,7 +34,7 @@ export default async function TrainingPage({ searchParams }: Props) {
   const authorizedTrainer = canViewPlayerAbsenceReasons(auth?.role);
   const center = buildTrainingPerformanceCenter(db, seasonId);
   const view = authorizedTrainer ? trainerTrainingPerformanceView(center) : publicTrainingPerformanceView(center);
-  const { kpis, trend, ranking, absenceTotals } = view;
+  const { kpis, trend, ranking, absenceAnalysis } = view;
 
   return (
     <div className="space-y-8">
@@ -80,15 +80,28 @@ export default async function TrainingPage({ searchParams }: Props) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm">
+      <section
+        data-testid="absence-analysis"
+        className="rounded-2xl border border-zvv-border bg-white p-5 shadow-sm"
+      >
         <p className="club-page-eyebrow">Afwezigheid</p>
         <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
-          Redenen dit seizoen
+          Afwezigheidsanalyse
         </h2>
-        <p className="mt-1 text-sm text-zvv-muted">Teamtotalen. Geen namen, geen medische details.</p>
-        <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,16rem)_1fr] md:items-start">
-          <TeamAbsenceDonut counts={absenceTotals} />
-          <AbsenceCategoryBars counts={absenceTotals} />
+        <p className="mt-1 text-sm text-zvv-muted">
+          Gemiste trainingsmomenten per reden. Geen namen, geen medische details.
+        </p>
+        <p className="mt-3 text-sm text-zvv-ink">
+          <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-zvv-muted">
+            Unieke speelsters met afwezigheid
+          </span>
+          <span className="mt-0.5 block font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-primary">
+            {absenceAnalysis.uniquePlayersWithAbsence}/{absenceAnalysis.squadSize}
+          </span>
+        </p>
+        <div className="mt-4 grid gap-6 md:grid-cols-[8.5rem_1fr] md:items-center">
+          <TeamAbsenceDonut analysis={absenceAnalysis} />
+          <AbsenceCategoryBars analysis={absenceAnalysis} />
         </div>
       </section>
 

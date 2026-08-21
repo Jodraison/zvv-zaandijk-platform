@@ -15,7 +15,7 @@ import {
   parseAbsenceReason,
   type AbsenceReason,
 } from "@/lib/training/absence-reason";
-import type { AdminPlayerAttendanceDetail, SessionTrendRow } from "@/lib/training/training-performance";
+import type { AdminPlayerAttendanceDetail, SessionTrendRow, TeamAbsenceAnalysis } from "@/lib/training/training-performance";
 import type { TrainingVerificationPayload } from "@/lib/admin/verification-types";
 import { cn } from "@/lib/utils";
 import { formatDateTimeNL, formatHumanDateNL } from "@/lib/utils/format-date";
@@ -97,6 +97,7 @@ export function TrainingAttendanceDashboard({
     adminRanking: AdminPlayerAttendanceDetail[];
     withoutReasonCount: number;
     absenceTotals?: Record<AbsenceReason, number>;
+    absenceAnalysis?: TeamAbsenceAnalysis;
   };
 }) {
   const router = useRouter();
@@ -757,6 +758,7 @@ export function TrainingAttendanceDashboard({
       <AdminPlayerAttendanceExplain
         rows={performance?.adminRanking ?? []}
         absenceTotals={performance?.absenceTotals}
+        absenceAnalysis={performance?.absenceAnalysis}
         withoutReasonCount={performance?.withoutReasonCount ?? 0}
       />
 
