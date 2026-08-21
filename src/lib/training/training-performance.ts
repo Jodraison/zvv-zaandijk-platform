@@ -249,12 +249,48 @@ export function buildTrainingPerformanceCenter(
   };
 }
 
-/** Publieke payload: geen per-speler redenen. */
+export type PublicPlayerTrainingCardModel = PublicPlayerAttendanceRow;
+
+export type TrainerPlayerTrainingCardModel = PublicPlayerAttendanceRow & {
+  recentSessions: PlayerTrainingSessionMoment[];
+};
+
+export function isTrainerPlayerCard(
+  row: PublicPlayerTrainingCardModel | TrainerPlayerTrainingCardModel,
+): row is TrainerPlayerTrainingCardModel {
+  return Array.isArray((row as TrainerPlayerTrainingCardModel).recentSessions);
+}
+
+/** Publieke payload: geen per-speler redenen of sessiehistorie. */
 export function publicTrainingPerformanceView(center: TrainingPerformanceCenter) {
   return {
+    trainerView: false as const,
     kpis: center.kpis,
     trend: center.trend,
     ranking: center.ranking,
+    absenceTotals: center.absenceTotals,
+  };
+}
+
+/** Alleen server-side voor bevoegde trainers. Bevat recente sessies + redenen. */
+export function trainerTrainingPerformanceView(center: TrainingPerformanceCenter) {
+  const ranking: TrainerPlayerTrainingCardModel[] = center.adminRanking.map((row) => ({
+    player_id: row.player_id,
+    name: row.name,
+    shirt_number: row.shirt_number,
+    photo_url: row.photo_url,
+    present: row.present,
+    absent: row.absent,
+    total: row.total,
+    pct: row.pct,
+    tier: row.tier,
+    recentSessions: row.sessions,
+  }));
+  return {
+    trainerView: true as const,
+    kpis: center.kpis,
+    trend: center.trend,
+    ranking,
     absenceTotals: center.absenceTotals,
   };
 }

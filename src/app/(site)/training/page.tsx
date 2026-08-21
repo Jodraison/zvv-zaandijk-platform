@@ -1,11 +1,18 @@
 import { readDb } from "@/lib/data/repository";
 import { readResolvedSeasonId } from "@/actions/season";
-import { buildTrainingPerformanceCenter, publicTrainingPerformanceView } from "@/lib/training/training-performance";
+import {
+  buildTrainingPerformanceCenter,
+  publicTrainingPerformanceView,
+  trainerTrainingPerformanceView,
+} from "@/lib/training/training-performance";
 import { SessionTrendList } from "@/components/training/session-trend-list";
 import { PlayerAttendanceRank } from "@/components/training/player-attendance-rank";
 import { AbsenceCategoryBars } from "@/components/training/absence-category-bars";
+import { canViewPlayerAbsenceReasons, resolveAuthContext } from "@/lib/auth/capabilities";
 
 type Props = { searchParams: Promise<{ season?: string }> };
+
+export const dynamic = "force-dynamic";
 
 function KpiCard({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
@@ -22,7 +29,10 @@ export default async function TrainingPage({ searchParams }: Props) {
   const db = await readDb();
   const seasonId = await readResolvedSeasonId(db, sp.season);
   const season = db.seasons.find((s) => s.id === seasonId);
-  const view = publicTrainingPerformanceView(buildTrainingPerformanceCenter(db, seasonId));
+  const auth = await resolveAuthContext();
+  const authorizedTrainer = canViewPlayerAbsenceReasons(auth?.role);
+  const center = buildTrainingPerformanceCenter(db, seasonId);
+  const view = authorizedTrainer ? trainerTrainingPerformanceView(center) : publicTrainingPerformanceView(center);
   const { kpis, trend, ranking, absenceTotals } = view;
 
   return (
@@ -59,9 +69,13 @@ export default async function TrainingPage({ searchParams }: Props) {
         <h2 className="mt-1 font-[family-name:var(--font-display)] text-2xl tracking-wide text-zvv-ink">
           Aanwezigheidsranglijst
         </h2>
-        <p className="mt-1 text-sm text-zvv-muted">Alleen opkomst. Geen persoonlijke afwezigheidsredenen.</p>
+        <p className="mt-1 text-sm text-zvv-muted">
+          {authorizedTrainer
+            ? "Beheerweergave: per speelster de laatste trainingen en redenen. Alleen zichtbaar voor teambeheer."
+            : "Alleen opkomst. Geen persoonlijke afwezigheidsredenen."}
+        </p>
         <div className="mt-4">
-          <PlayerAttendanceRank rows={ranking} />
+          <PlayerAttendanceRank rows={ranking} trainerView={authorizedTrainer} />
         </div>
       </section>
 

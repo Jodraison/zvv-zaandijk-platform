@@ -63,6 +63,11 @@ export function roleHasCapability(role: AppRole, cap: Capability): boolean {
   return capabilitiesForRole(role).includes(cap);
 }
 
+/** Individuele afwezigheidsredenen: alleen wie training mag beheren. */
+export function canViewPlayerAbsenceReasons(role: AppRole | null | undefined): boolean {
+  return role != null && roleHasCapability(role, "manage_training");
+}
+
 export type AuthContext = {
   userId: string;
   email: string | null;

@@ -19,6 +19,7 @@ import {
   recentRegisteredMoments,
   shortTrainingDayLabel,
   sortAttendanceRanking,
+  trainerTrainingPerformanceView,
 } from "@/lib/training/training-performance";
 import { attendanceSessionCountLabel } from "@/components/training/player-attendance-rank";
 import { readFileSync } from "node:fs";
@@ -125,6 +126,7 @@ function emptyDb(): ClubDatabase {
   assert.equal(center.ranking[0]!.pct, center.adminRanking[0]!.pct);
 
   const pub = publicTrainingPerformanceView(center);
+  assert.equal(pub.trainerView, false);
   assert.equal("reasons" in pub.ranking[0]!, false);
   assert.equal("withoutReasonCount" in pub.ranking[0]!, false);
   assert.ok("no_reason" in pub.absenceTotals);
@@ -154,7 +156,8 @@ function emptyDb(): ClubDatabase {
   assert.equal(attendanceSessionCountLabel(1, 4), "1 van 4 trainingen");
   const src = readFileSync(join(process.cwd(), "src/components/training/player-attendance-rank.tsx"), "utf8");
   assert.match(src, /md:grid-cols-2/);
-  assert.match(src, /h-12 w-12 md:h-14 md:w-14/);
+  assert.match(src, /h-14 w-14 md:h-16 md:w-16/);
+  assert.match(src, /trainerView/);
   assert.match(src, /photo_url/);
   assert.match(src, /PlayerPhotoAvatar/);
   assert.doesNotMatch(src, /Zeer constant|STERK|Wisselend|Beperkte aanwezigheid|attendanceTierLabelNl/);
@@ -303,10 +306,130 @@ function emptyDb(): ClubDatabase {
   assert.match(adminSrc, /Privé|ABSENCE_REASON_LABELS_NL/);
   assert.match(adminSrc, /player-history-expand/);
   const publicSrc = readFileSync(join(process.cwd(), "src/components/training/player-attendance-rank.tsx"), "utf8");
-  assert.doesNotMatch(publicSrc, /ABSENCE_REASON_LABELS_NL|absenceReason|Privé|Geblesseerd|Werk\/School/);
+  assert.doesNotMatch(publicSrc, /ABSENCE_REASON_LABELS_NL|Privé|Geblesseerd|Werk\/School/);
+  assert.match(publicSrc, /trainerView \? trainerSessions/);
+  const chipsSrc = readFileSync(join(process.cwd(), "src/components/training/player-attendance-session-chips.tsx"), "utf8");
+  assert.match(chipsSrc, /ABSENCE_REASON_LABELS_NL/);
+  assert.match(chipsSrc, /Laatste trainingen/);
   const publicPage = readFileSync(join(process.cwd(), "src/app/(site)/training/page.tsx"), "utf8");
   assert.match(publicPage, /Geen persoonlijke afwezigheidsredenen/);
-  assert.doesNotMatch(publicPage, /adminRanking|sessions\.map/);
+  assert.match(publicPage, /canViewPlayerAbsenceReasons/);
+  assert.match(publicPage, /trainerTrainingPerformanceView/);
+  assert.match(publicPage, /force-dynamic/);
+  assert.doesNotMatch(publicPage, /adminRanking/);
+}
+
+{
+  const db = emptyDb();
+  db.players.push({
+    id: "p3",
+    full_name: "Clara",
+    photo_url: "https://example.com/c.jpg",
+    is_guest: false,
+    initials: null,
+    bio: null,
+    preferred_foot: null,
+    strengths: null,
+    role_label: null,
+    tagline: null,
+    card_note: null,
+  });
+  db.player_season_memberships.push({
+    id: "m3",
+    player_id: "p3",
+    season_id: SEASON_2026_27_ID,
+    shirt_number: 11,
+    position: "MID",
+    display_position: "9",
+    is_captain: false,
+    is_vice_captain: false,
+    is_guest: false,
+  });
+  const dates = ["2026-08-10", "2026-08-12", "2026-08-17", "2026-08-19"] as const;
+  db.training_sessions = dates.map((d, i) => ({
+    id: `t${i}`,
+    season_id: SEASON_2026_27_ID,
+    title: "Reguliere training",
+    session_at: clubLocalDateTimeToIso(d, "20:00"),
+    location: "20:00–21:00",
+    status: "completed" as const,
+  }));
+  db.training_sessions.push({
+    id: "tfuture",
+    season_id: SEASON_2026_27_ID,
+    title: "Reguliere training",
+    session_at: clubLocalDateTimeToIso("2026-08-24", "20:00"),
+    location: "20:00–21:00",
+    status: "scheduled",
+  });
+  const marks: Record<string, Array<{ present: boolean; note: string | null }>> = {
+    p1: [
+      { present: true, note: null },
+      { present: false, note: "no_reason" },
+      { present: true, note: null },
+      { present: true, note: null },
+    ],
+    p2: [
+      { present: true, note: null },
+      { present: false, note: "private" },
+      { present: false, note: "private" },
+      { present: true, note: null },
+    ],
+    p3: [
+      { present: false, note: "sick" },
+      { present: false, note: null },
+      { present: true, note: null },
+      { present: false, note: "no_reason" },
+    ],
+  };
+  db.training_attendance = ["p1", "p2", "p3"].flatMap((pid) =>
+    dates.map((_, i) => ({
+      session_id: `t${i}`,
+      player_id: pid,
+      present: marks[pid]![i]!.present,
+      note: marks[pid]![i]!.note,
+    })),
+  );
+  const now = new Date("2026-08-21T10:00:00+02:00");
+  const center = buildTrainingPerformanceCenter(db, SEASON_2026_27_ID, now);
+  const trainer = trainerTrainingPerformanceView(center);
+  const pub = publicTrainingPerformanceView(center);
+  const dionne = trainer.ranking.find((r) => r.name === "Anna")!;
+  const emma = trainer.ranking.find((r) => r.name === "Bente")!;
+  const nienke = trainer.ranking.find((r) => r.name === "Clara")!;
+  assert.equal(trainer.trainerView, true);
+  assert.equal(pub.trainerView, false);
+  assert.equal(dionne.present, 3);
+  assert.equal(dionne.total, 4);
+  assert.equal(dionne.pct, 75);
+  assert.equal(dionne.recentSessions.filter((s) => !s.attended).length, 1);
+  assert.equal(dionne.recentSessions.find((s) => s.dateKey === "2026-08-12")?.absenceReason, "no_reason");
+  assert.ok(dionne.recentSessions.filter((s) => s.attended).every((s) => s.absenceReason === null));
+  assert.equal(emma.present, 2);
+  assert.equal(emma.pct, 50);
+  assert.equal(emma.recentSessions.filter((s) => !s.attended).length, 2);
+  assert.equal(emma.recentSessions.find((s) => s.dateKey === "2026-08-12")?.absenceReason, "private");
+  assert.equal(emma.recentSessions.find((s) => s.dateKey === "2026-08-17")?.absenceReason, "private");
+  assert.equal(nienke.present, 1);
+  assert.equal(nienke.pct, 25);
+  assert.equal(nienke.recentSessions.filter((s) => !s.attended).length, 3);
+  assert.equal(nienke.recentSessions.find((s) => s.dateKey === "2026-08-10")?.absenceReason, "sick");
+  assert.equal(nienke.recentSessions.find((s) => s.dateKey === "2026-08-12")?.absenceReason, "no_reason");
+  assert.equal(nienke.recentSessions.find((s) => s.dateKey === "2026-08-19")?.absenceReason, "no_reason");
+  assert.ok(trainer.ranking.every((r) => !r.recentSessions.some((s) => s.dateKey === "2026-08-24")));
+  assert.equal(pub.ranking.find((r) => r.name === "Anna")!.pct, dionne.pct);
+  assert.equal(pub.ranking.find((r) => r.name === "Bente")!.present, emma.present);
+  assert.ok(pub.ranking.every((r) => !("recentSessions" in r)));
+  const pubRankJson = JSON.stringify(pub.ranking);
+  assert.equal(pubRankJson.includes("recentSessions"), false);
+  assert.equal(pubRankJson.includes("absenceReason"), false);
+  assert.equal(pubRankJson.includes("private"), false);
+  assert.equal(pubRankJson.includes("sick"), false);
+  assert.equal(pubRankJson.includes("Privé"), false);
+  assert.equal(pubRankJson.includes("Ziek"), false);
+  assert.equal(pub.ranking.find((r) => r.name === "Clara")!.photo_url, "https://example.com/c.jpg");
+  const { visible } = recentRegisteredMoments(dionne.recentSessions);
+  assert.ok(visible.length <= 6);
 }
 
 console.log("PASS test:training-performance-center");

@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import {
   roleFromProfileRole,
   roleHasCapability,
+  canViewPlayerAbsenceReasons,
   capabilitiesForRole,
   ADMIN_EMAIL,
 } from "@/lib/auth/capabilities";
@@ -38,6 +39,13 @@ import {
   const none = roleFromProfileRole("user", "player@example.com");
   assert.equal(none, "none");
   assert.equal(capabilitiesForRole(none).length, 0);
+  assert.equal(canViewPlayerAbsenceReasons(none), false);
+  assert.equal(canViewPlayerAbsenceReasons(null), false);
+}
+
+{
+  assert.equal(canViewPlayerAbsenceReasons(roleFromProfileRole("user", ADMIN_EMAIL)), true);
+  assert.equal(canViewPlayerAbsenceReasons(roleFromProfileRole("team_manager", "coach@example.com")), true);
 }
 
 console.log("capabilities.test.ts: ok");
