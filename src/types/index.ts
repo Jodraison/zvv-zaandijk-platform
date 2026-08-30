@@ -24,7 +24,7 @@ export interface Player {
   photo_url: string | null;
   /** Gast-speelster: alleen via wedstrijd-roster, geen vaste selectie/ranking. */
   is_guest: boolean;
-  /** YYYY-MM-DD — persoonsniveau; niet publiek tonen (geen jaar/leeftijd). */
+  /** YYYY-MM-DD — persoonsniveau. Publiek geen geboortejaar; homepage mag ‘wordt N’ / ‘N jaar’ tonen. */
   birth_date?: string | null;
   initials?: string | null;
   bio?: string | null;

@@ -9,7 +9,7 @@ export function HomeTeamSpotlight({
   model: HomeTeamSpotlightModel;
   className?: string;
 }) {
-  const rows = [model.training, model.fitness].filter(Boolean) as NonNullable<
+  const rows = [model.training, model.fitness, model.birthday].filter(Boolean) as NonNullable<
     HomeTeamSpotlightModel["training"]
   >[];
 
@@ -46,9 +46,16 @@ export function HomeTeamSpotlight({
         {rows.length > 0 ? (
           <div className="mt-8 space-y-5">
             {rows.map((row) => (
-              <div key={row.title} className="border-t border-white/12 pt-5 first:border-t-0 first:pt-0">
+              <div
+                key={row.title}
+                className="border-t border-white/12 pt-5 first:border-t-0 first:pt-0"
+                data-testid={row.title === "Eerstvolgende verjaardag" ? "home-next-birthday" : undefined}
+              >
                 <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-100/62">{row.title}</p>
                 <p className="mt-2 text-[17px] font-semibold leading-snug text-white sm:text-lg">{row.detail}</p>
+                {row.subdetail ? (
+                  <p className="mt-1 text-[17px] font-semibold leading-snug text-white sm:text-lg">{row.subdetail}</p>
+                ) : null}
               </div>
             ))}
           </div>

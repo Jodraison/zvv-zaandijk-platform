@@ -105,6 +105,91 @@ export function getBirthdayPlayersForDate(
   return out.sort((a, b) => a.full_name.localeCompare(b.full_name, "nl"));
 }
 
+/**
+ * Eerstvolgende verjaardag van één persoon, gerekend vanaf de Amsterdam-kalenderdag van `now`.
+ * Jaar van birth_date telt niet mee voor sortering: 2002-09-04 → 2026-09-04 of 2027-09-04.
+ * 29 feb in een niet-schrikkeljaar → 28 feb (zie `effectiveBirthdayMd`).
+ */
+export function nextBirthdayOccurrence(
+  person: BirthdayPerson,
+  now: Date = new Date(),
+): BirthdayOccurrence | null {
+  if (!person.birth_date) return null;
+  const parts = parseBirthDateParts(person.birth_date);
+  if (!parts) return null;
+
+  const { year, ymd } = clubDateParts(now);
+  const thisYear = effectiveBirthdayMd(parts.month, parts.day, year);
+  let next = ymdFromParts(year, thisYear.month, thisYear.day);
+  let daysUntil = daysBetweenYmd(ymd, next);
+  if (daysUntil < 0) {
+    const nextYear = effectiveBirthdayMd(parts.month, parts.day, year + 1);
+    next = ymdFromParts(year + 1, nextYear.month, nextYear.day);
+    daysUntil = daysBetweenYmd(ymd, next);
+  }
+
+  return {
+    ...person,
+    nextOccurrence: next,
+    daysUntil,
+    month: parts.month,
+    day: parts.day,
+  };
+}
+
+export type NextBirthdayGroup = {
+  occurrences: BirthdayOccurrence[];
+  daysUntil: number;
+  nextOccurrence: string;
+};
+
+/**
+ * Alle actieve kandidaten met dezelfde eerstvolgende verjaardag (incl. vandaag).
+ * Geen vensterlimiet — december → januari wrap hoort hier thuis.
+ */
+export function getNextBirthdayGroup(
+  players: BirthdayPerson[],
+  now: Date = new Date(),
+): NextBirthdayGroup | null {
+  const rows = players
+    .map((p) => nextBirthdayOccurrence(p, now))
+    .filter((row): row is BirthdayOccurrence => row != null)
+    .sort(
+      (a, b) =>
+        a.daysUntil - b.daysUntil ||
+        a.full_name.localeCompare(b.full_name, "nl"),
+    );
+  const first = rows[0];
+  if (!first) return null;
+  const occurrences = rows.filter(
+    (row) => row.daysUntil === first.daysUntil && row.nextOccurrence === first.nextOccurrence,
+  );
+  return {
+    occurrences,
+    daysUntil: first.daysUntil,
+    nextOccurrence: first.nextOccurrence,
+  };
+}
+
+/** Leeftijd die iemand bereikt op `occurrenceYmd` (YYYY-MM-DD). Alleen bij geldige volledige datum. */
+export function ageOnOccurrence(birthDate: string, occurrenceYmd: string): number | null {
+  const birth = parseBirthDateParts(birthDate);
+  const occ = parseBirthDateParts(occurrenceYmd);
+  if (!birth || !occ) return null;
+  const age = occ.year - birth.year;
+  if (!Number.isInteger(age) || age < 1 || age > 80) return null;
+  return age;
+}
+
+/** Compacte namenlijst voor de homepage: "Emma & Renée" / "A, B & C". */
+export function joinPlayerNamesNl(names: string[]): string {
+  const clean = names.map((n) => n.trim()).filter(Boolean);
+  if (clean.length === 0) return "";
+  if (clean.length === 1) return clean[0]!;
+  if (clean.length === 2) return `${clean[0]} & ${clean[1]}`;
+  return `${clean.slice(0, -1).join(", ")} & ${clean[clean.length - 1]}`;
+}
+
 /** Eerstvolgende verjaardagen binnen `withinDays` (incl. vandaag). */
 export function getUpcomingBirthdays(
   players: BirthdayPerson[],
@@ -112,30 +197,12 @@ export function getUpcomingBirthdays(
   withinDays = 60,
   limit = 5,
 ): BirthdayOccurrence[] {
-  const { year, ymd } = clubDateParts(now);
   const rows: BirthdayOccurrence[] = [];
 
   for (const p of players) {
-    if (!p.birth_date) continue;
-    const parts = parseBirthDateParts(p.birth_date);
-    if (!parts) continue;
-
-    const thisYear = effectiveBirthdayMd(parts.month, parts.day, year);
-    let next = ymdFromParts(year, thisYear.month, thisYear.day);
-    let daysUntil = daysBetweenYmd(ymd, next);
-    if (daysUntil < 0) {
-      const nextYear = effectiveBirthdayMd(parts.month, parts.day, year + 1);
-      next = ymdFromParts(year + 1, nextYear.month, nextYear.day);
-      daysUntil = daysBetweenYmd(ymd, next);
-    }
-    if (daysUntil > withinDays) continue;
-    rows.push({
-      ...p,
-      nextOccurrence: next,
-      daysUntil,
-      month: parts.month,
-      day: parts.day,
-    });
+    const occ = nextBirthdayOccurrence(p, now);
+    if (!occ || occ.daysUntil > withinDays) continue;
+    rows.push(occ);
   }
 
   rows.sort(

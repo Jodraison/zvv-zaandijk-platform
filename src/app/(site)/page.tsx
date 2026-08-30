@@ -39,7 +39,7 @@ export default async function HomePage({ searchParams }: Props) {
       href: `/selectie/${encodeURIComponent(p.id)}?season=${encodeURIComponent(seasonId)}`,
     }),
   );
-  const teamSpotlight = buildHomeTeamSpotlight(db, seasonId);
+  const teamSpotlight = buildHomeTeamSpotlight(db, seasonId, birthdayOn);
 
   const q = (sid: string) => `?season=${encodeURIComponent(sid)}`;
   const navTiles = [

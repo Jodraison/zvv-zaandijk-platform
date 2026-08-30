@@ -58,6 +58,7 @@ const nowTue = new Date("2026-08-18T10:00:00+02:00");
   assert.match(model.training.detail, /20:00/);
   assert.ok(model.fitness);
   assert.match(model.fitness.detail, /Woensdag 2 september/i);
+  assert.equal(model.birthday, null);
   assert.match(model.clubLine, /Voorbereiding 2026\/27/);
   assert.doesNotMatch(JSON.stringify(model), /WSV|tegenstander|countdown|thuis|uit|beker/i);
 }
@@ -153,6 +154,7 @@ const nowTue = new Date("2026-08-18T10:00:00+02:00");
   assert.equal(model.mode, "club");
   assert.equal(model.training, null);
   assert.equal(model.fitness, null);
+  assert.equal(model.birthday, null);
   assert.match(model.clubLine, /Samen strijden/);
   assert.doesNotMatch(model.clubLine, /undefined|Niet gepland/);
 }
@@ -211,7 +213,10 @@ const nowTue = new Date("2026-08-18T10:00:00+02:00");
   assert.doesNotMatch(live, /aria-live/);
 
   assert.match(teamUi, /data-testid="home-team-spotlight"/);
+  assert.match(teamUi, /home-next-birthday/);
+  assert.match(teamUi, /model\.birthday/);
   assert.doesNotMatch(teamUi, /WSV|countdown|thuis|uit/);
+  assert.match(home, /buildHomeTeamSpotlight\(db, seasonId, birthdayOn\)/);
   assert.match(birthday, /Vandaag jarig/);
   assert.match(home, /buildHomeTeamSpotlight/);
 }

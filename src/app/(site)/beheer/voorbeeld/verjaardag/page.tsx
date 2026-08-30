@@ -8,6 +8,7 @@ import {
   formatBirthdayDateNL,
   getBirthdayPlayersForDate,
   parseBirthDateParts,
+  resolveBirthdayPreviewDate,
 } from "@/lib/players/birthdays";
 import { mapSquadToBirthdayPeople } from "@/lib/players/birthday-squad";
 import type { HomeBirthdayPlayer } from "@/components/home/home-birthday-spotlight";
@@ -77,7 +78,11 @@ export default async function BeheerBirthdayPreviewPage({ searchParams }: Props)
           seasonId={seasonId}
           nextM={nextM}
           birthdayPlayers={birthdayPlayers}
-          teamSpotlight={buildHomeTeamSpotlight(db, seasonId)}
+          teamSpotlight={buildHomeTeamSpotlight(
+            db,
+            seasonId,
+            resolveBirthdayPreviewDate(datum, { allowPreview: true }) ?? new Date(),
+          )}
         />
       </div>
     </div>

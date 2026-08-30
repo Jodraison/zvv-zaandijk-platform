@@ -13,10 +13,18 @@ import { trainingDateKeyAmsterdam } from "@/lib/training/manual-training";
 import { formatHumanDateNL, formatTimeNl } from "@/lib/utils/format-date";
 import { STATIC_CLUB_COPY } from "@/lib/season-foundation/content-2026-27-spec";
 import { TEAM_DISPLAY_LABEL_UPPER } from "@/constants/club";
+import { mapSquadToBirthdayPeople } from "@/lib/players/birthday-squad";
+import {
+  ageOnOccurrence,
+  getNextBirthdayGroup,
+  joinPlayerNamesNl,
+} from "@/lib/players/birthdays";
 
 export type HomeTeamSpotlightRow = {
   title: string;
   detail: string;
+  /** Tweede regel — alleen verjaardag (naam staat in `detail`). */
+  subdetail?: string;
 };
 
 export type HomeTeamSpotlightModel = {
@@ -24,6 +32,7 @@ export type HomeTeamSpotlightModel = {
   title: string;
   training: HomeTeamSpotlightRow | null;
   fitness: HomeTeamSpotlightRow | null;
+  birthday: HomeTeamSpotlightRow | null;
   seasonLabel: string | null;
   clubLine: string;
   mode: "ops" | "club";
@@ -109,7 +118,8 @@ export function buildHomeTeamSpotlight(
         }
       : null;
 
-  const hasOps = Boolean(training || fitnessRow);
+  const birthday = buildHomeNextBirthdayRow(db, seasonId, now);
+  const hasOps = Boolean(training || fitnessRow || birthday);
   const clubLine = hasOps
     ? inPreparation(seasonId, now)
       ? seasonLabel
@@ -125,8 +135,44 @@ export function buildHomeTeamSpotlight(
     title: TEAM_DISPLAY_LABEL_UPPER,
     training,
     fitness: fitnessRow,
+    birthday,
     seasonLabel: seasonLabel ? (hasOps ? seasonLabel : `Seizoen ${seasonLabel}`) : null,
     clubLine,
     mode: hasOps ? "ops" : "club",
+  };
+}
+
+export function formatHomeBirthdayWhen(
+  daysUntil: number,
+  nextOccurrence: string,
+  age: number | null,
+): string {
+  if (daysUntil === 0) {
+    return age != null ? `Vandaag · ${age} jaar` : "Vandaag";
+  }
+  const dateLabel = capitalizeNl(formatHumanDateNL(nextOccurrence, { includeYear: false }));
+  return age != null ? `${dateLabel} · wordt ${age}` : dateLabel;
+}
+
+/** Derde rij in de hero-card — alleen actieve selectie, geen fallbacktekst bij ontbrekende data. */
+export function buildHomeNextBirthdayRow(
+  db: ClubDatabase,
+  seasonId: string,
+  now = new Date(),
+): HomeTeamSpotlightRow | null {
+  const group = getNextBirthdayGroup(mapSquadToBirthdayPeople(db, seasonId), now);
+  if (!group) return null;
+
+  const ages = group.occurrences.map((p) =>
+    p.birth_date ? ageOnOccurrence(p.birth_date, group.nextOccurrence) : null,
+  );
+  const sharedAge = ages[0];
+  const age =
+    sharedAge != null && ages.every((value) => value === sharedAge) ? sharedAge : null;
+
+  return {
+    title: "Eerstvolgende verjaardag",
+    detail: joinPlayerNamesNl(group.occurrences.map((p) => p.full_name)),
+    subdetail: formatHomeBirthdayWhen(group.daysUntil, group.nextOccurrence, age),
   };
 }
