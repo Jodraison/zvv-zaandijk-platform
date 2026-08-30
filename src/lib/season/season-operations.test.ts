@@ -23,7 +23,7 @@ const ops = seasonOperations2026_27;
 
 assert.equal(ops.operationalStartOn, "2026-08-10");
 assert.equal(ops.operationalEndOn, "2027-06-30");
-assert.equal(ops.fitness.firstTestOn, "2026-09-02");
+assert.equal(ops.fitness.firstTestOn, "2026-09-07");
 assert.equal(ops.fitness.intervalWeeks, 6);
 assert.deepEqual(ops.trainingSchedule.weekdays, [1, 3]);
 assert.equal(ops.trainingSchedule.startsAt, "20:00");
@@ -111,7 +111,7 @@ function emptyDb(): ClubDatabase {
 
   const f = nextFitnessMoment(db, SEASON_2026_27_ID, now);
   assert.equal(f.kind, "planned_config");
-  assert.equal(f.date, "2026-09-02");
+  assert.equal(f.date, "2026-09-07");
   assert.equal(f.isFirstSeasonTest, true);
   assert.equal(latestPublishedFitnessSession(db, SEASON_2026_27_ID, now), null);
 }
@@ -194,7 +194,7 @@ function emptyDb(): ClubDatabase {
 {
   // Milestones
   assert.ok(ops.milestones.some((m) => m.on === "2026-08-08"));
-  assert.ok(ops.milestones.some((m) => m.on === "2026-09-02"));
+  assert.ok(ops.milestones.some((m) => m.on === "2026-09-07"));
   assert.ok(ops.milestones.some((m) => m.from === "2026-08-29" && m.to === "2026-08-30"));
   assert.ok(ops.milestones.some((m) => m.from === "2026-09-19" && m.to === "2026-09-20"));
 }

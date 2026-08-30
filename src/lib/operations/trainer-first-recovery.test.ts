@@ -67,7 +67,7 @@ const root = process.cwd();
 
 {
   // 7–8 first test date
-  assert.equal(seasonOperations2026_27.fitness.firstTestOn, "2026-09-02");
+  assert.equal(seasonOperations2026_27.fitness.firstTestOn, "2026-09-07");
 }
 
 {

@@ -196,33 +196,39 @@ async function main() {
   const fitnessMutations: Array<{ action: string; id: string; detail: string }> = [];
   const on17 = sessions.filter((s) => s.test_on === "2026-08-17" && !(s.note ?? "").startsWith("[QA]"));
   const on2 = sessions.filter((s) => s.test_on === "2026-09-02" && !(s.note ?? "").startsWith("[QA]"));
+  const on7 = sessions.filter((s) => s.test_on === "2026-09-07" && !(s.note ?? "").startsWith("[QA]"));
 
-  if (on17.length && on2.length === 0) {
-    const keep = on17[0]!;
+  if (on7.length === 0 && on2.length) {
+    const keep = on2[0]!;
     const { error } = await sb
       .from("fitness_test_sessions")
       .update({
-        test_on: "2026-09-02",
-        note: keep.note?.trim() || "Verplaatst wegens weer (17 augustus → 2 september)",
+        test_on: "2026-09-07",
         updated_at: new Date().toISOString(),
       })
       .eq("id", keep.id);
     if (error) throw error;
-    fitnessMutations.push({ action: "move", id: keep.id, detail: "2026-08-17 → 2026-09-02" });
-    keep.test_on = "2026-09-02";
-  } else if (on17.length && on2.length) {
-    fitnessMutations.push({
-      action: "keep_sept2_review_aug17",
-      id: on2[0]!.id,
-      detail: `2-sep bestaat al (${on2[0]!.id}); 17-aug blijft ${on17.map((s) => s.id).join(",")}`,
-    });
-  } else if (!on17.length && on2.length === 0) {
+    fitnessMutations.push({ action: "move", id: keep.id, detail: "2026-09-02 → 2026-09-07" });
+    keep.test_on = "2026-09-07";
+  } else if (on7.length === 0 && on17.length) {
+    const keep = on17[0]!;
+    const { error } = await sb
+      .from("fitness_test_sessions")
+      .update({
+        test_on: "2026-09-07",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", keep.id);
+    if (error) throw error;
+    fitnessMutations.push({ action: "move", id: keep.id, detail: "2026-08-17 → 2026-09-07" });
+    keep.test_on = "2026-09-07";
+  } else if (on7.length === 0 && on2.length === 0 && on17.length === 0) {
     const sessionId = randomUUID();
     const now = new Date().toISOString();
     const { error } = await sb.from("fitness_test_sessions").insert({
       id: sessionId,
       season_id: SEASON_2026_27_ID,
-      test_on: "2026-09-02",
+      test_on: "2026-09-07",
       protocol_code: "four_part_v1",
       status: "draft",
       note: "Eerste meting seizoen 2026/27",
@@ -231,7 +237,7 @@ async function main() {
       published_at: null,
     });
     if (error) throw error;
-    fitnessMutations.push({ action: "insert", id: sessionId, detail: "created 2026-09-02 draft" });
+    fitnessMutations.push({ action: "insert", id: sessionId, detail: "created 2026-09-07 draft" });
   }
 
   const { data: afterMatches, error: afterMErr } = await sb

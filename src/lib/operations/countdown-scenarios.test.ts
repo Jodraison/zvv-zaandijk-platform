@@ -95,7 +95,7 @@ const now = new Date("2026-07-30T10:00:00");
   const db = baseDb(SEASON_2026_27_ID);
   const f = nextFitnessMoment(db, SEASON_2026_27_ID, now);
   assert.equal(f.kind, "planned_config");
-  assert.equal(f.date, "2026-09-02");
+  assert.equal(f.date, "2026-09-07");
   assert.equal(f.labelPrefix, "Eerste meting");
 }
 
@@ -184,7 +184,7 @@ const now = new Date("2026-07-30T10:00:00");
   ];
   const f = nextFitnessMoment(db, SEASON_2026_27_ID, now);
   assert.equal(f.kind, "planned_config");
-  assert.equal(f.date, "2026-09-02");
+  assert.equal(f.date, "2026-09-07");
   assert.equal(f.lastPublished, null);
 }
 

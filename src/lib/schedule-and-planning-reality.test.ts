@@ -176,18 +176,20 @@ function plannedPayload(over: Record<string, unknown> = {}) {
 
 // 13–18: fitnessdatum
 {
-  assert.equal(seasonOperations2026_27.fitness.firstTestOn, "2026-09-02");
+  assert.equal(seasonOperations2026_27.fitness.firstTestOn, "2026-09-07");
   assert.ok(!seasonOperations2026_27.fitness.proposedCycle.includes("2026-08-17"));
+  assert.ok(!seasonOperations2026_27.fitness.proposedCycle.includes("2026-09-02"));
   const db = emptyDb();
   const emptyNext = nextFitnessMoment(db, SEASON_2026_27_ID, new Date("2026-08-17T10:00:00+02:00"));
-  assert.equal(emptyNext.date, "2026-09-02", "14: fallback is 2 september");
+  assert.equal(emptyNext.date, "2026-09-07", "14: fallback is 7 september");
   assert.notEqual(emptyNext.date, "2026-08-17", "13: 17 augustus niet meer actief");
+  assert.notEqual(emptyNext.date, "2026-09-02");
 
   db.fitness_test_sessions = [
     {
       id: "sess-1",
       season_id: SEASON_2026_27_ID,
-      test_on: "2026-09-02",
+      test_on: "2026-09-07",
       protocol_code: "four_part_v1",
       status: "draft",
       note: "Verplaatst wegens weer",
@@ -201,8 +203,8 @@ function plannedPayload(over: Record<string, unknown> = {}) {
   ];
   const draftNext = nextFitnessMoment(db, SEASON_2026_27_ID, new Date("2026-08-17T10:00:00+02:00"));
   assert.equal(draftNext.kind, "draft");
-  assert.equal(draftNext.date, "2026-09-02");
-  assert.equal(formatHumanDateNL("2026-09-02", { includeYear: true }).toLowerCase().includes("2 september"), true);
+  assert.equal(draftNext.date, "2026-09-07");
+  assert.equal(formatHumanDateNL("2026-09-07", { includeYear: true }).toLowerCase().includes("7 september"), true);
 
   assert.equal(canEditFitnessSessionMeta({ status: "draft" }), true, "15: testdatum wijzigbaar");
   assert.equal(canDeleteFitnessSession({ status: "draft", published_at: null }), true);
@@ -274,7 +276,7 @@ function plannedPayload(over: Record<string, unknown> = {}) {
   assert.match(nieuw, /later optioneel/);
 }
 
-// Live DB: zeven fixtures + fitness 2 september (skip zonder env)
+// Live DB: zeven fixtures + fitness 7 september (skip zonder env)
 async function liveDbChecks() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.SUPABASE_URL) {
     console.log("schedule-and-planning-reality: skip live DB (no Supabase env)");
@@ -307,8 +309,12 @@ async function liveDbChecks() {
   if (sErr) throw new Error(sErr.message);
   const real = (sessions ?? []).filter((s) => !(s.note ?? "").startsWith("[QA]"));
   assert.ok(
-    real.some((s) => s.test_on === "2026-09-02"),
-    "live: fitheidstest 2 september bestaat",
+    real.some((s) => s.test_on === "2026-09-07"),
+    "live: fitheidstest 7 september bestaat",
+  );
+  assert.ok(
+    !real.some((s) => s.test_on === "2026-09-02"),
+    "live: geen actieve 2-september-fitheidstest",
   );
   assert.ok(
     !real.some((s) => s.test_on === "2026-08-17"),

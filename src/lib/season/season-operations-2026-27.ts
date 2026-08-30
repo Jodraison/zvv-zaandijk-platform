@@ -1,6 +1,6 @@
 /**
  * Centrale operationele kalender seizoen 2026/27.
- * Administratieve seasons.starts_on (1 aug) ≠ operationele start (10 aug training / 2 sep fitheid).
+ * Administratieve seasons.starts_on (1 aug) ≠ operationele start (10 aug training / 7 sep fitheid).
  * De canonieke eerstvolgende testdatum is nextFitnessMoment (sessie.test_on), niet deze fallback alleen.
  */
 
@@ -49,10 +49,10 @@ export const seasonOperations2026_27: SeasonOperationsConfig = {
     endsAt: "21:00",
   },
   fitness: {
-    firstTestOn: "2026-09-02",
+    firstTestOn: "2026-09-07",
     intervalWeeks: 6,
     proposedCycle: [
-      "2026-09-02",
+      "2026-09-07",
       "2026-10-14",
       "2026-11-25",
       "2027-01-06",
@@ -70,8 +70,8 @@ export const seasonOperations2026_27: SeasonOperationsConfig = {
     },
     {
       id: "seizoenstart-training-fitheid",
-      on: "2026-09-02",
-      label: "Eerste fitheidstest (verplaatst wegens weer; trainingen starten 10 augustus)",
+      on: "2026-09-07",
+      label: "Eerste fitheidstest (verplaatst naar 7 september; trainingen starten 10 augustus)",
     },
     {
       id: "beker-start",

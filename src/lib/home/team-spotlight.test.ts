@@ -57,7 +57,7 @@ const nowTue = new Date("2026-08-18T10:00:00+02:00");
   assert.match(model.training.detail, /Woensdag 19 augustus/i);
   assert.match(model.training.detail, /20:00/);
   assert.ok(model.fitness);
-  assert.match(model.fitness.detail, /Woensdag 2 september/i);
+  assert.match(model.fitness.detail, /Maandag 7 september/i);
   assert.equal(model.birthday, null);
   assert.match(model.clubLine, /Voorbereiding 2026\/27/);
   assert.doesNotMatch(JSON.stringify(model), /WSV|tegenstander|countdown|thuis|uit|beker/i);

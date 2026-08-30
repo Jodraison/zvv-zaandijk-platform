@@ -33,6 +33,7 @@ import {
 } from "@/lib/fitness/parse-values";
 import Link from "next/link";
 import { nextFitnessMoment } from "@/lib/operations/next-events";
+import { getSeasonOperations } from "@/lib/season/season-operations-2026-27";
 
 type Props = { searchParams: Promise<{ season?: string; view?: string; session?: string }> };
 
@@ -185,9 +186,12 @@ export default async function RankingPage({ searchParams }: Props) {
               <p className="text-lg font-semibold text-zvv-ink">Nog geen fitheidsranking</p>
               <p className="mx-auto mt-3 max-w-md text-[15px] leading-relaxed">
                 De eerste meting staat gepland voor{" "}
-                {formatHumanDateNL(nextFitness.date ?? "2026-09-02", {
-                  includeYear: true,
-                })}
+                {formatHumanDateNL(
+                  nextFitness.date ?? getSeasonOperations(seasonId)?.fitness.firstTestOn ?? "",
+                  {
+                    includeYear: true,
+                  },
+                )}
                 . Na publicatie verschijnen hier de rankings voor sprint, agility, plank, 6 minuten lopen en
                 het totaalklassement.
               </p>
