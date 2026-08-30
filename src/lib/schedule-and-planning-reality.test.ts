@@ -276,7 +276,7 @@ function plannedPayload(over: Record<string, unknown> = {}) {
   assert.match(nieuw, /later optioneel/);
 }
 
-// Live DB: zeven fixtures + fitness 7 september (skip zonder env)
+// Live DB: zeven vroege fixtures + fitness 7 september (29 aug mag gespeeld zijn)
 async function liveDbChecks() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.SUPABASE_URL) {
     console.log("schedule-and-planning-reality: skip live DB (no Supabase env)");
@@ -291,8 +291,7 @@ async function liveDbChecks() {
   const { data: matches, error } = await client
     .from("matches")
     .select("id,opponent,kickoff_at,is_home,match_type,status,notes,season_id")
-    .eq("season_id", SEASON_2026_27_ID)
-    .eq("status", "scheduled");
+    .eq("season_id", SEASON_2026_27_ID);
   if (error) throw new Error(error.message);
   const production = (matches ?? []).filter((m) => !isQaMatchOpponent(m.opponent) && !isQaFixtureNotes(m.notes));
   for (const spec of SEASON_2026_27_PRODUCTION_FIXTURES) {
@@ -301,6 +300,11 @@ async function liveDbChecks() {
     assert.equal(formatTimeNl(hit!.kickoff_at), spec.time, `live: tijd ${spec.date}`);
     assert.equal(hit!.is_home, spec.isHome, `live: thuis/uit ${spec.date}`);
     assert.equal(hit!.match_type, spec.matchType, `live: type ${spec.date}`);
+    if (spec.date === "2026-08-29") {
+      assert.equal(hit!.status, "played", "live: 29 augustus WSV blijft gespeeld");
+    } else {
+      assert.equal(hit!.status, "scheduled", `live: status ${spec.date}`);
+    }
   }
   const { data: sessions, error: sErr } = await client
     .from("fitness_test_sessions")

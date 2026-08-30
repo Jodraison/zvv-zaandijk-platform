@@ -25,6 +25,8 @@
     "test:training-performance-center": "tsx src/lib/training/training-performance-center.test.ts",
     "test:schedule-and-planning-reality": "tsx src/lib/schedule-and-planning-reality.test.ts",
     "reconcile:season-2026-27-schedule": "tsx scripts/reconcile-season-2026-27-schedule-reality.ts",
+    "reconcile:remaining-league-2026-27": "tsx scripts/reconcile-remaining-league-program-2026-27.ts",
+    "test:remaining-league-program": "tsx src/lib/season/remaining-league-program-2026-27.test.ts",
     "reconcile:manual-training-aug": "tsx scripts/reconcile-manual-training-aug-2026.ts",
     "test:capabilities": "tsx src/lib/auth/capabilities.test.ts",
     "test:trainer-first": "tsx src/lib/operations/trainer-first-recovery.test.ts",
