@@ -15,6 +15,7 @@ import { formatKickoffLongNl } from "@/lib/utils/format-date";
 import { getMatchShapeAtMinute } from "@/lib/match/match-shape";
 import { MatchCountdownLabel } from "@/components/match/match-countdown-label";
 import { PublicMatchLineup } from "@/components/matches/public-match-lineup";
+import { wotmPlayerIdsOf } from "@/lib/match/wotm-winners";
 
 type Props = {
   params: Promise<{ matchId: string }>;
@@ -33,9 +34,18 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
   const result = matchResult(db, m);
   const resultNl = result === "W" ? "Winst" : result === "L" ? "Verlies" : result === "D" ? "Gelijk" : null;
 
-  const wotm = m.wotm_player_id ? db.players.find((p) => p.id === m.wotm_player_id) : null;
-  const wotmIsGuest = !!wotm?.is_guest;
-  const wotmShirt = m.wotm_player_id ? matchdayShirtForPlayer(db, matchId, m.season_id, m.wotm_player_id) : null;
+  const wotmWinners = wotmPlayerIdsOf(m)
+    .map((id) => {
+      const player = db.players.find((p) => p.id === id);
+      if (!player) return null;
+      return {
+        name: player.full_name,
+        shirt: matchdayShirtForPlayer(db, matchId, m.season_id, id),
+        isGuest: !!player.is_guest,
+        photoUrl: player.photo_url,
+      };
+    })
+    .filter((row): row is NonNullable<typeof row> => row != null);
 
   const timeline = buildMatchTimeline(db, matchId);
   const lineup = buildMatchLineupDisplay(db, matchId, m.season_id);
@@ -160,9 +170,7 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
         </div>
       </section>
 
-      {wotm && m.status === "played" ? (
-        <WotmSpotlight name={wotm.full_name} shirt={wotmShirt} isGuest={wotmIsGuest} photoUrl={wotm.photo_url} />
-      ) : null}
+      {wotmWinners.length > 0 && m.status === "played" ? <WotmSpotlight winners={wotmWinners} /> : null}
 
       {hasLineup ? (
         <PublicMatchLineup

@@ -1,5 +1,6 @@
 import type { ClubDatabase } from "@/types";
 import { matchResult } from "@/lib/queries/matches";
+import { matchHasWotm } from "@/lib/match/wotm-winners";
 
 export type PlayerDisputeMatchRow = {
   match_id: string;
@@ -63,7 +64,7 @@ export function buildPlayerDisputeBreakdown(
       });
     const goals = sourceEvents.filter((e) => e.involvement === "goal").length;
     const assists = sourceEvents.filter((e) => e.involvement === "assist").length;
-    const isMvp = match.wotm_player_id === playerId;
+    const isMvp = matchHasWotm(match, playerId);
     if (goals === 0 && assists === 0 && !isMvp) continue;
 
     const guestInRoster = db.match_matchday_roster.some((r) => r.match_id === match.id && r.player_id === playerId);

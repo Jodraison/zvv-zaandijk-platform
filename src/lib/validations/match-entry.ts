@@ -61,13 +61,7 @@ export const matchEntryPayloadSchema = z
     }
 
     const wotm = data.wotm_player_id?.trim();
-    if (!wotm) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Kies een MVP (speelster van de wedstrijd).",
-        path: ["wotm_player_id"],
-      });
-    } else if (!sel.has(wotm)) {
+    if (wotm && !sel.has(wotm)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "MVP niet in selectie",

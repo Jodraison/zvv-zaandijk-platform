@@ -77,19 +77,23 @@ export function resolvePlayerIdIncludingGuests(
   return null;
 }
 
-/** MVP-regel: "shared: …", "Mandy en Anouk" → eerste naam; log via callback. */
-export function parseMvpPrimaryName(mvpLine: string, onWarning?: (msg: string) => void): string {
+/** Alle MVP-namen uit "shared: …", "Mandy en Anouk" of één naam. */
+export function parseMvpWinnerNames(mvpLine: string): string[] {
   let n = normalizePlayerName(mvpLine);
   n = n.replace(/^shared\s*:\s*/i, "").trim();
-  if (!n) return "";
-
-  const parts = n
+  if (!n) return [];
+  return n
     .split(/\s+(?:en|and|,|;)\s+/i)
     .map((x) => normalizePlayerName(x))
     .filter(Boolean);
+}
+
+/** MVP-regel: "shared: …", "Mandy en Anouk" → eerste naam; log via callback. */
+export function parseMvpPrimaryName(mvpLine: string, onWarning?: (msg: string) => void): string {
+  const parts = parseMvpWinnerNames(mvpLine);
   if (parts.length > 1) {
     onWarning?.(
-      `Gedeelde MVP (${mvpLine.trim()}). Opgeslagen als eerste: "${parts[0]}"; voeg eventueel notitie toe in import-log.`,
+      `Gedeelde MVP (${mvpLine.trim()}). Alle winnaars: ${parts.join(" & ")}.`,
     );
   }
   return parts[0] ?? "";

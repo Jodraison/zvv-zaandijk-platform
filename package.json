@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:admin-nav": "tsx src/lib/admin/beheer-nav.test.ts",
     "test:match-integrity": "tsx src/lib/admin/match-save-contract.test.ts && tsx src/lib/admin/match-integrity-scenarios.test.ts",
+    "test:wotm-winners": "tsx src/lib/match/wotm-winners.test.ts",
     "test:admin-2": "npm run test:admin-nav && npm run test:match-integrity",
     "test:fitness-protocol": "tsx src/lib/fitness/fitness-protocol.test.ts",
     "test:fitness-reschedule": "tsx src/lib/fitness/fitness-reschedule-2026-09-07.test.ts",

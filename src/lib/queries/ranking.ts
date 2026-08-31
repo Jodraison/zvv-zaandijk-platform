@@ -3,7 +3,7 @@ import { aggregateSeasonMatchStats, playerTotalsFromAggregate } from "@/lib/quer
 
 /**
  * Ranking = query-laag: totalen komen uitsluitend uit `aggregateSeasonMatchStats`
- * (match_goal_events + matches.wotm voor geverifieerde gespeelde wedstrijden).
+ * (match_goal_events + match_wotm_winners / wotm_player_ids; elke winnaar +1).
  */
 export function computeRanking(db: ClubDatabase, seasonId: string): PlayerSeasonRankingRow[] {
   if (!seasonId) return [];

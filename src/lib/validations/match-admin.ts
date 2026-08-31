@@ -40,6 +40,8 @@ export const matchAdminPayloadSchema = z
     goals_against: z.coerce.number().int().min(0, "Doelpunten tegen kunnen niet negatief zijn.").max(99),
     selected_player_ids: z.array(z.string().min(1)),
     goals: z.array(matchAdminGoalRowSchema),
+    wotm_player_ids: z.array(z.string().min(1)).optional().default([]),
+    /** Legacy enkelvoud — wordt samengevoegd met wotm_player_ids. */
     wotm_player_id: z.string().optional().or(z.literal("")),
     lineup: matchLineupPayloadSchema,
     cards: matchCardEventsPayloadSchema,
@@ -109,11 +111,15 @@ export const matchAdminPayloadSchema = z
           path: ["substitutions"],
         });
       }
-      if (data.wotm_player_id?.trim()) {
+      const scheduledWotm = [
+        ...(data.wotm_player_ids ?? []),
+        data.wotm_player_id?.trim() || "",
+      ].filter(Boolean);
+      if (scheduledWotm.length > 0) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "MVP alleen bij een gespeelde wedstrijd",
-          path: ["wotm_player_id"],
+          path: ["wotm_player_ids"],
         });
       }
     }
@@ -221,21 +227,27 @@ export const matchAdminPayloadSchema = z
       }
     });
 
-    const wotm = data.wotm_player_id?.trim();
+    const rawWotm = [...(data.wotm_player_ids ?? []), data.wotm_player_id?.trim() || ""].filter(Boolean);
     if (data.status === "played") {
-      if (!wotm) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Kies een MVP (speelster van de wedstrijd).",
-          path: ["wotm_player_id"],
-        });
-      } else if (!sel.has(wotm)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "MVP niet in selectie",
-          path: ["wotm_player_id"],
-        });
-      }
+      const seenWotm = new Set<string>();
+      rawWotm.forEach((id, i) => {
+        if (seenWotm.has(id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Dezelfde speelster kan niet twee keer speelster van de wedstrijd zijn.",
+            path: ["wotm_player_ids", i],
+          });
+          return;
+        }
+        seenWotm.add(id);
+        if (!sel.has(id)) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "MVP niet in selectie",
+            path: ["wotm_player_ids", i],
+          });
+        }
+      });
     }
   });
 

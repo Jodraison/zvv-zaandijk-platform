@@ -86,7 +86,13 @@ export interface Match {
   goals_for: number;
   goals_against: number;
   status: MatchStatus;
+  /**
+   * Legacy spiegel: eerste POTM-winnaar, of null.
+   * Productcode leest via `wotmPlayerIdsOf` / `wotm_player_ids`.
+   */
   wotm_player_id: string | null;
+  /** Canonical POTM-winnaars (0..n). */
+  wotm_player_ids?: string[];
   integrity_state?: "verified" | "invalid";
   lineup_status?: MatchLineupStatus;
   lineup_confirmed_at?: string | null;
@@ -103,6 +109,12 @@ export interface MatchPlayerStat {
   player_id: string;
   goals: number;
   assists: number;
+}
+
+/** Eén Player of the Match-winnaar voor een wedstrijd. */
+export interface MatchWotmWinner {
+  match_id: string;
+  player_id: string;
 }
 
 /** Eén doelpunt-rij; stats worden hiervan afgeleid. */
@@ -250,6 +262,8 @@ export interface ClubDatabase {
   match_matchday_roster: MatchMatchdayRosterRow[];
   match_lineup_entries: MatchLineupEntry[];
   match_player_stats: MatchPlayerStat[];
+  /** Canonical POTM-winnaars. Ontbrekend in oudere fixtures → lees via wotmPlayerIdsOf(match). */
+  match_wotm_winners?: MatchWotmWinner[];
   match_goal_events: MatchGoalEvent[];
   match_position_changes: MatchPositionChange[];
   match_card_events: MatchCardEvent[];

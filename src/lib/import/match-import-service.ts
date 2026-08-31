@@ -12,7 +12,7 @@ import { aggregateStatsFromGoals, type GoalRowInput } from "@/lib/match-goal-hel
 import {
   normalizePlayerName,
   resolvePlayerIdIncludingGuests,
-  parseMvpPrimaryName,
+  parseMvpWinnerNames,
   stripGuestAnnotation,
   type ImportPlayerRow,
 } from "@/lib/import/normalize-player-name";
@@ -191,21 +191,26 @@ export async function importSingleMatch(
   }
   const goalInputs = payloadResult.goals;
 
-  const mvpPrimary = parseMvpPrimaryName(spec.mvpRaw, (m) => warn(m));
-  if (!mvpPrimary.trim()) {
+  const mvpNames = parseMvpWinnerNames(spec.mvpRaw);
+  if (mvpNames.length === 0) {
     return { ok: false, error: "MVP ontbreekt" };
   }
-  const mvpResolved = resolvePlayerIdIncludingGuests(normalizePlayerName(mvpPrimary), players);
-  if (!mvpResolved) {
-    return { ok: false, error: `MVP niet gevonden: "${mvpPrimary}"` };
+  const mvpResolvedList: { id: string; matchedAs: string }[] = [];
+  for (const name of mvpNames) {
+    const resolved = resolvePlayerIdIncludingGuests(normalizePlayerName(name), players);
+    if (!resolved) {
+      return { ok: false, error: `MVP niet gevonden: "${name}"` };
+    }
+    mvpResolvedList.push(resolved);
   }
+  const mvpResolved = mvpResolvedList[0]!;
 
   const involved = new Set<string>();
   for (const g of goalInputs) {
     involved.add(g.scorer_player_id);
     if (g.assist_player_id) involved.add(g.assist_player_id);
   }
-  involved.add(mvpResolved.id);
+  for (const mvp of mvpResolvedList) involved.add(mvp.id);
 
   const guestIdsForRoster: string[] = [];
   for (const id of involved) {
@@ -283,6 +288,19 @@ export async function importSingleMatch(
     return { ok: false, error: `Match upsert: ${eM.message}` };
   }
 
+  const { error: eDelWotm } = await client.from("match_wotm_winners").delete().eq("match_id", matchId);
+  if (eDelWotm && !/does not exist|schema cache/i.test(eDelWotm.message)) {
+    return { ok: false, error: `MVP-winnaars wissen: ${eDelWotm.message}` };
+  }
+  if (!eDelWotm && mvpResolvedList.length > 0) {
+    const { error: eInsWotm } = await client.from("match_wotm_winners").insert(
+      mvpResolvedList.map((mvp) => ({ match_id: matchId, player_id: mvp.id })) as never[],
+    );
+    if (eInsWotm) {
+      return { ok: false, error: `MVP-winnaars opslaan: ${eInsWotm.message}` };
+    }
+  }
+
   if (statsFinal.length) {
     const { error: eS } = await client.from("match_player_stats").upsert(statsFinal as never[], {
       onConflict: "match_id,player_id",
@@ -310,7 +328,7 @@ export async function importSingleMatch(
 
   const action = createdMatch ? "aangemaakt" : "bijgewerkt";
   log(
-    `OK ${action}: ${spec.opponent} | ${kickoffIso.slice(0, 10)} | ${spec.goalsFor}-${spec.goalsAgainst} | MVP=${mvpResolved.matchedAs} | match_id=${matchId}`,
+    `OK ${action}: ${spec.opponent} | ${kickoffIso.slice(0, 10)} | ${spec.goalsFor}-${spec.goalsAgainst} | MVP=${mvpResolvedList.map((m) => m.matchedAs).join(" & ")} | match_id=${matchId}`,
   );
 
   return { ok: true, matchId, createdMatch };

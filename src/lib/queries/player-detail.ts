@@ -3,6 +3,7 @@ import { aggregateSeasonMatchStats, playerTotalsFromAggregate } from "@/lib/quer
 import { computeTrainingAttendanceStats } from "@/lib/queries/training-attendance-stats";
 import { fitnessTotalSeconds } from "@/lib/fitness-analytics";
 import { matchResult } from "./matches";
+import { matchHasWotm } from "@/lib/match/wotm-winners";
 
 export function buildPlayerDetail(db: ClubDatabase, playerId: string, seasonId: string): PlayerDetailAggregates | null {
   const mem = db.player_season_memberships.find((m) => m.player_id === playerId && m.season_id === seasonId);
@@ -61,7 +62,7 @@ export function buildPlayerDetail(db: ClubDatabase, playerId: string, seasonId: 
         kickoff_at: m.kickoff_at,
         goals,
         assists,
-        is_wotm: m.wotm_player_id === playerId,
+        is_wotm: matchHasWotm(m, playerId),
         result: matchResult(db, m)!,
       };
     });

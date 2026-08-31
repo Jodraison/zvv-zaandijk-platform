@@ -18,8 +18,8 @@ import {
     assistEventCount: 1,
     statsGoalSum: 2,
     statsAssistSum: 1,
-    mvpPlayerId: "p1",
-    mvpInSelection: true,
+    mvpPlayerIds: ["p1"],
+    mvpAllInSelection: true,
   });
   assert.equal(issues.length, 0, "consistent 2-1 style payload");
 }
@@ -33,8 +33,8 @@ import {
     assistEventCount: 0,
     statsGoalSum: 0,
     statsAssistSum: 0,
-    mvpPlayerId: "p1",
-    mvpInSelection: true,
+    mvpPlayerIds: ["p1"],
+    mvpAllInSelection: true,
   });
   assert.equal(issues.length, 0, "0-0 with MVP ok");
 }
@@ -48,8 +48,8 @@ import {
     assistEventCount: 0,
     statsGoalSum: 2,
     statsAssistSum: 0,
-    mvpPlayerId: "p1",
-    mvpInSelection: true,
+    mvpPlayerIds: ["p1"],
+    mvpAllInSelection: true,
   });
   assert.ok(issues.some((i) => i.code === "goals_for_mismatch"));
 }
@@ -63,10 +63,10 @@ import {
     assistEventCount: 0,
     statsGoalSum: 1,
     statsAssistSum: 0,
-    mvpPlayerId: null,
-    mvpInSelection: false,
+    mvpPlayerIds: [],
+    mvpAllInSelection: true,
   });
-  assert.ok(issues.some((i) => i.code === "mvp_required"));
+  assert.equal(issues.length, 0, "0 MVP winners allowed");
 }
 
 // --- scheduled must be clean ---
@@ -78,8 +78,8 @@ import {
     assistEventCount: 0,
     statsGoalSum: 1,
     statsAssistSum: 0,
-    mvpPlayerId: "p1",
-    mvpInSelection: true,
+    mvpPlayerIds: ["p1"],
+    mvpAllInSelection: true,
   });
   assert.ok(issues.length >= 2);
 }

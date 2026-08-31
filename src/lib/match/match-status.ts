@@ -61,7 +61,7 @@ export function matchFieldRequirements(status: MatchStatusCode): {
       goals_against: "required",
       goals: "required",
       assists: "optional",
-      mvp: "required",
+      mvp: "optional",
       cards: "optional",
       substitutions: "optional",
       selection: "required",

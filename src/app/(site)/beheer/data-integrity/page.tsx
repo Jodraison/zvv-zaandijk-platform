@@ -1,4 +1,5 @@
 import { readDb } from "@/lib/data/repository";
+import { wotmPlayerIdsOf } from "@/lib/match/wotm-winners";
 import { readResolvedSeasonId } from "@/actions/season";
 import { AdminPageHeader, AdminSection } from "@/components/admin/shell/admin-ui";
 import { GlassCard } from "@/components/layout/glass-card";
@@ -22,11 +23,11 @@ function runIntegrityChecks(db: Awaited<ReturnType<typeof readDb>>, seasonId: st
           `Wedstrijd ${m.opponent}: spelerstatistieken (${g} goals) komen niet overeen met doelpunten (${events.length})`,
         );
       }
-      if (m.wotm_player_id && !db.players.some((p) => p.id === m.wotm_player_id)) {
+      const wotmIds = wotmPlayerIdsOf(m);
+      if (wotmIds.some((id) => !db.players.some((p) => p.id === id))) {
         errors.push(`Wedstrijd ${m.opponent}: MVP verwijst naar onbekende speelster`);
       }
-      if (!m.wotm_player_id) errors.push(`Wedstrijd ${m.opponent}: MVP ontbreekt`);
-    } else if (m.wotm_player_id) {
+    } else if (wotmPlayerIdsOf(m).length > 0) {
       errors.push(`Wedstrijd ${m.opponent}: MVP gezet op niet-gespeelde wedstrijd`);
     }
   }

@@ -11,6 +11,7 @@ export type MatchVerificationPayload = {
   persisted_assist_events_count: number;
   persisted_derived_assists_count: number;
   persisted_mvp_player_id: string;
+  persisted_mvp_player_ids: string[];
   affected_player_ids: string[];
   verified_at: string;
   changes: {
@@ -20,6 +21,8 @@ export type MatchVerificationPayload = {
   }[];
   mvp_before_player_id: string | null;
   mvp_after_player_id: string | null;
+  mvp_before_player_ids: string[];
+  mvp_after_player_ids: string[];
 };
 
 export type TrainingVerificationPayload = {

@@ -25,6 +25,7 @@ import type { MatchVerificationPayload } from "@/lib/admin/verification-types";
 import { sortPlayersBySquadNumber } from "@/lib/players/sort-by-squad-number";
 import { CLUB_NAME } from "@/constants/club";
 import { matchWorkflowHref } from "@/lib/match/match-workflow-steps";
+import { formatWotmNamesNl, uniquePlayerIds } from "@/lib/match/wotm-winners";
 
 export type MatchAdminMember = {
   player_id: string;
@@ -71,7 +72,7 @@ type MatchDraft = {
   eventDraft: GoalEvent[];
   cardDraft: CardEvent[];
   substitutionDraft: SubstitutionEvent[];
-  selectedMvpPlayerId: string;
+  selectedMvpPlayerIds: string[];
   selectedSquadIds: Record<string, boolean>;
   lineupRoleByPlayer: Record<string, MatchLineupRole | "">;
   lineupAbsentReasons: Record<string, string>;
@@ -137,6 +138,7 @@ function createInitialDraft(
     goals_against: number;
     status: MatchStatus;
     wotm_player_id: string | null;
+    wotm_player_ids?: string[];
   },
   initialLineup: MatchLineupInitial,
   initialCardEvents: CardEvent[],
@@ -174,7 +176,7 @@ function createInitialDraft(
     eventDraft: seededGoals,
     cardDraft: initCards(initialCardEvents),
     substitutionDraft: initSubstitutions(initialSubstitutionEvents),
-    selectedMvpPlayerId: initialMatch.wotm_player_id ?? "",
+    selectedMvpPlayerIds: uniquePlayerIds(initialMatch.wotm_player_ids ?? (initialMatch.wotm_player_id ? [initialMatch.wotm_player_id] : [])),
     selectedSquadIds: selected,
     lineupRoleByPlayer: lineupState.lineupRoleByPlayer,
     lineupAbsentReasons: lineupState.lineupAbsentReasons,
@@ -236,6 +238,7 @@ export function MatchAdminForm({
     goals_against: number;
     status: MatchStatus;
     wotm_player_id: string | null;
+    wotm_player_ids?: string[];
   };
   initialSelectedIds: string[];
   initialGoalEvents?: { scorer_player_id: string; assist_player_id: string | null; minute?: number }[];
@@ -306,7 +309,7 @@ export function MatchAdminForm({
   const cards = draft.cardDraft;
   const substitutions = draft.substitutionDraft;
   const selected = draft.selectedSquadIds;
-  const wotmId = draft.selectedMvpPlayerId;
+  const wotmIds = draft.selectedMvpPlayerIds;
   const lastVerifiedSignature = draft.lastVerifiedSnapshot;
 
   const setOpponent = (value: string) =>
@@ -353,7 +356,16 @@ export function MatchAdminForm({
           ? (updater as (rows: Record<string, boolean>) => Record<string, boolean>)(prev.selectedSquadIds)
           : updater,
     }));
-  const setWotmId = (value: string) => setDraft((prev) => ({ ...prev, selectedMvpPlayerId: value }));
+  const toggleWotmId = (playerId: string) =>
+    setDraft((prev) => {
+      const has = prev.selectedMvpPlayerIds.includes(playerId);
+      return {
+        ...prev,
+        selectedMvpPlayerIds: has
+          ? prev.selectedMvpPlayerIds.filter((id) => id !== playerId)
+          : uniquePlayerIds([...prev.selectedMvpPlayerIds, playerId]),
+      };
+    });
 
   const setLineupRole = (playerId: string, role: MatchLineupRole | "") => {
     setDraft((prev) => {
@@ -430,10 +442,9 @@ export function MatchAdminForm({
         if (g.assist_player_id && !squadById.has(g.assist_player_id)) return false;
         return true;
       });
-      const nextMvp =
-        prev.selectedMvpPlayerId && !squadById.has(prev.selectedMvpPlayerId) ? "" : prev.selectedMvpPlayerId;
-      if (nextEvents === prev.eventDraft && nextMvp === prev.selectedMvpPlayerId) return prev;
-      return { ...prev, eventDraft: nextEvents, selectedMvpPlayerId: nextMvp };
+      const nextMvp = prev.selectedMvpPlayerIds.filter((id) => squadById.has(id));
+      if (nextEvents === prev.eventDraft && nextMvp.length === prev.selectedMvpPlayerIds.length) return prev;
+      return { ...prev, eventDraft: nextEvents, selectedMvpPlayerIds: nextMvp };
     });
   }, [squadById]);
 
@@ -442,7 +453,7 @@ export function MatchAdminForm({
       setDraft((prev) => ({
         ...prev,
         eventDraft: [],
-        selectedMvpPlayerId: "",
+        selectedMvpPlayerIds: [],
         matchMetaDraft: { ...prev.matchMetaDraft, goalsFor: 0 },
       }));
     }
@@ -491,11 +502,9 @@ export function MatchAdminForm({
       if (g.assist_player_id && !squadById.has(g.assist_player_id)) errs.push(`Goal ${i + 1}: assist niet in selectie.`);
       if (g.assist_player_id && g.assist_player_id === g.scorer_player_id) errs.push(`Goal ${i + 1}: assist mag niet gelijk zijn aan scorer.`);
     }
-    const w = wotmId.trim();
-    if (!w) errs.push("Kies een MVP (speelster van de wedstrijd).");
-    else if (!squadById.has(w)) errs.push("MVP niet in selectie");
+    if (wotmIds.some((id) => !squadById.has(id))) errs.push("Elke MVP moet in de selectie staan.");
     return errs;
-  }, [status, selectedIds.length, goals, goalsForInput, wotmId, squadById]);
+  }, [status, selectedIds.length, goals, goalsForInput, wotmIds, squadById]);
 
   const liveWarnings = useMemo(() => {
     if (status !== "played") return [] as string[];
@@ -559,7 +568,8 @@ export function MatchAdminForm({
       cards: status === "played" ? cards : [],
       substitutions: status === "played" && !preserveShapeEvents ? substitutions : [],
       preserve_shape_events: preserveShapeEvents,
-      wotm_player_id: status === "played" ? wotmId : "",
+      wotm_player_ids: status === "played" ? wotmIds : [],
+      wotm_player_id: "",
       lineup,
     };
     return JSON.stringify(payload);
@@ -585,7 +595,7 @@ export function MatchAdminForm({
     seasonId,
     selectedIds,
     status,
-    wotmId,
+    wotmIds,
   ]);
 
   // Afrondstap: forceer status played (ook als DB-record nog gepland is).
@@ -728,15 +738,17 @@ export function MatchAdminForm({
       const assist = g.assist_player_id ? members.find((m) => m.player_id === g.assist_player_id)?.name ?? "Onbekend" : null;
       return `- Doelpunt #${i + 1}: ${scorer}${assist ? ` (assist van ${assist})` : ""}`;
     });
-    const mvpName = wotmId ? members.find((m) => m.player_id === wotmId)?.name ?? "—" : "—";
+    const mvpName = formatWotmNamesNl(
+      wotmIds.map((id) => members.find((m) => m.player_id === id)?.name ?? "").filter(Boolean),
+    );
     return [
       "Je slaat op:",
       `Score: ${goalsForInput}-${goalsAgainst}`,
       "Doelpunten:",
       ...(lines.length ? lines : ["- geen"]),
-      `MVP: ${mvpName}`,
+      `MVP: ${mvpName || "—"}`,
     ].join("\n");
-  }, [goals, goalsAgainst, goalsForInput, members, wotmId]);
+  }, [goals, goalsAgainst, goalsForInput, members, wotmIds]);
   const currentSignature = useMemo(
     () =>
       JSON.stringify({
@@ -744,9 +756,9 @@ export function MatchAdminForm({
         goalsForInput,
         goalsAgainst,
         goals: goals.map((g) => [g.scorer_player_id, g.assist_player_id ?? ""]),
-        wotmId,
+        wotmIds,
       }),
-    [goals, goalsAgainst, goalsForInput, status, wotmId],
+    [goals, goalsAgainst, goalsForInput, status, wotmIds],
   );
   const dirtySinceVerified = !!lastVerifiedSignature && lastVerifiedSignature !== currentSignature;
   const verification = saveState.status === "success" ? (saveState.verification as MatchVerificationPayload | undefined) : undefined;
@@ -796,7 +808,7 @@ export function MatchAdminForm({
               <div className="flex flex-wrap items-center gap-2 text-sm">
                 <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">Doelpunten: {goals.length}</span>
                 <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">Assists: {goals.filter((g) => !!g.assist_player_id).length}</span>
-                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">MVP: {wotmId ? (members.find((m) => m.player_id === wotmId)?.name ?? "—") : "—"}</span>
+                <span className="rounded-full border border-zvv-border bg-zvv-card-mid px-3 py-1 text-zvv-muted">MVP: {formatWotmNamesNl(wotmIds.map((id) => members.find((m) => m.player_id === id)?.name ?? "").filter(Boolean)) || "—"}</span>
                 <span className={`rounded-full border px-3 py-1 ${liveErrors.length ? "border-red-300 bg-red-50 text-red-700" : "border-emerald-300 bg-emerald-50 text-emerald-700"}`}>
                   {liveErrors.length ? `${liveErrors.length} aandachtspunt${liveErrors.length === 1 ? "" : "en"}` : "Validatie in orde"}
                 </span>
@@ -1211,7 +1223,7 @@ export function MatchAdminForm({
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                     {squadMembers.map((m) => {
                       const st = liveStats.get(m.player_id) ?? { goals: 0, assists: 0 };
-                      const isMvp = wotmId === m.player_id;
+                      const isMvp = wotmIds.includes(m.player_id);
                       return (
                         <div key={`quick-${m.player_id}`} className="rounded-xl border border-zvv-border bg-white p-3">
                           <div className="flex items-center justify-between">
@@ -1221,7 +1233,7 @@ export function MatchAdminForm({
                           <div className="mt-2 flex gap-2">
                             <button type="button" className="club-btn-secondary px-3 py-1 text-xs" onClick={() => handleAddGoalForPlayer(m.player_id)} disabled={busy}>+ Doelpunt</button>
                             <button type="button" className="club-btn-secondary px-3 py-1 text-xs" onClick={() => handleQuickAssist(m.player_id)} disabled={busy}>+ Assist</button>
-                            <button type="button" className={`rounded-lg border px-2 text-xs font-semibold ${isMvp ? "border-amber-400 bg-amber-50 text-amber-800" : "border-zvv-border bg-zvv-card-mid text-zvv-muted"}`} onClick={() => setWotmId(m.player_id)} disabled={busy}>⭐ MVP</button>
+                            <button type="button" className={`rounded-lg border px-2 text-xs font-semibold ${isMvp ? "border-amber-400 bg-amber-50 text-amber-800" : "border-zvv-border bg-zvv-card-mid text-zvv-muted"}`} onClick={() => toggleWotmId(m.player_id)} disabled={busy}>⭐ MVP</button>
                           </div>
                         </div>
                       );
@@ -1455,23 +1467,38 @@ export function MatchAdminForm({
                     Stap 4 — MVP en controle
                   </h2>
                   <p className="mt-1 text-sm text-zvv-muted">
-                    Kies de speelster van de wedstrijd. Controleer of de eindstand overeenkomt met de doelpunten vóór het opslaan.
+                    Kies één of meer speelsters van de wedstrijd. Controleer of de eindstand overeenkomt met de doelpunten vóór het opslaan.
                   </p>
                 </div>
-                <label className="block max-w-md space-y-2">
-                  <span className="text-sm font-medium text-zvv-muted">MVP</span>
-                  <select value={wotmId} onChange={(e) => setWotmId(e.target.value)} className={inputCls} disabled={busy || squadMembers.length === 0}>
-                    <option value="">Kies MVP</option>
-                    {squadMembers.map((m) => <option key={m.player_id} value={m.player_id}>{m.name}</option>)}
-                  </select>
-                </label>
+                <fieldset className="space-y-2" disabled={busy || squadMembers.length === 0}>
+                  <legend className="text-sm font-medium text-zvv-muted">Speelsters van de wedstrijd</legend>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {squadMembers.map((m) => {
+                      const checked = wotmIds.includes(m.player_id);
+                      return (
+                        <label key={`mvp-${m.player_id}`} className={toggleCls}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleWotmId(m.player_id)}
+                            className="h-4 w-4 accent-amber-600"
+                          />
+                          <span className="text-sm font-semibold text-zvv-ink">
+                            {m.shirt_number != null ? `#${m.shirt_number} ` : ""}
+                            {m.name}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </fieldset>
                 <div className="rounded-xl border border-zvv-border bg-white p-4 text-sm text-zvv-ink">
                   <p className="font-semibold">Samenvatting</p>
                   <ul className="mt-2 list-inside list-disc space-y-1 text-zvv-muted">
                     <li>Eindstand: {goalsForInput}–{goalsAgainst}</li>
                     <li>Doelpunten ingevoerd: {goals.length}</li>
                     <li>Assists: {goals.filter((g) => !!g.assist_player_id).length}</li>
-                    <li>MVP: {wotmId ? members.find((m) => m.player_id === wotmId)?.name ?? "—" : "Nog niet gekozen"}</li>
+                    <li>MVP: {formatWotmNamesNl(wotmIds.map((id) => members.find((m) => m.player_id === id)?.name ?? "").filter(Boolean)) || "Nog niet gekozen"}</li>
                   </ul>
                 </div>
               </div>

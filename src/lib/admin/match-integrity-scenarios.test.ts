@@ -29,10 +29,12 @@ function buildIntegrityInput(args: {
   goalsFor: number;
   events: { assist_player_id?: string | null }[];
   stats: { goals: number; assists: number }[];
-  mvpPlayerId: string | null;
-  mvpInSelection?: boolean;
+  mvpPlayerId?: string | null;
+  mvpPlayerIds?: string[];
+  mvpAllInSelection?: boolean;
 }): MatchIntegrityCheckInput {
   const sums = statsSums(args.stats);
+  const mvpPlayerIds = args.mvpPlayerIds ?? (args.mvpPlayerId ? [args.mvpPlayerId] : []);
   return {
     status: args.status,
     goalsFor: args.goalsFor,
@@ -40,8 +42,8 @@ function buildIntegrityInput(args: {
     assistEventCount: assistCount(args.events),
     statsGoalSum: sums.goals,
     statsAssistSum: sums.assists,
-    mvpPlayerId: args.mvpPlayerId,
-    mvpInSelection: args.mvpInSelection ?? (args.mvpPlayerId ? PLAYERS.includes(args.mvpPlayerId) : false),
+    mvpPlayerIds,
+    mvpAllInSelection: args.mvpAllInSelection ?? mvpPlayerIds.every((id) => PLAYERS.includes(id)),
   };
 }
 
@@ -183,7 +185,7 @@ function simulateMatchSavePipeline(args: {
   console.log("scenario C ok");
 }
 
-// --- Scenario D: MVP change via integrity (mvp required, exactly one MVP) ---
+// --- Scenario D: 0, 1 of meerdere MVP's toegestaan ---
 {
   const goalsPayload = [{ scorer_player_id: "p1", minute: 10 }];
   const agg = aggregateStatsFromGoals(MATCH_ID, PLAYERS, goalsPayload);
@@ -194,10 +196,10 @@ function simulateMatchSavePipeline(args: {
       goalsFor: 1,
       events: agg.events,
       stats: agg.stats,
-      mvpPlayerId: null,
+      mvpPlayerIds: [],
     }),
   );
-  assert.ok(missingMvp.some((i) => i.code === "mvp_required"));
+  assert.equal(missingMvp.length, 0, "0 MVP winners allowed");
 
   const withMvp = collectMatchIntegrityIssues(
     buildIntegrityInput({
@@ -205,21 +207,21 @@ function simulateMatchSavePipeline(args: {
       goalsFor: 1,
       events: agg.events,
       stats: agg.stats,
-      mvpPlayerId: "p2",
+      mvpPlayerIds: ["p2"],
     }),
   );
   assert.equal(withMvp.length, 0);
 
-  const changedMvp = collectMatchIntegrityIssues(
+  const sharedMvp = collectMatchIntegrityIssues(
     buildIntegrityInput({
       status: "played",
       goalsFor: 1,
       events: agg.events,
       stats: agg.stats,
-      mvpPlayerId: "p3",
+      mvpPlayerIds: ["p2", "p3"],
     }),
   );
-  assert.equal(changedMvp.length, 0);
+  assert.equal(sharedMvp.length, 0);
   console.log("scenario D ok");
 }
 

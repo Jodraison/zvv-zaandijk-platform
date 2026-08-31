@@ -13,6 +13,7 @@ import type {
   MatchPlayerStat,
   MatchSubstitution,
   MatchPositionChange,
+  MatchWotmWinner,
   Player,
   PlayerSeasonMembership,
   Season,
@@ -45,6 +46,10 @@ function failFitnessWrite(ctx: string, message: string): never {
 
 function statKey(s: MatchPlayerStat) {
   return `${s.match_id}:${s.player_id}`;
+}
+
+function wotmKey(r: MatchWotmWinner) {
+  return `${r.match_id}:${r.player_id}`;
 }
 
 function rosterKey(r: MatchMatchdayRosterRow) {
@@ -125,6 +130,7 @@ function matchEq(a: Match, b: Match) {
     a.goals_against === b.goals_against &&
     a.status === b.status &&
     a.wotm_player_id === b.wotm_player_id &&
+    (a.wotm_player_ids ?? []).join("|") === (b.wotm_player_ids ?? []).join("|") &&
     (a.integrity_state ?? "verified") === (b.integrity_state ?? "verified") &&
     (a.lineup_status ?? "draft") === (b.lineup_status ?? "draft") &&
     (a.lineup_confirmed_at ?? null) === (b.lineup_confirmed_at ?? null)
@@ -272,6 +278,7 @@ export async function applyClubDatabaseDiff(
   const afterFitSessionIds = new Set(after.fitness_test_sessions.map((s) => s.id));
   const afterFitConfigIds = new Set(after.fitness_score_configs.map((c) => c.id));
 
+  const afterWotmKeys = new Set((after.match_wotm_winners ?? []).map(wotmKey));
   const afterRosterKeys = new Set(after.match_matchday_roster.map(rosterKey));
   const afterLineupIds = new Set(after.match_lineup_entries.map((e) => e.id));
   const afterStatKeys = new Set(after.match_player_stats.map(statKey));
@@ -314,6 +321,22 @@ export async function applyClubDatabaseDiff(
     if (!afterSessIds.has(s.id)) {
       const { error } = await client.from("training_sessions").delete().eq("id", s.id);
       if (error) fail("training_sessions verwijderen", error.message);
+    }
+  }
+
+  for (const r of before.match_wotm_winners ?? []) {
+    if (!afterWotmKeys.has(wotmKey(r))) {
+      const { error } = await client
+        .from("match_wotm_winners")
+        .delete()
+        .eq("match_id", r.match_id)
+        .eq("player_id", r.player_id);
+      if (error) {
+        if (isMissingFitnessTableError(error.message)) {
+          throw new Error("Database nog niet bijgewerkt voor meerdere Player of the Match-winnaars. Pas migratie 028 toe.");
+        }
+        fail("match_wotm_winners verwijderen", error.message);
+      }
     }
   }
 
@@ -486,13 +509,29 @@ export async function applyClubDatabaseDiff(
         goals_for: m.goals_for,
         goals_against: m.goals_against,
         status: m.status,
-        wotm_player_id: m.wotm_player_id,
+        wotm_player_id: (m.wotm_player_ids && m.wotm_player_ids[0]) || m.wotm_player_id,
         integrity_state: m.integrity_state ?? "verified",
         lineup_status: m.lineup_status ?? "draft",
         lineup_confirmed_at: m.lineup_confirmed_at ?? null,
       };
       const { error } = await client.from("matches").upsert(row as never, { onConflict: "id" });
       if (error) fail("matches opslaan", error.message);
+    }
+  }
+
+  for (const r of after.match_wotm_winners ?? []) {
+    const b = (before.match_wotm_winners ?? []).find((x) => wotmKey(x) === wotmKey(r));
+    if (!b) {
+      const { error } = await client.from("match_wotm_winners").upsert(
+        { match_id: r.match_id, player_id: r.player_id } as never,
+        { onConflict: "match_id,player_id" },
+      );
+      if (error) {
+        if (isMissingFitnessTableError(error.message)) {
+          throw new Error("Database nog niet bijgewerkt voor meerdere Player of the Match-winnaars. Pas migratie 028 toe.");
+        }
+        fail("match_wotm_winners opslaan", error.message);
+      }
     }
   }
 

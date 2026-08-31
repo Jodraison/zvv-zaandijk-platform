@@ -100,7 +100,7 @@ export const MATCH_CENTER_CAPABILITIES: MatchCenterCapability[] = [
     id: "motm",
     label: "MOTM / WOTM",
     status: "ready",
-    evidence: "matches.wotm_player_id; verplicht bij status played",
+    evidence: "match_wotm_winners (0..n); matches.wotm_player_id is legacy-spiegel",
   },
   {
     id: "preview",

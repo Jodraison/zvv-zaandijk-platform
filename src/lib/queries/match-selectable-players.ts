@@ -1,5 +1,6 @@
 import type { ClubDatabase } from "@/types";
 import { activeSeasonMembers, catalogGuestPlayers, isGuestPlayer } from "@/lib/players/season-squad";
+import { wotmPlayerIdsOf } from "@/lib/match/wotm-winners";
 
 export type MatchSelectablePlayer = {
   playerId: string;
@@ -80,11 +81,13 @@ export function buildMatchSelectablePlayers(
       addTag(s.player_id, "stats");
     }
     const m = db.matches.find((x) => x.id === matchId);
-    if (m?.wotm_player_id) {
-      const row = ensure(m.wotm_player_id);
-      if (row) {
-        row.isAlreadyInMatch = true;
-        addTag(m.wotm_player_id, "mvp");
+    if (m) {
+      for (const wotmId of wotmPlayerIdsOf(m)) {
+        const row = ensure(wotmId);
+        if (row) {
+          row.isAlreadyInMatch = true;
+          addTag(wotmId, "mvp");
+        }
       }
     }
     for (const e of db.match_lineup_entries.filter((x) => x.match_id === matchId)) {

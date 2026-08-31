@@ -33,6 +33,7 @@ export default async function WedstrijdToevoegenPage({ searchParams }: Props) {
     goals_against: 0,
     status: "played" as const,
     wotm_player_id: null as string | null,
+    wotm_player_ids: [] as string[],
   };
   const initialLineup = { starters: [], bench: [], absent: [] as { player_id: string; absence_reason: string | null }[] };
 

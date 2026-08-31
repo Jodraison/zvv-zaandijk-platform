@@ -19,6 +19,7 @@ import type {
   MatchPlayerStat,
   MatchSubstitution,
   MatchPositionChange,
+  MatchWotmWinner,
   MatchStatus,
   Player,
   PlayerPosition,
@@ -29,6 +30,7 @@ import type {
   TrainingSessionStatus,
 } from "@/types";
 import { asMatchType, DEFAULT_MATCH_TYPE } from "@/lib/match-type";
+import { hydrateMatchWotmFromTable } from "@/lib/match/wotm-winners";
 
 function asMatchStatus(s: string): MatchStatus {
   const v = s.toLowerCase();
@@ -72,6 +74,7 @@ const FITNESS_OPTIONAL_TABLES = new Set([
   "fitness_test_sessions",
   "fitness_test_results",
   "fitness_score_configs",
+  "match_wotm_winners",
 ]);
 
 function isMissingFitnessTableError(message: string): boolean {
@@ -133,6 +136,7 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     cardEventsRes,
     subEventsRes,
     posChangesRes,
+    wotmWinnersRes,
     sessRes,
     attRes,
     fitRes,
@@ -152,6 +156,7 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     client.from("match_card_events").select("*"),
     client.from("match_substitutions").select("*"),
     client.from("match_position_changes").select("*"),
+    client.from("match_wotm_winners").select("*"),
     client.from("training_sessions").select("*").order("session_at", { ascending: false }),
     client.from("training_attendance").select("*"),
     client.from("fitness_tests").select("*").order("test_on", { ascending: false }).order("recorded_at", { ascending: false }),
@@ -173,6 +178,7 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     ["match_card_events", cardEventsRes],
     ["match_substitutions", subEventsRes],
     ["match_position_changes", posChangesRes],
+    ["match_wotm_winners", wotmWinnersRes],
     ["training_sessions", sessRes],
     ["training_attendance", attRes],
     ["fitness_tests", fitRes],
@@ -326,11 +332,19 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
     goals_against: Number(r.goals_against ?? 0),
     status: asMatchStatus(String(r.status)),
     wotm_player_id: r.wotm_player_id ?? null,
+    wotm_player_ids: r.wotm_player_id ? [r.wotm_player_id] : [],
     integrity_state: (r as { integrity_state?: string | null }).integrity_state === "invalid" ? "invalid" : "verified",
     lineup_status:
       (r as { lineup_status?: string | null }).lineup_status === "confirmed" ? "confirmed" : "draft",
     lineup_confirmed_at: (r as { lineup_confirmed_at?: string | null }).lineup_confirmed_at ?? null,
   }));
+
+  const match_wotm_winners: MatchWotmWinner[] = fitnessTableMissing.has("match_wotm_winners")
+    ? []
+    : ((wotmWinnersRes.data ?? []) as { match_id: string; player_id: string }[]).map((r) => ({
+        match_id: r.match_id,
+        player_id: r.player_id,
+      }));
 
   const match_player_stats: MatchPlayerStat[] = (statsRes.data ?? []).map((r) => ({
     match_id: r.match_id,
@@ -538,8 +552,7 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
   const rawVer = (profileRes.data as { schema_version?: number | string } | null)?.schema_version;
   const schemaVersion = typeof rawVer === "number" && !Number.isNaN(rawVer) ? rawVer : Number(rawVer ?? 0) || 0;
 
-  return {
-    database: {
+  const database = {
       seasons,
       players,
       player_season_memberships,
@@ -547,6 +560,7 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
       match_matchday_roster,
       match_lineup_entries,
       match_player_stats,
+      match_wotm_winners,
       match_goal_events,
       match_card_events,
       match_substitutions,
@@ -558,7 +572,10 @@ export async function loadClubDatabaseFromSupabase(client: SupabaseClient, debug
       fitness_test_results,
       fitness_score_configs,
       team_photo_url,
-    },
+  };
+  hydrateMatchWotmFromTable(database);
+  return {
+    database,
     schemaVersion,
   };
 }

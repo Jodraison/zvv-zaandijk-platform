@@ -72,6 +72,16 @@ CREATE TABLE IF NOT EXISTS public.match_player_stats (
   PRIMARY KEY (match_id, player_id)
 );
 
+CREATE TABLE IF NOT EXISTS public.match_wotm_winners (
+  match_id uuid NOT NULL REFERENCES public.matches (id) ON DELETE CASCADE,
+  player_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (match_id, player_id)
+);
+
+CREATE INDEX IF NOT EXISTS match_wotm_winners_match_id_idx ON public.match_wotm_winners (match_id);
+CREATE INDEX IF NOT EXISTS match_wotm_winners_player_id_idx ON public.match_wotm_winners (player_id);
+
 -- -----------------------------------------------------------------------------
 -- Reparatie: ontbrekende kolommen op bestaande tabellen (oude / handmatige schema’s)
 -- -----------------------------------------------------------------------------

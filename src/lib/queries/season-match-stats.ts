@@ -1,5 +1,6 @@
 import type { ClubDatabase } from "@/types";
 import { isProductionMatch } from "@/lib/match/match-data-scope";
+import { wotmPlayerIdsForMatch } from "@/lib/match/wotm-winners";
 import {
   isPlayerCleanSheetEligibleInMatch,
   isPlayerCleanSheetSeason,
@@ -8,7 +9,7 @@ import {
 /**
  * Enige bron voor seizoens-totalen per speelster uit wedstrijddata:
  * - goals / assists: aggregatie van `match_goal_events` over geverifieerde gespeelde wedstrijden
- * - MVP: aantal `matches` met status played en `wotm_player_id` = speelster
+ * - MVP: aantal `match_wotm_winners` / `wotm_player_ids` over geverifieerde gespeelde wedstrijden (elke winnaar +1)
  * - matches_played: distinct `match_id` waarin speelster een bijdrage heeft (goal/assist/MVP)
  * - clean sheets (vanaf 2026/27): keeper/verdediger meegespeeld + goals_against === 0
  *
@@ -66,17 +67,17 @@ export function aggregateSeasonMatchStats(db: ClubDatabase, seasonId: string): S
 
   const mvp = new Map<string, number>();
   for (const m of playedMatches) {
-    if (!m.wotm_player_id) continue;
-    const w = db.players.find((p) => p.id === m.wotm_player_id);
-    if (w?.is_guest) continue;
-    const id = m.wotm_player_id;
-    mvp.set(id, (mvp.get(id) ?? 0) + 1);
-    let set = matchesPlayed.get(id);
-    if (!set) {
-      set = new Set();
-      matchesPlayed.set(id, set);
+    for (const id of wotmPlayerIdsForMatch(db, m)) {
+      const w = db.players.find((p) => p.id === id);
+      if (w?.is_guest) continue;
+      mvp.set(id, (mvp.get(id) ?? 0) + 1);
+      let set = matchesPlayed.get(id);
+      if (!set) {
+        set = new Set();
+        matchesPlayed.set(id, set);
+      }
+      set.add(m.id);
     }
-    set.add(m.id);
   }
 
   const cleanSheets = new Map<string, number>();

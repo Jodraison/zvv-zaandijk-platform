@@ -134,8 +134,19 @@ CREATE TABLE public.matches (
 );
 
 COMMENT ON TABLE public.matches IS 'Competitiewedstrijden gekoppeld aan een seizoen.';
-COMMENT ON COLUMN public.matches.wotm_player_id IS 'Woman of the match; ON DELETE SET NULL als speler verwijderd wordt.';
+COMMENT ON COLUMN public.matches.wotm_player_id IS 'Legacy spiegel van de eerste Player of the Match; canoniek via match_wotm_winners.';
 COMMENT ON COLUMN public.matches.status IS 'Enum match_status; default scheduled voor countdown / geplande wedstrijden.';
+
+CREATE TABLE public.match_wotm_winners (
+  match_id uuid NOT NULL REFERENCES public.matches (id) ON DELETE CASCADE,
+  player_id uuid NOT NULL REFERENCES public.players (id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (match_id, player_id)
+);
+
+CREATE INDEX match_wotm_winners_match_id_idx ON public.match_wotm_winners (match_id);
+CREATE INDEX match_wotm_winners_player_id_idx ON public.match_wotm_winners (player_id);
+COMMENT ON TABLE public.match_wotm_winners IS 'Player of the Match-winnaars. Elke rij = één volledige award.';
 
 -- -----------------------------------------------------------------------------
 -- 10. Statistieken per wedstrijd en speler

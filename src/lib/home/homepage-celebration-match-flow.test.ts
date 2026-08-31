@@ -104,7 +104,10 @@ function persistFromBeheerFlow(raw: unknown): Match {
     goals_for,
     goals_against: data.goals_against,
     status: data.status,
-    wotm_player_id: played ? data.wotm_player_id?.trim() || null : null,
+    wotm_player_id: played ? data.wotm_player_id?.trim() || data.wotm_player_ids?.[0] || null : null,
+    wotm_player_ids: played
+      ? [...new Set([...(data.wotm_player_ids ?? []), data.wotm_player_id?.trim() || ""].filter(Boolean))]
+      : [],
     integrity_state: "verified",
     data_scope: "production",
   };

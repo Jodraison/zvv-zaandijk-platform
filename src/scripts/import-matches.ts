@@ -26,7 +26,7 @@ import { aggregateStatsFromGoals, type GoalRowInput } from "@/lib/match-goal-hel
 import {
   normalizePlayerName,
   resolvePlayerId,
-  parseMvpPrimaryName,
+  parseMvpWinnerNames,
   type ImportPlayerRow,
 } from "@/lib/import/normalize-player-name";
 import {
@@ -165,20 +165,29 @@ async function importOneMatch(
     return false;
   }
 
-  const mvpPrimary = parseMvpPrimaryName(block.mvpRaw, (m) => warn(`[mvp] ${m}`));
-  const mvpResolved = resolveName(mvpPrimary);
+  const mvpNames = parseMvpWinnerNames(block.mvpRaw);
+  const mvpResolvedList: { id: string; matchedAs: string }[] = [];
+  for (const name of mvpNames) {
+    const resolved = resolveName(name);
+    if (!resolved) {
+      log(`SKIP: MVP niet gevonden: "${name}" (uit "${block.mvpRaw}")`);
+      return false;
+    }
+    mvpResolvedList.push(resolved);
+    matchedNames.set(resolved.id, resolved.matchedAs);
+  }
+  const mvpResolved = mvpResolvedList[0];
   if (!mvpResolved) {
-    log(`SKIP: MVP niet gevonden: "${mvpPrimary}" (uit "${block.mvpRaw}")`);
+    log(`SKIP: MVP ontbreekt (uit "${block.mvpRaw}")`);
     return false;
   }
-  matchedNames.set(mvpResolved.id, mvpResolved.matchedAs);
 
   const selectedSet = new Set<string>();
   for (const g of goalInputs) {
     selectedSet.add(g.scorer_player_id);
     if (g.assist_player_id) selectedSet.add(g.assist_player_id);
   }
-  selectedSet.add(mvpResolved.id);
+  for (const mvp of mvpResolvedList) selectedSet.add(mvp.id);
 
   for (const raw of block.squadRaw) {
     const r = resolveName(raw);
@@ -248,6 +257,21 @@ async function importOneMatch(
     return false;
   }
 
+  const { error: eDelWotm } = await client.from("match_wotm_winners").delete().eq("match_id", matchId);
+  if (eDelWotm && !/does not exist|schema cache/i.test(eDelWotm.message)) {
+    log(`SKIP: MVP-winnaars wissen: ${eDelWotm.message}`);
+    return false;
+  }
+  if (!eDelWotm) {
+    const { error: eInsWotm } = await client.from("match_wotm_winners").insert(
+      mvpResolvedList.map((mvp) => ({ match_id: matchId, player_id: mvp.id })) as never[],
+    );
+    if (eInsWotm) {
+      log(`SKIP: MVP-winnaars opslaan: ${eInsWotm.message}`);
+      return false;
+    }
+  }
+
   if (statsFinal.length) {
     const { error: eS } = await client.from("match_player_stats").upsert(statsFinal as never[], {
       onConflict: "match_id,player_id",
@@ -276,7 +300,7 @@ async function importOneMatch(
   }
 
   log(
-    `OK  ${block.opponent} ${kickoffIso.slice(0, 10)}  ${block.goalsFor}-${block.goalsAgainst}  MVP=${mvpResolved.matchedAs}  match_id=${matchId}`,
+    `OK  ${block.opponent} ${kickoffIso.slice(0, 10)}  ${block.goalsFor}-${block.goalsAgainst}  MVP=${mvpResolvedList.map((m) => m.matchedAs).join(" & ")}  match_id=${matchId}`,
   );
   const names = [...new Set(matchedNames.values())];
   log(`    spelers: ${names.sort((a, b) => a.localeCompare(b, "nl")).join(", ")}`);

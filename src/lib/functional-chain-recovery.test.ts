@@ -83,7 +83,7 @@ console.log("→ functional-chain-recovery");
   assert.equal(plannedFields.opponent, "required");
   const playedFields = matchFieldRequirements("played");
   assert.equal(playedFields.goals_against, "required");
-  assert.equal(playedFields.mvp, "required");
+  assert.equal(playedFields.mvp, "optional");
 }
 
 // Wizard steps 7–10

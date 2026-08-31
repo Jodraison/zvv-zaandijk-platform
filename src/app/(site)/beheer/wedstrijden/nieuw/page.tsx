@@ -39,6 +39,7 @@ export default async function NieuwWedstrijdPage({ searchParams }: Props) {
     goals_against: 0,
     status: "scheduled" as const,
     wotm_player_id: null as string | null,
+    wotm_player_ids: [] as string[],
   };
 
   return (

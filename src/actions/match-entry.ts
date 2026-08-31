@@ -59,5 +59,6 @@ export async function createMatchEntryAction(raw: unknown): Promise<MatchEntryAc
     selected_player_ids: data.selected_player_ids,
     goals: goalsPayload,
     wotm_player_id: data.wotm_player_id || "",
+    wotm_player_ids: data.wotm_player_id ? [data.wotm_player_id] : [],
   });
 }

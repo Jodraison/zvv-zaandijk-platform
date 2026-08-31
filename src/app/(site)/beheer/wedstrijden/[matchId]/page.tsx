@@ -17,6 +17,7 @@ import { formatDateTimeNL } from "@/lib/utils/format-date";
 import { FORMATION_SLOT_CODES, type FormationSlotCode } from "@/lib/match/formation-4231";
 import { isFormationSlotCode } from "@/lib/match/formation-4231";
 import { sortPlayersBySquadNumber } from "@/lib/players/sort-by-squad-number";
+import { wotmPlayerIdsOf } from "@/lib/match/wotm-winners";
 
 type Props = {
   params: Promise<{ matchId: string }>;
@@ -58,7 +59,7 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
       ...statsRows.map((s) => s.player_id),
       ...events.map((e) => e.scorer_player_id),
       ...events.map((e) => e.assist_player_id).filter((x): x is string => !!x),
-      ...(m.wotm_player_id ? [m.wotm_player_id] : []),
+      ...wotmPlayerIdsOf(m),
       ...db.match_lineup_entries
         .filter((e) => e.match_id === matchId && e.role !== "absent")
         .map((e) => e.player_id),
@@ -77,6 +78,7 @@ export default async function EditWedstrijdPage({ params, searchParams }: Props)
     goals_against: m.goals_against,
     status: effectiveStatus,
     wotm_player_id: m.wotm_player_id,
+    wotm_player_ids: wotmPlayerIdsOf(m),
   };
 
   const initialLineup = getMatchLineupInitial(db, matchId);

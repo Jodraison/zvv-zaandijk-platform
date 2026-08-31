@@ -3,18 +3,18 @@
  *
  * Bron van waarheid:
  * - Goals + assists → match_goal_events (events zijn canonieke)
- * - MVP → matches.wotm_player_id (UI-label: MVP)
+ * - MVP → match_wotm_winners (0..n; matches.wotm_player_id is legacy-spiegel)
  * - Cards → match_card_events
  * - Wissels → match_substitutions
  * - Opstelling → match_lineup_entries
  * - goals_for / match_player_stats → afgeleid van events (zelfde save)
  *
- * Ranking/statistieken lezen events + wotm_player_id via aggregateSeasonMatchStats.
+ * Ranking/statistieken lezen events + wotm-winnaars via aggregateSeasonMatchStats.
  */
 
 export const MATCH_CANONICAL_SOURCES = {
   goalsAssists: "match_goal_events",
-  mvp: "matches.wotm_player_id",
+  mvp: "match_wotm_winners",
   cards: "match_card_events",
   substitutions: "match_substitutions",
   lineup: "match_lineup_entries",
@@ -40,8 +40,8 @@ export type MatchIntegrityCheckInput = {
   assistEventCount: number;
   statsGoalSum: number;
   statsAssistSum: number;
-  mvpPlayerId: string | null;
-  mvpInSelection: boolean;
+  mvpPlayerIds: string[];
+  mvpAllInSelection: boolean;
 };
 
 export type MatchIntegrityIssue = {
@@ -65,7 +65,7 @@ export function collectMatchIntegrityIssues(input: MatchIntegrityCheckInput): Ma
         message: "Eindstand (voor) moet 0 zijn bij een niet-gespeelde wedstrijd.",
       });
     }
-    if (input.mvpPlayerId) {
+    if (input.mvpPlayerIds.length > 0) {
       issues.push({
         code: "scheduled_mvp",
         message: "MVP is alleen toegestaan bij een gespeelde wedstrijd.",
@@ -92,15 +92,17 @@ export function collectMatchIntegrityIssues(input: MatchIntegrityCheckInput): Ma
       message: "Spelerstatistieken (assists) komen niet overeen met de assist-gebeurtenissen.",
     });
   }
-  if (!input.mvpPlayerId) {
+  const uniqueMvp = [...new Set(input.mvpPlayerIds.filter(Boolean))];
+  if (uniqueMvp.length !== input.mvpPlayerIds.filter(Boolean).length) {
     issues.push({
-      code: "mvp_required",
-      message: "Kies een MVP (speelster van de wedstrijd).",
+      code: "mvp_duplicate",
+      message: "Dezelfde speelster kan niet twee keer speelster van de wedstrijd zijn.",
     });
-  } else if (!input.mvpInSelection) {
+  }
+  if (uniqueMvp.length > 0 && !input.mvpAllInSelection) {
     issues.push({
       code: "mvp_not_in_selection",
-      message: "De MVP moet in de wedstrijdselectie staan.",
+      message: "Elke MVP moet in de wedstrijdselectie staan.",
     });
   }
   return issues;

@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { z } from "zod";
 import { mutateDb } from "@/lib/data/mutate";
 import { normalizeMutationError, type AdminFormState, flattenZodIssues } from "@/lib/forms/admin-action-state";
+import { replaceMatchWotmWinners, wotmPlayerIdsOf } from "@/lib/match/wotm-winners";
 
 const addGuestSchema = z.object({
   match_id: z.string().min(1),
@@ -184,9 +185,10 @@ export async function removeMatchGuestFormAction(_prev: AdminFormState, formData
               (e.scorer_player_id === playerId || e.assist_player_id === playerId)
             ),
         );
-        db.matches.forEach((m) => {
-          if (m.id === matchId && m.wotm_player_id === playerId) m.wotm_player_id = null;
-        });
+        const remainingWotm = wotmPlayerIdsOf(db.matches.find((m) => m.id === matchId) ?? { wotm_player_id: null }).filter(
+          (id) => id !== playerId,
+        );
+        replaceMatchWotmWinners(db, matchId, remainingWotm);
 
         const anyRoster = db.match_matchday_roster.some((r) => r.player_id === playerId);
         const anyStats = db.match_player_stats.some((s) => s.player_id === playerId);

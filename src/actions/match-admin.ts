@@ -17,6 +17,11 @@ import { membershipPositionLabel, validateMatchLineup } from "@/lib/match-lineup
 import { assignStableGoalEventIds, collectMatchIntegrityIssues } from "@/lib/admin/match-save-contract";
 import { isFormationSlotCode } from "@/lib/match/formation-4231";
 import { shouldPreserveExistingLineup } from "@/lib/match/match-planning";
+import {
+  replaceMatchWotmWinners,
+  wotmIdsFromAdminPayload,
+  wotmPlayerIdsForMatch,
+} from "@/lib/match/wotm-winners";
 
 type MatchVerificationCore = {
   match_id: string;
@@ -25,6 +30,7 @@ type MatchVerificationCore = {
   persisted_assist_events_count: number;
   persisted_derived_assists_count: number;
   persisted_mvp_player_id: string;
+  persisted_mvp_player_ids: string[];
 };
 
 function rebuildStatsFromPersistedEvents(
@@ -108,12 +114,12 @@ function verifyMatchIntegrity(db: import("@/types").ClubDatabase, matchId: strin
     eventPlayerIds.add(e.scorer_player_id);
     if (e.assist_player_id) eventPlayerIds.add(e.assist_player_id);
   }
-  const mvpOk =
-    !match.wotm_player_id ||
-    lineupPlayerIds.has(match.wotm_player_id) ||
-    eventPlayerIds.has(match.wotm_player_id) ||
-    stats.some((s) => s.player_id === match.wotm_player_id) ||
-    db.players.some((p) => p.id === match.wotm_player_id);
+  const wotmIds = wotmPlayerIdsForMatch(db, match);
+  const mvpKnown = (id: string) =>
+    lineupPlayerIds.has(id) ||
+    eventPlayerIds.has(id) ||
+    stats.some((s) => s.player_id === id) ||
+    db.players.some((p) => p.id === id);
   const issues = collectMatchIntegrityIssues({
     status: match.status,
     goalsFor: match.goals_for,
@@ -121,18 +127,13 @@ function verifyMatchIntegrity(db: import("@/types").ClubDatabase, matchId: strin
     assistEventCount: assistsFromEvents,
     statsGoalSum: goalsFromStats,
     statsAssistSum: assistsFromStats,
-    mvpPlayerId: match.wotm_player_id,
-    mvpInSelection: match.wotm_player_id
-      ? lineupPlayerIds.has(match.wotm_player_id) ||
-        eventPlayerIds.has(match.wotm_player_id) ||
-        stats.some((s) => s.player_id === match.wotm_player_id) ||
-        db.players.some((p) => p.id === match.wotm_player_id)
-      : false,
+    mvpPlayerIds: wotmIds,
+    mvpAllInSelection: wotmIds.every(mvpKnown),
   });
   if (issues.length > 0) {
     throw new Error(issues[0]!.message);
   }
-  if (match.status === "played" && match.wotm_player_id && !mvpOk) {
+  if (match.status === "played" && wotmIds.some((id) => !mvpKnown(id))) {
     throw new Error("MVP verwijst naar een onbekende speelster.");
   }
   return {
@@ -141,7 +142,8 @@ function verifyMatchIntegrity(db: import("@/types").ClubDatabase, matchId: strin
     persisted_derived_goals_count: goalsFromStats,
     persisted_assist_events_count: assistsFromEvents,
     persisted_derived_assists_count: assistsFromStats,
-    persisted_mvp_player_id: match.wotm_player_id ?? "",
+    persisted_mvp_player_id: wotmIds[0] ?? "",
+    persisted_mvp_player_ids: wotmIds,
   };
 }
 
@@ -304,6 +306,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         })),
         stats: beforeStats,
         mvp_player_id: beforeMatch?.wotm_player_id ?? null,
+        mvp_player_ids: beforeMatch ? wotmPlayerIdsForMatch(db, beforeMatch) : [],
       };
       db.match_player_stats = db.match_player_stats.filter((s) => s.match_id !== matchId);
       db.match_goal_events = db.match_goal_events.filter((e) => e.match_id !== matchId);
@@ -319,7 +322,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       }
 
       let goals_for = 0;
-      let wotm: string | null = null;
+      let wotmIds: string[] = [];
 
       if (played) {
         const { goals_for: gf, events } = aggregateStatsFromGoals(matchId, data.selected_player_ids, goalsPayload);
@@ -330,12 +333,9 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         if (goals_for !== data.goals_for) {
           throw new Error("Eindstand (voor) komt niet overeen met het aantal doelpunten.");
         }
-        wotm = data.wotm_player_id?.trim() || null;
-        if (!wotm) {
-          throw new Error("Kies een MVP (speelster van de wedstrijd).");
-        }
-        if (!data.selected_player_ids.includes(wotm)) {
-          throw new Error("De MVP moet in de wedstrijdselectie staan.");
+        wotmIds = wotmIdsFromAdminPayload(data);
+        if (wotmIds.some((id) => !data.selected_player_ids.includes(id))) {
+          throw new Error("Elke MVP moet in de wedstrijdselectie staan.");
         }
         const withIds = assignStableGoalEventIds(
           events.map((e, index) => ({
@@ -350,7 +350,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         for (const id of rebuilt.affectedPlayerIds) affectedPlayerIds.add(id);
       } else {
         goals_for = 0;
-        wotm = null;
+        wotmIds = [];
         rebuildStatsFromPersistedEvents(db, matchId);
       }
 
@@ -368,7 +368,8 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         goals_for,
         goals_against: played ? data.goals_against : data.goals_against,
         status: data.status,
-        wotm_player_id: wotm,
+        wotm_player_id: wotmIds[0] ?? null,
+        wotm_player_ids: wotmIds,
         integrity_state: "invalid" as const,
         lineup_status: existing?.lineup_status ?? "draft",
         lineup_confirmed_at: existing?.lineup_confirmed_at ?? null,
@@ -377,6 +378,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       auditAction = existing ? "update" : "create";
       if (existing) Object.assign(existing, row);
       else db.matches.push({ ...row, data_scope: "production" });
+      replaceMatchWotmWinners(db, matchId, wotmIds);
 
       // Afrond/controle met preserve_shape_events: behoud bevestigde 1-4-2-3-1-slots.
       // Het admin-formulier stuurt membership-labels i.p.v. slotcodes; herschrijven
@@ -453,6 +455,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         events: afterEvents,
         stats: afterStats,
         mvp_player_id: afterMatch?.wotm_player_id ?? null,
+        mvp_player_ids: afterMatch ? wotmPlayerIdsForMatch(db, afterMatch) : [],
       };
     },
     {
@@ -474,6 +477,7 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       persisted_assist_events_count: 0,
       persisted_derived_assists_count: 0,
       persisted_mvp_player_id: "",
+      persisted_mvp_player_ids: [],
     };
     const verified: MatchVerificationPayload = {
       ...verificationCore,
@@ -488,11 +492,13 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
       changes: [],
       mvp_before_player_id: null,
       mvp_after_player_id: verificationCore.persisted_mvp_player_id || null,
+      mvp_before_player_ids: [],
+      mvp_after_player_ids: verificationCore.persisted_mvp_player_ids,
     };
     const bStats = new Map<string, { g: number; a: number }>();
     const aStats = new Map<string, { g: number; a: number }>();
-    const bSnap = (beforeSnapshot as { stats?: { player_id: string; goals: number; assists: number }[]; mvp_player_id?: string | null } | null);
-    const aSnap = (afterSnapshot as { stats?: { player_id: string; goals: number; assists: number }[]; mvp_player_id?: string | null } | null);
+    const bSnap = (beforeSnapshot as { stats?: { player_id: string; goals: number; assists: number }[]; mvp_player_id?: string | null; mvp_player_ids?: string[] } | null);
+    const aSnap = (afterSnapshot as { stats?: { player_id: string; goals: number; assists: number }[]; mvp_player_id?: string | null; mvp_player_ids?: string[] } | null);
     for (const s of bSnap?.stats ?? []) bStats.set(s.player_id, { g: s.goals, a: s.assists });
     for (const s of aSnap?.stats ?? []) aStats.set(s.player_id, { g: s.goals, a: s.assists });
     const ids = new Set([...bStats.keys(), ...aStats.keys()]);
@@ -503,11 +509,13 @@ export async function saveMatchAdminAction(raw: unknown): Promise<MatchAdminActi
         return { player_id: id, goals_delta: a.g - b.g, assists_delta: a.a - b.a };
       })
       .filter((c) => c.goals_delta !== 0 || c.assists_delta !== 0);
-    verified.mvp_before_player_id = bSnap?.mvp_player_id ?? null;
-    verified.mvp_after_player_id = aSnap?.mvp_player_id ?? null;
+    verified.mvp_before_player_ids = bSnap?.mvp_player_ids ?? (bSnap?.mvp_player_id ? [bSnap.mvp_player_id] : []);
+    verified.mvp_after_player_ids = aSnap?.mvp_player_ids ?? (aSnap?.mvp_player_id ? [aSnap.mvp_player_id] : []);
+    verified.mvp_before_player_id = verified.mvp_before_player_ids[0] ?? null;
+    verified.mvp_after_player_id = verified.mvp_after_player_ids[0] ?? null;
     const affectedIds = new Set<string>([...affectedPlayerIds]);
-    if (verified.mvp_before_player_id) affectedIds.add(verified.mvp_before_player_id);
-    if (verified.mvp_after_player_id) affectedIds.add(verified.mvp_after_player_id);
+    for (const id of verified.mvp_before_player_ids) affectedIds.add(id);
+    for (const id of verified.mvp_after_player_ids) affectedIds.add(id);
     verified.affected_player_ids = [...affectedIds];
     return { ok: true, matchId, verification: verified };
   } catch (e) {
