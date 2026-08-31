@@ -1,0 +1,302 @@
+{
+  "at": "2026-08-31T10:41:21.030Z",
+  "table_exists": true,
+  "table_error": null,
+  "legacy_potm_count": 18,
+  "junction_row_count": 19,
+  "last_played": {
+    "match_id": "c1ccbec0-3619-4c5f-adb0-3111b6055a7e",
+    "opponent": "WSV 1930 VR1",
+    "kickoff_at": "2026-08-29T12:00:00+00:00",
+    "old_potm_id": "f1000001-0000-4000-8000-000000000011",
+    "old_potm_name": "Danique van Heeringen"
+  },
+  "danique_candidates": [
+    {
+      "id": "f1000001-0000-4000-8000-000000000011",
+      "full_name": "Danique van Heeringen",
+      "is_guest": false
+    }
+  ],
+  "mandy_candidates": [
+    {
+      "id": "f1000001-0000-4000-8000-00000000000a",
+      "full_name": "Mandy Kalmeijer",
+      "is_guest": false
+    }
+  ],
+  "historical": [
+    {
+      "match_id": "c1ccbec0-3619-4c5f-adb0-3111b6055a7e",
+      "kickoff_at": "2026-08-29T12:00:00+00:00",
+      "opponent": "WSV 1930 VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000011",
+      "old_potm_name": "Danique van Heeringen",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000011",
+        "f1000001-0000-4000-8000-00000000000a"
+      ],
+      "new_potm_names": [
+        "Danique van Heeringen",
+        "Mandy Kalmeijer"
+      ]
+    },
+    {
+      "match_id": "1e3101e7-5f0d-48e8-a81a-c364b44e7fda",
+      "kickoff_at": "2026-05-20T18:00:00+00:00",
+      "opponent": "Sporting Andijk VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000002",
+      "old_potm_name": "Melissa Donkers",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000002"
+      ],
+      "new_potm_names": [
+        "Melissa Donkers"
+      ]
+    },
+    {
+      "match_id": "a850262f-9745-4c96-959c-29979dbd588d",
+      "kickoff_at": "2026-05-09T11:30:00+00:00",
+      "opponent": "Wieringermeer VR2",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-00000000000a",
+      "old_potm_name": "Mandy Kalmeijer",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-00000000000a"
+      ],
+      "new_potm_names": [
+        "Mandy Kalmeijer"
+      ]
+    },
+    {
+      "match_id": "3fecd57f-cbcf-4c85-9479-61643d48fbd2",
+      "kickoff_at": "2026-04-23T18:00:00+00:00",
+      "opponent": "ZCFC",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000004",
+      "old_potm_name": "Marisha Prins",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000004"
+      ],
+      "new_potm_names": [
+        "Marisha Prins"
+      ]
+    },
+    {
+      "match_id": "ca741cbc-2602-4354-9874-9bf9edf10c85",
+      "kickoff_at": "2026-03-14T12:30:00+00:00",
+      "opponent": "Wieringermeer VR3",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-00000000000a",
+      "old_potm_name": "Mandy Kalmeijer",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-00000000000a"
+      ],
+      "new_potm_names": [
+        "Mandy Kalmeijer"
+      ]
+    },
+    {
+      "match_id": "fbbf2b89-d200-4b1d-b96c-d63b1917b196",
+      "kickoff_at": "2026-03-11T19:00:00+00:00",
+      "opponent": "VV Egmond VR1",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000005",
+      "old_potm_name": "Anouk Aafjes",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000005"
+      ],
+      "new_potm_names": [
+        "Anouk Aafjes"
+      ]
+    },
+    {
+      "match_id": "d799b6e2-6459-4015-b89d-d2d85500b277",
+      "kickoff_at": "2026-03-07T12:45:00+00:00",
+      "opponent": "VVH/Velserbroek VR1",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000010",
+      "old_potm_name": "Andrada Timmer",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000010"
+      ],
+      "new_potm_names": [
+        "Andrada Timmer"
+      ]
+    },
+    {
+      "match_id": "9c0c36bc-57ae-458f-9dec-befc4645570f",
+      "kickoff_at": "2026-02-07T12:30:00+00:00",
+      "opponent": "ZOB VR1",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000004",
+      "old_potm_name": "Marisha Prins",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000004"
+      ],
+      "new_potm_names": [
+        "Marisha Prins"
+      ]
+    },
+    {
+      "match_id": "3c2d309a-1a1a-4d88-912c-2d5fa31d5f7f",
+      "kickoff_at": "2026-01-31T14:15:00+00:00",
+      "opponent": "WSV 1930 VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "297110fb-7423-4da5-97d8-92dad58ed639",
+      "old_potm_name": "Pitou Ludding",
+      "new_potm_ids": [
+        "297110fb-7423-4da5-97d8-92dad58ed639"
+      ],
+      "new_potm_names": [
+        "Pitou Ludding"
+      ]
+    },
+    {
+      "match_id": "2cac1fc6-2493-4c8c-a8da-85d75de0d1ca",
+      "kickoff_at": "2026-01-24T12:30:00+00:00",
+      "opponent": "ZVC'22 VR1",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-00000000000f",
+      "old_potm_name": "Nienke Hoffman",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-00000000000f"
+      ],
+      "new_potm_names": [
+        "Nienke Hoffman"
+      ]
+    },
+    {
+      "match_id": "2ab6a654-8a79-4fed-b6df-7ccbef3d1bfc",
+      "kickoff_at": "2025-12-13T15:15:00+00:00",
+      "opponent": "Wieringermeer VR3",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000004",
+      "old_potm_name": "Marisha Prins",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000004"
+      ],
+      "new_potm_names": [
+        "Marisha Prins"
+      ]
+    },
+    {
+      "match_id": "57b5b56f-d80c-43d3-b719-951db4f52689",
+      "kickoff_at": "2025-12-06T14:30:00+00:00",
+      "opponent": "Wieringermeer VR2",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000004",
+      "old_potm_name": "Marisha Prins",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000004"
+      ],
+      "new_potm_names": [
+        "Marisha Prins"
+      ]
+    },
+    {
+      "match_id": "94dfb4d7-5cc3-4da5-84c1-b97d1de51594",
+      "kickoff_at": "2025-11-29T11:30:00+00:00",
+      "opponent": "Sporting Andijk",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000001",
+      "old_potm_name": "Jelisa De Jonge",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000001"
+      ],
+      "new_potm_names": [
+        "Jelisa De Jonge"
+      ]
+    },
+    {
+      "match_id": "4307cbad-e3c5-4443-a68d-3ffcc65b879a",
+      "kickoff_at": "2025-11-08T11:00:00+00:00",
+      "opponent": "Stormvogels ijvv VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000010",
+      "old_potm_name": "Andrada Timmer",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000010"
+      ],
+      "new_potm_names": [
+        "Andrada Timmer"
+      ]
+    },
+    {
+      "match_id": "0a00f83d-24d7-4028-b295-0661dbdf9a6c",
+      "kickoff_at": "2025-10-11T10:00:00+00:00",
+      "opponent": "VVVH/Velserbroek VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000002",
+      "old_potm_name": "Melissa Donkers",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000002"
+      ],
+      "new_potm_names": [
+        "Melissa Donkers"
+      ]
+    },
+    {
+      "match_id": "cde8e99a-5525-4772-8001-4aa7b1dba816",
+      "kickoff_at": "2025-10-04T11:43:00+00:00",
+      "opponent": "VV Egmond VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-00000000000a",
+      "old_potm_name": "Mandy Kalmeijer",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-00000000000a"
+      ],
+      "new_potm_names": [
+        "Mandy Kalmeijer"
+      ]
+    },
+    {
+      "match_id": "8019c3e8-89ca-4119-94be-ad3169f1c761",
+      "kickoff_at": "2025-10-01T11:30:00+00:00",
+      "opponent": "ZOB VR1",
+      "status": "played",
+      "is_home": false,
+      "old_potm_id": "f1000001-0000-4000-8000-00000000000d",
+      "old_potm_name": "Emma de Mie",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-00000000000d"
+      ],
+      "new_potm_names": [
+        "Emma de Mie"
+      ]
+    },
+    {
+      "match_id": "c344d0a2-8317-422f-af65-7bf107c4d614",
+      "kickoff_at": "2025-09-20T11:30:00+00:00",
+      "opponent": "WSV 1930 VR1",
+      "status": "played",
+      "is_home": true,
+      "old_potm_id": "f1000001-0000-4000-8000-000000000004",
+      "old_potm_name": "Marisha Prins",
+      "new_potm_ids": [
+        "f1000001-0000-4000-8000-000000000004"
+      ],
+      "new_potm_names": [
+        "Marisha Prins"
+      ]
+    }
+  ]
+}

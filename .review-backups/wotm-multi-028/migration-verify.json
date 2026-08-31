@@ -1,0 +1,22 @@
+{
+  "at": "2026-08-31T10:25:32.141Z",
+  "legacy_count": 18,
+  "junction_count": 18,
+  "missing_after_backfill": [],
+  "extras_after_backfill": [],
+  "constraints": [
+    {
+      "conname": "match_wotm_winners_match_id_fkey",
+      "contype": "f"
+    },
+    {
+      "conname": "match_wotm_winners_player_id_fkey",
+      "contype": "f"
+    },
+    {
+      "conname": "match_wotm_winners_pkey",
+      "contype": "p"
+    }
+  ],
+  "rls_enabled": true
+}
