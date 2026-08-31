@@ -6,13 +6,13 @@ export type CelebrationViewportTier = "mobile-375" | "mobile-390" | "mobile-430"
 
 /** Totale speelduur vanaf start van de engine — daarna is de homepage rustig. */
 export const CELEBRATION_DURATION_MS: Record<CelebrationKind, number> = {
-  birthday: 11500,
-  victory: 14500,
-  birthday_victory: 15500,
+  birthday: 13000,
+  victory: 15000,
+  birthday_victory: 16000,
 };
 
-/** Homepage eerst zichtbaar, daarna pas particles. */
-export const CELEBRATION_START_DELAY_MS = 600;
+/** Homepage eerst zichtbaar, daarna pas DOM-feest. */
+export const CELEBRATION_START_DELAY_MS = 700;
 
 export const CELEBRATION_REDUCED_MOTION_MS = 1400;
 export const CELEBRATION_HOLD_AT_MS = 1800;
@@ -84,6 +84,6 @@ export function celebrationChoreography(kind: CelebrationKind): {
   return {
     durationMs: CELEBRATION_DURATION_MS[kind],
     startDelayMs: CELEBRATION_START_DELAY_MS,
-    fadeStartMs: kind === "birthday" ? 10000 : kind === "victory" ? 12500 : 13800,
+    fadeStartMs: kind === "birthday" ? 11000 : kind === "victory" ? 13000 : 14200,
   };
 }

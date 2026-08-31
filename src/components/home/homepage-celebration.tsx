@@ -9,8 +9,18 @@ import {
   markHomepageCelebrationStarted,
   shouldReplayHomepageCelebration,
 } from "@/lib/home/homepage-celebration";
-import { CELEBRATION_START_DELAY_MS, celebrationOverlayClassName } from "@/lib/home/celebration-visual";
+import {
+  CELEBRATION_DURATION_MS,
+  CELEBRATION_START_DELAY_MS,
+  celebrationOverlayClassName,
+} from "@/lib/home/celebration-visual";
+import {
+  buildCelebrationDomLayout,
+  CELEBRATION_CANVAS_ENHANCEMENT_DELAY_MS,
+  type CelebrationDomPiece,
+} from "@/lib/home/celebration-dom";
 import { runClubCelebration, type CelebrationEngineHandle } from "@/lib/home/celebration-engine";
+import { CelebrationDomLayer } from "@/components/home/celebration-dom-layer";
 
 const OVERLAY_CLASS = cn(celebrationOverlayClassName(), "pointer-events-none");
 
@@ -35,6 +45,7 @@ export function HomepageCelebration({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>("pending");
+  const [domPieces, setDomPieces] = useState<CelebrationDomPiece[] | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -71,19 +82,49 @@ export function HomepageCelebration({
     return () => window.clearTimeout(startId);
   }, [type, calendarDay, preview, hold]);
 
+  useEffect(() => {
+    if (!type) return;
+    if (phase !== "play" && phase !== "hold") return;
+    setDomPieces(
+      buildCelebrationDomLayout({
+        kind: type,
+        width: window.innerWidth,
+        seed: `${type}:${calendarDay}`,
+      }),
+    );
+  }, [type, calendarDay, phase]);
+
+  useEffect(() => {
+    if (!type || phase !== "play") return;
+    const id = window.setTimeout(() => setPhase("done"), CELEBRATION_DURATION_MS[type]);
+    return () => window.clearTimeout(id);
+  }, [type, phase]);
+
   useLayoutEffect(() => {
     if (!type) return;
     if (phase !== "play" && phase !== "hold") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let handle: CelebrationEngineHandle | null = runClubCelebration(canvas, {
-      type,
-      hold: phase === "hold",
-      onDone: () => setPhase("done"),
-    });
+    let handle: CelebrationEngineHandle | null = null;
+    const startCanvas = () => {
+      handle = runClubCelebration(canvas, {
+        type,
+        hold: phase === "hold",
+      });
+    };
 
+    if (phase === "hold") {
+      startCanvas();
+      return () => {
+        handle?.stop();
+        handle = null;
+      };
+    }
+
+    const id = window.setTimeout(startCanvas, CELEBRATION_CANVAS_ENHANCEMENT_DELAY_MS);
     return () => {
+      window.clearTimeout(id);
       handle?.stop();
       handle = null;
     };
@@ -112,6 +153,7 @@ export function HomepageCelebration({
       ) : (
         <>
           <div className="zvv-celebration-wash" data-testid="homepage-celebration-wash" />
+          {domPieces ? <CelebrationDomLayer pieces={domPieces} /> : null}
           <canvas
             ref={canvasRef}
             className="absolute inset-0 block h-full w-full"

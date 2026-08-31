@@ -32,6 +32,11 @@ import {
   celebrationParticleScale,
   celebrationViewportTier,
 } from "@/lib/home/celebration-visual";
+import {
+  buildCelebrationDomLayout,
+  celebrationDomBudget,
+  celebrationDomNodeCount,
+} from "@/lib/home/celebration-dom";
 import { getBirthdayPlayersForDate, type BirthdayPerson } from "@/lib/players/birthdays";
 
 const root = process.cwd();
@@ -354,12 +359,12 @@ assert.equal(celebrationSessionKey("birthday_victory", "2026-08-31"), "zvv-celeb
 }
 
 // --- Visual / performance config ---
-assert.ok(CELEBRATION_DURATION_MS.birthday >= 10000 && CELEBRATION_DURATION_MS.birthday <= 12500);
-assert.ok(CELEBRATION_DURATION_MS.victory >= 12000 && CELEBRATION_DURATION_MS.victory <= 15500);
-assert.ok(CELEBRATION_DURATION_MS.birthday_victory >= 14000 && CELEBRATION_DURATION_MS.birthday_victory <= 16500);
+assert.ok(CELEBRATION_DURATION_MS.birthday >= 12500 && CELEBRATION_DURATION_MS.birthday <= 14000);
+assert.ok(CELEBRATION_DURATION_MS.victory >= 14500 && CELEBRATION_DURATION_MS.victory <= 16000);
+assert.ok(CELEBRATION_DURATION_MS.birthday_victory >= 15500 && CELEBRATION_DURATION_MS.birthday_victory <= 17000);
 assert.ok(CELEBRATION_DURATION_MS.victory > CELEBRATION_DURATION_MS.birthday);
 assert.ok(CELEBRATION_DURATION_MS.birthday_victory > CELEBRATION_DURATION_MS.victory);
-assert.ok(CELEBRATION_START_DELAY_MS >= 400 && CELEBRATION_START_DELAY_MS <= 700);
+assert.ok(CELEBRATION_START_DELAY_MS >= 650 && CELEBRATION_START_DELAY_MS <= 750);
 assert.equal(celebrationChoreography("birthday").startDelayMs, CELEBRATION_START_DELAY_MS);
 assert.ok(celebrationChoreography("birthday").fadeStartMs >= 9000);
 
@@ -394,6 +399,26 @@ assert.ok(celebrationColors("victory").includes("#d4af37"));
 assert.ok(celebrationColors("birthday").includes("#fbbf24"));
 assert.ok(celebrationColors("birthday").includes("#ffffff"));
 
+{
+  const desk = celebrationDomBudget("birthday", 1440);
+  const mob = celebrationDomBudget("birthday", 390);
+  assert.ok(desk.confetti >= 50 && desk.confetti <= 80);
+  assert.ok(desk.streamers >= 8 && desk.streamers <= 12);
+  assert.ok(desk.bursts >= 3);
+  assert.ok(mob.confetti >= 30 && mob.confetti <= 50);
+  assert.ok(celebrationDomNodeCount(desk, 1440) <= 110);
+  assert.ok(celebrationDomNodeCount(mob, 390) <= 70);
+  const a = buildCelebrationDomLayout({ kind: "birthday", width: 1440, seed: "birthday:2026-08-31" });
+  const b = buildCelebrationDomLayout({ kind: "birthday", width: 1440, seed: "birthday:2026-08-31" });
+  assert.deepEqual(a, b);
+  const c = buildCelebrationDomLayout({ kind: "victory", width: 1440, seed: "victory:2026-08-31" });
+  assert.notEqual(a.length, 0);
+  assert.ok(c.filter((p) => p.kind === "confetti").length > a.filter((p) => p.kind === "confetti").length);
+  assert.ok(a.some((p) => p.kind === "burst"));
+  assert.ok(a.some((p) => p.kind === "streamer"));
+  assert.ok(a.filter((p) => p.kind === "confetti").every((p) => p.width >= 8 && p.height >= 12));
+}
+
 // --- UI source contracts ---
 {
   const overlay = readFileSync(join(root, "src/components/home/homepage-celebration.tsx"), "utf8");
@@ -410,6 +435,9 @@ assert.ok(celebrationColors("birthday").includes("#ffffff"));
   assert.match(overlay, /homepage-celebration/);
   assert.match(overlay, /homepage-celebration-root/);
   assert.match(overlay, /CELEBRATION_START_DELAY_MS/);
+  assert.match(overlay, /CelebrationDomLayer/);
+  assert.match(overlay, /buildCelebrationDomLayout/);
+  assert.match(overlay, /CELEBRATION_DURATION_MS/);
   assert.match(overlay, /useLayoutEffect/);
   assert.match(overlay, /aria-hidden/);
   assert.match(overlay, /cancelAnimationFrame|handle\?\.stop/);
@@ -436,7 +464,18 @@ assert.ok(celebrationColors("birthday").includes("#ffffff"));
 
   const css = readFileSync(join(root, "src/app/globals.css"), "utf8");
   assert.match(css, /#homepage-celebration-root/);
-  assert.match(css, /z-index:\s*80/);
+  assert.match(css, /z-index:\s*9999/);
+  assert.match(css, /@keyframes zvv-dom-confetti-fall/);
+  assert.match(css, /@keyframes zvv-dom-confetti-drift/);
+  assert.match(css, /@keyframes zvv-dom-streamer-wave/);
+  assert.match(css, /@keyframes zvv-dom-burst-pop/);
+  assert.match(css, /\.zvv-dom-confetti-layer/);
+  assert.match(css, /\.zvv-dom-burst-spark/);
+
+  const domLayer = readFileSync(join(root, "src/components/home/celebration-dom-layer.tsx"), "utf8");
+  assert.match(domLayer, /homepage-celebration-dom/);
+  assert.match(domLayer, /homepage-celebration-burst/);
+  assert.doesNotMatch(domLayer, /sessionStorage/);
 }
 
 {
