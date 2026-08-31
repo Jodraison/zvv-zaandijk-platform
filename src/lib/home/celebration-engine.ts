@@ -198,10 +198,10 @@ function buildCues(
   const budget = celebrationParticleBudget(kind, width);
   const spotlightX = width * 0.74;
   const spotlightY = height * 0.36;
-  const left = width * 0.08;
-  const right = width * 0.92;
-  const midY = height * 0.42;
-  const top = height * 0.08;
+  const left = width * 0.1;
+  const right = width * 0.9;
+  const midY = height * 0.52;
+  const top = height * 0.04;
 
   const rain = (count: number, y = -12) => {
     for (let i = 0; i < count; i += 1) {
@@ -230,9 +230,10 @@ function buildCues(
       {
         at: 0,
         run: () => {
-          cannon(left, -0.55, Math.round(budget.confetti * 0.22), 8.4);
-          cannon(right, Math.PI + 0.55, Math.round(budget.confetti * 0.22), 8.4);
-          rain(Math.round(budget.confetti * 0.18));
+          cannon(left, -0.2, Math.round(budget.confetti * 0.2), 7.6);
+          cannon(right, Math.PI + 0.2, Math.round(budget.confetti * 0.2), 7.6);
+          rain(Math.round(budget.confetti * 0.28), height * 0.02);
+          spawnConfetti(particles, width * 0.5, height * 0.22, colors, Math.round(budget.confetti * 0.12), 6.8, Math.PI / 2, 2.2, rnd);
         },
       },
       {
