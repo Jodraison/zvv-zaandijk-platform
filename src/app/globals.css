@@ -540,7 +540,22 @@
   }
 }
 
+@keyframes celebration-accent-fade {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  [data-testid="homepage-celebration-reduced"] {
+    animation: celebration-accent-fade 1.4s ease-out both;
+  }
   .club-match-accent-pulse {
     animation: none !important;
   }

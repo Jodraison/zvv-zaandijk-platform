@@ -18,8 +18,17 @@ import {
 import { mapSquadToBirthdayPeople } from "@/lib/players/birthday-squad";
 import type { HomeBirthdayPlayer } from "@/components/home/home-birthday-spotlight";
 import { buildHomeTeamSpotlight } from "@/lib/home/team-spotlight";
+import { HomepageCelebration } from "@/components/home/homepage-celebration";
+import {
+  getHomepageCelebration,
+  isPublicCelebrationPreviewAllowed,
+  resolveCelebrationHoldPreview,
+  resolveCelebrationPreviewType,
+} from "@/lib/home/homepage-celebration";
 
-type Props = { searchParams: Promise<{ season?: string; vandaag?: string }> };
+type Props = {
+  searchParams: Promise<{ season?: string; vandaag?: string; celebration?: string; celebrationHold?: string }>;
+};
 
 export default async function HomePage({ searchParams }: Props) {
   const sp = await searchParams;
@@ -30,6 +39,7 @@ export default async function HomePage({ searchParams }: Props) {
   const form = teamFormLast5(db, seasonId);
 
   const allowBirthdayPreview = isPublicBirthdayPreviewAllowed();
+  const allowCelebrationPreview = isPublicCelebrationPreviewAllowed();
   const previewDate = resolveBirthdayPreviewDate(sp.vandaag, { allowPreview: allowBirthdayPreview });
   const birthdayOn = previewDate ?? new Date();
   const squadPeople = mapSquadToBirthdayPeople(db, seasonId);
@@ -40,6 +50,15 @@ export default async function HomePage({ searchParams }: Props) {
     }),
   );
   const teamSpotlight = buildHomeTeamSpotlight(db, seasonId, birthdayOn);
+  const celebrationPreview = resolveCelebrationPreviewType(sp.celebration, { allowPreview: allowCelebrationPreview });
+  const celebrationHold = resolveCelebrationHoldPreview(sp.celebrationHold, { allowPreview: allowCelebrationPreview });
+  const celebration = getHomepageCelebration({
+    birthdayCount: birthdayPlayers.length,
+    matches: db.matches,
+    seasonId,
+    now: birthdayOn,
+    previewType: celebrationPreview,
+  });
 
   const q = (sid: string) => `?season=${encodeURIComponent(sid)}`;
   const navTiles = [
@@ -52,15 +71,23 @@ export default async function HomePage({ searchParams }: Props) {
 
   return (
     <>
-      {previewDate ? (
+      {previewDate || celebrationPreview ? (
         <div
           className="border-b border-amber-300/80 bg-amber-50 px-4 py-2.5 text-center text-sm text-amber-950"
           data-testid="birthday-dev-preview-banner"
         >
           <span className="font-semibold">Voorbeeldweergave — niet openbaar. </span>
-          Verjaardagsdatum geforceerd via development-preview ({sp.vandaag}). In productie wordt deze parameter genegeerd.
+          {previewDate ? `Verjaardagsdatum geforceerd via development-preview (${sp.vandaag}). ` : null}
+          {celebrationPreview ? `Celebration=${celebrationPreview}${celebrationHold ? " (hold)" : ""}. ` : null}
+          In productie wordt deze parameter genegeerd.
         </div>
       ) : null}
+      <HomepageCelebration
+        type={celebration.type}
+        calendarDay={celebration.calendarDay}
+        preview={Boolean(celebrationPreview)}
+        hold={celebrationHold}
+      />
       <ClubHomeHero
         seasonId={seasonId}
         nextM={nextM}

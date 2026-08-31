@@ -18,6 +18,7 @@
     "test:match-live-countdown": "tsx src/lib/match/match-live-countdown.test.ts",
     "test:hero-spotlight": "tsx src/lib/home/team-spotlight.test.ts",
     "test:home-next-birthday": "tsx src/lib/home/home-next-birthday.test.ts",
+    "test:homepage-celebration": "tsx src/lib/home/homepage-celebration.test.ts",
     "test:season-operations": "tsx src/lib/season/season-operations.test.ts",
     "test:manual-training-management": "tsx src/lib/training/manual-training-management.test.ts",
     "test:training-attendance-recovery": "tsx src/lib/training/training-attendance-recovery.test.ts",
