@@ -1,5 +1,5 @@
 /**
- * Eén canvas, korte choreografie, daarna volledig stil.
+ * Eén canvas, zichtbare choreografie, daarna volledig stil.
  * Geen permanente rAF, geen honderden DOM-nodes.
  */
 import type { CelebrationKind } from "@/lib/home/celebration-visual";
@@ -10,7 +10,7 @@ import {
   celebrationParticleBudget,
 } from "@/lib/home/celebration-visual";
 
-type ParticleKind = "confetti" | "streamer" | "spark";
+type ParticleKind = "confetti" | "streamer" | "spark" | "flash" | "ember";
 
 type Particle = {
   kind: ParticleKind;
@@ -51,7 +51,7 @@ function spawnConfetti(
 ): void {
   for (let i = 0; i < count; i += 1) {
     const a = angle + (rnd() - 0.5) * spread;
-    const spd = power * (0.55 + rnd() * 0.7);
+    const spd = power * (0.55 + rnd() * 0.75);
     list.push({
       kind: "confetti",
       x,
@@ -59,12 +59,12 @@ function spawnConfetti(
       vx: Math.cos(a) * spd,
       vy: Math.sin(a) * spd,
       rot: rnd() * Math.PI * 2,
-      vr: (rnd() - 0.5) * 0.28,
-      w: 9 + rnd() * 10,
-      h: 14 + rnd() * 14,
+      vr: (rnd() - 0.5) * 0.32,
+      w: 13 + rnd() * 16,
+      h: 18 + rnd() * 16,
       color: pick(colors, rnd),
       life: 0,
-      maxLife: 2800 + rnd() * 2200,
+      maxLife: 3600 + rnd() * 2800,
       wobble: rnd() * Math.PI * 2,
       wobbleSpeed: 0.04 + rnd() * 0.05,
     });
@@ -82,17 +82,17 @@ function spawnStreamers(
     const fromLeft = rnd() < 0.5;
     list.push({
       kind: "streamer",
-      x: fromLeft ? width * (0.04 + rnd() * 0.18) : width * (0.78 + rnd() * 0.18),
-      y: -20 - rnd() * 40,
-      vx: (fromLeft ? 1 : -1) * (0.4 + rnd() * 0.7),
-      vy: 1.4 + rnd() * 1.1,
+      x: fromLeft ? width * (0.03 + rnd() * 0.2) : width * (0.76 + rnd() * 0.2),
+      y: -24 - rnd() * 50,
+      vx: (fromLeft ? 1 : -1) * (0.45 + rnd() * 0.75),
+      vy: 1.5 + rnd() * 1.2,
       rot: rnd() * Math.PI,
-      vr: (rnd() - 0.5) * 0.08,
-      w: 5 + rnd() * 3,
-      h: 72 + rnd() * 48,
+      vr: (rnd() - 0.5) * 0.09,
+      w: 7 + rnd() * 5,
+      h: 96 + rnd() * 70,
       color: pick(colors, rnd),
       life: 0,
-      maxLife: 3200 + rnd() * 1800,
+      maxLife: 4200 + rnd() * 2200,
       wobble: rnd() * Math.PI * 2,
       wobbleSpeed: 0.06 + rnd() * 0.05,
     });
@@ -106,10 +106,11 @@ function spawnSparks(
   colors: readonly string[],
   count: number,
   rnd: () => number,
+  power = 1,
 ): void {
   for (let i = 0; i < count; i += 1) {
-    const a = (i / count) * Math.PI * 2 + (rnd() - 0.5) * 0.2;
-    const spd = 3.2 + rnd() * 4.2;
+    const a = (i / count) * Math.PI * 2 + (rnd() - 0.5) * 0.18;
+    const spd = (3.8 + rnd() * 5.2) * power;
     list.push({
       kind: "spark",
       x,
@@ -118,13 +119,62 @@ function spawnSparks(
       vy: Math.sin(a) * spd,
       rot: 0,
       vr: 0,
-      w: 3 + rnd() * 2.8,
-      h: 3 + rnd() * 2.8,
+      w: 3.6 + rnd() * 3.2,
+      h: 3.6 + rnd() * 3.2,
       color: pick(colors, rnd),
       life: 0,
-      maxLife: 900 + rnd() * 600,
+      maxLife: 1100 + rnd() * 700,
       wobble: 0,
       wobbleSpeed: 0,
+    });
+  }
+}
+
+function spawnFirework(
+  list: Particle[],
+  x: number,
+  y: number,
+  colors: readonly string[],
+  sparks: number,
+  rnd: () => number,
+  intensity = 1,
+): void {
+  list.push({
+    kind: "flash",
+    x,
+    y,
+    vx: 0,
+    vy: 0,
+    rot: 0,
+    vr: 0,
+    w: 42 * intensity,
+    h: 42 * intensity,
+    color: "#fff7d6",
+    life: 0,
+    maxLife: 260 + rnd() * 90,
+    wobble: 0,
+    wobbleSpeed: 0,
+  });
+  spawnSparks(list, x, y, colors, sparks, rnd, intensity);
+  const embers = Math.max(10, Math.round(sparks * 0.4));
+  for (let i = 0; i < embers; i += 1) {
+    const a = rnd() * Math.PI * 2;
+    const spd = (1.1 + rnd() * 2.8) * intensity;
+    list.push({
+      kind: "ember",
+      x,
+      y,
+      vx: Math.cos(a) * spd,
+      vy: Math.sin(a) * spd * 0.55 + 0.4,
+      rot: 0,
+      vr: 0,
+      w: 2.6 + rnd() * 2.2,
+      h: 2.6 + rnd() * 2.2,
+      color: pick(["#ffffff", "#fde68a", "#fbbf24", "#fdba74"], rnd),
+      life: 0,
+      maxLife: 1400 + rnd() * 900,
+      wobble: rnd() * Math.PI * 2,
+      wobbleSpeed: 0.03,
     });
   }
 }
@@ -148,27 +198,37 @@ function fillRounded(
 
 function drawParticle(ctx: CanvasRenderingContext2D, p: Particle): void {
   const t = p.life / p.maxLife;
-  const fade = t < 0.72 ? 1 : 1 - (t - 0.72) / 0.28;
+  const fade = t < 0.68 ? 1 : 1 - (t - 0.68) / 0.32;
   ctx.save();
   ctx.translate(p.x, p.y);
   ctx.rotate(p.rot);
   ctx.globalAlpha = Math.max(0, fade);
-  if (p.kind === "spark") {
-    ctx.fillStyle = p.color;
-    ctx.globalAlpha = Math.max(0, fade) * 0.45;
+  if (p.kind === "flash") {
+    const r = p.w * (1.15 - t * 0.35);
+    const glow = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    glow.addColorStop(0, "rgba(255,255,255,0.95)");
+    glow.addColorStop(0.28, "rgba(253,230,138,0.75)");
+    glow.addColorStop(1, "rgba(253,230,138,0)");
+    ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(0, 0, p.w * 4.2, 0, Math.PI * 2);
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (p.kind === "spark" || p.kind === "ember") {
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.max(0, fade) * (p.kind === "spark" ? 0.42 : 0.35);
+    ctx.beginPath();
+    ctx.arc(0, 0, p.w * (p.kind === "spark" ? 4.6 : 3.2), 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = Math.max(0, fade);
     ctx.beginPath();
-    ctx.arc(0, 0, p.w * 1.35, 0, Math.PI * 2);
+    ctx.arc(0, 0, p.w * 1.4, 0, Math.PI * 2);
     ctx.fill();
   } else if (p.kind === "streamer") {
     ctx.fillStyle = p.color;
     fillRounded(ctx, -p.w / 2, -p.h / 2, p.w, p.h, 2);
   } else {
     ctx.fillStyle = p.color;
-    fillRounded(ctx, -p.w / 2, -p.h / 2, p.w, p.h, 1.5);
+    fillRounded(ctx, -p.w / 2, -p.h / 2, p.w, p.h, 2);
   }
   ctx.restore();
 }
@@ -176,11 +236,12 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle): void {
 function stepParticle(p: Particle, dt: number): void {
   p.life += dt;
   p.wobble += p.wobbleSpeed;
-  const drag = p.kind === "spark" ? 0.985 : 0.992;
+  if (p.kind === "flash") return;
+  const drag = p.kind === "spark" ? 0.982 : p.kind === "ember" ? 0.988 : 0.993;
   p.vx *= drag;
   p.vy *= drag;
-  p.vy += p.kind === "spark" ? 0.014 : 0.032;
-  p.x += p.vx + (p.kind === "streamer" ? Math.sin(p.wobble) * 0.7 : Math.sin(p.wobble) * 0.18);
+  p.vy += p.kind === "spark" ? 0.016 : p.kind === "ember" ? 0.028 : 0.034;
+  p.x += p.vx + (p.kind === "streamer" ? Math.sin(p.wobble) * 0.75 : Math.sin(p.wobble) * 0.2);
   p.y += p.vy;
   p.rot += p.vr;
 }
@@ -196,31 +257,37 @@ function buildCues(
 ): Cue[] {
   const colors = celebrationColors(kind);
   const budget = celebrationParticleBudget(kind, width);
-  const spotlightX = width * 0.74;
-  const spotlightY = height * 0.36;
-  const left = width * 0.1;
-  const right = width * 0.9;
-  const midY = height * 0.52;
-  const top = height * 0.04;
+  const spotlightX = width * 0.76;
+  const spotlightY = height * 0.34;
+  const left = width * 0.08;
+  const right = width * 0.92;
+  const midY = height * 0.58;
+  const top = height * 0.05;
+  const heroLeftX = width * 0.18;
+  const heroLeftY = height * 0.2;
 
-  const rain = (count: number, y = -12) => {
+  const rain = (count: number, y = -14) => {
     for (let i = 0; i < count; i += 1) {
       spawnConfetti(
         particles,
-        width * (0.06 + rnd() * 0.88),
+        width * (0.04 + rnd() * 0.92),
         y,
         colors,
         1,
-        2.2 + rnd() * 1.6,
+        2.4 + rnd() * 1.8,
         Math.PI / 2,
-        0.7,
+        0.75,
         rnd,
       );
     }
   };
 
   const cannon = (x: number, dir: number, count: number, power: number) => {
-    spawnConfetti(particles, x, midY, colors, count, power, dir, 0.9, rnd);
+    spawnConfetti(particles, x, midY, colors, count, power, dir, 1.05, rnd);
+  };
+
+  const firework = (x: number, y: number, sparks: number, intensity = 1) => {
+    spawnFirework(particles, x, y, colors, sparks, rnd, intensity);
   };
 
   const cues: Cue[] = [];
@@ -230,57 +297,64 @@ function buildCues(
       {
         at: 0,
         run: () => {
-          cannon(left, -0.2, Math.round(budget.confetti * 0.2), 7.6);
-          cannon(right, Math.PI + 0.2, Math.round(budget.confetti * 0.2), 7.6);
-          rain(Math.round(budget.confetti * 0.28), height * 0.02);
-          spawnConfetti(particles, width * 0.5, height * 0.22, colors, Math.round(budget.confetti * 0.12), 6.8, Math.PI / 2, 2.2, rnd);
+          firework(heroLeftX, heroLeftY, Math.round(budget.burstSparks * 0.85), 0.95);
+          firework(spotlightX, spotlightY - 28, Math.round(budget.burstSparks * 0.85), 0.95);
+          cannon(left, -0.35, Math.round(budget.confetti * 0.16), 8.4);
+          cannon(right, Math.PI + 0.35, Math.round(budget.confetti * 0.16), 8.4);
         },
       },
       {
-        at: 280,
+        at: 420,
         run: () => {
-          cannon(left, -0.4, Math.round(budget.confetti * 0.1), 7.2);
-          cannon(right, Math.PI + 0.4, Math.round(budget.confetti * 0.1), 7.2);
-          spawnStreamers(particles, width, colors, budget.streamers, rnd);
+          cannon(left, -0.5, Math.round(budget.confetti * 0.12), 8.2);
+          cannon(right, Math.PI + 0.5, Math.round(budget.confetti * 0.12), 8.2);
+          rain(Math.round(budget.confetti * 0.22), height * 0.02);
+          spawnStreamers(particles, width, colors, Math.round(budget.streamers * 0.55), rnd);
         },
-      },
-      {
-        at: 720,
-        run: () =>
-          spawnConfetti(
-            particles,
-            spotlightX,
-            spotlightY,
-            colors,
-            Math.round(budget.confetti * 0.16),
-            7.1,
-            -Math.PI / 2,
-            2.6,
-            rnd,
-          ),
       },
       {
         at: 1100,
-        run: () => rain(Math.round(budget.confetti * 0.14), -8),
-      },
-      {
-        at: 1680,
-        run: () => spawnSparks(particles, width * 0.28, height * 0.34, colors, budget.burstSparks, rnd),
-      },
-      {
-        at: 2280,
-        run: () => spawnSparks(particles, spotlightX, spotlightY - 20, colors, budget.burstSparks, rnd),
-      },
-      {
-        at: 2920,
         run: () => {
-          spawnSparks(particles, width * 0.62, height * 0.3, colors, budget.burstSparks, rnd);
+          rain(Math.round(budget.confetti * 0.16));
+          spawnConfetti(particles, width * 0.5, height * 0.18, colors, Math.round(budget.confetti * 0.1), 7.2, Math.PI / 2, 2.4, rnd);
+        },
+      },
+      {
+        at: 2200,
+        run: () => rain(Math.round(budget.confetti * 0.12)),
+      },
+      {
+        at: 3200,
+        run: () => {
+          spawnStreamers(particles, width, colors, Math.round(budget.streamers * 0.7), rnd);
+          firework(width * 0.3, height * 0.3, budget.burstSparks, 0.9);
+        },
+      },
+      {
+        at: 4300,
+        run: () => firework(spotlightX + 18, spotlightY - 36, budget.burstSparks, 0.95),
+      },
+      {
+        at: 5400,
+        run: () => {
+          firework(width * 0.58, height * 0.26, Math.round(budget.burstSparks * 0.75), 0.85);
           rain(Math.round(budget.confetti * 0.1));
         },
       },
       {
-        at: 3600,
-        run: () => spawnSparks(particles, width * 0.48, height * 0.26, colors, Math.round(budget.burstSparks * 0.7), rnd),
+        at: 6800,
+        run: () => {
+          rain(Math.round(budget.confetti * 0.1));
+          firework(width * 0.22, height * 0.38, Math.round(budget.burstSparks * 0.7), 0.8);
+        },
+      },
+      {
+        at: 8200,
+        run: () => firework(width * 0.7, height * 0.24, Math.round(budget.burstSparks * 0.65), 0.75),
+      },
+      {
+        at: 9400,
+        run: () => rain(Math.round(budget.confetti * 0.08)),
       },
     );
   } else if (kind === "victory") {
@@ -288,48 +362,67 @@ function buildCues(
       {
         at: 0,
         run: () => {
-          spawnConfetti(
-            particles,
-            width * 0.5,
-            top,
-            colors,
-            Math.round(budget.confetti * 0.3),
-            10.2,
-            Math.PI / 2,
-            2.8,
-            rnd,
-          );
-          cannon(left, -0.45, Math.round(budget.confetti * 0.18), 9.4);
-          cannon(right, Math.PI + 0.45, Math.round(budget.confetti * 0.18), 9.4);
+          spawnConfetti(particles, width * 0.5, top, colors, Math.round(budget.confetti * 0.22), 11.2, Math.PI / 2, 2.9, rnd);
+          cannon(left, -0.55, Math.round(budget.confetti * 0.18), 10.4);
+          cannon(right, Math.PI + 0.55, Math.round(budget.confetti * 0.18), 10.4);
           spawnStreamers(particles, width, colors, budget.streamers, rnd);
         },
       },
       {
-        at: 220,
-        run: () => rain(Math.round(budget.confetti * 0.18)),
+        at: 280,
+        run: () => rain(Math.round(budget.confetti * 0.16)),
       },
       {
-        at: 620,
-        run: () => spawnSparks(particles, width * 0.28, height * 0.34, colors, budget.burstSparks, rnd),
+        at: 700,
+        run: () => firework(width * 0.26, height * 0.3, budget.burstSparks, 1.25),
       },
       {
-        at: 1180,
-        run: () => spawnSparks(particles, width * 0.74, height * 0.3, colors, budget.burstSparks, rnd),
+        at: 1300,
+        run: () => firework(width * 0.76, height * 0.26, budget.burstSparks, 1.25),
       },
       {
-        at: 1960,
+        at: 2100,
         run: () => {
-          cannon(left, -0.4, Math.round(budget.confetti * 0.1), 7.4);
-          cannon(right, Math.PI + 0.4, Math.round(budget.confetti * 0.1), 7.4);
+          cannon(left, -0.45, Math.round(budget.confetti * 0.1), 8.6);
+          cannon(right, Math.PI + 0.45, Math.round(budget.confetti * 0.1), 8.6);
         },
       },
       {
-        at: 2680,
-        run: () => spawnSparks(particles, width * 0.5, height * 0.28, colors, budget.burstSparks, rnd),
+        at: 3000,
+        run: () => firework(width * 0.5, height * 0.24, budget.burstSparks, 1.35),
       },
       {
-        at: 3900,
-        run: () => spawnSparks(particles, width * 0.62, height * 0.4, colors, budget.burstSparks, rnd),
+        at: 4200,
+        run: () => {
+          rain(Math.round(budget.confetti * 0.12));
+          firework(width * 0.18, height * 0.4, Math.round(budget.burstSparks * 0.85), 1.1);
+        },
+      },
+      {
+        at: 5600,
+        run: () => firework(width * 0.68, height * 0.32, budget.burstSparks, 1.15),
+      },
+      {
+        at: 7200,
+        run: () => {
+          cannon(left, -0.4, Math.round(budget.confetti * 0.08), 8.2);
+          cannon(right, Math.PI + 0.4, Math.round(budget.confetti * 0.08), 8.2);
+        },
+      },
+      {
+        at: 8800,
+        run: () => firework(width * 0.42, height * 0.28, budget.burstSparks, 1.2),
+      },
+      {
+        at: 10400,
+        run: () => {
+          rain(Math.round(budget.confetti * 0.1));
+          firework(width * 0.8, height * 0.36, Math.round(budget.burstSparks * 0.8), 1.05);
+        },
+      },
+      {
+        at: 12200,
+        run: () => rain(Math.round(budget.confetti * 0.06)),
       },
     );
   } else {
@@ -337,56 +430,58 @@ function buildCues(
       {
         at: 0,
         run: () => {
-          spawnConfetti(
-            particles,
-            width * 0.5,
-            top,
-            colors,
-            Math.round(budget.confetti * 0.22),
-            8.8,
-            Math.PI / 2,
-            2.6,
-            rnd,
-          );
-          cannon(left, -0.25, Math.round(budget.confetti * 0.14), 8.2);
-          cannon(right, Math.PI + 0.25, Math.round(budget.confetti * 0.14), 8.2);
+          spawnConfetti(particles, width * 0.5, top, colors, Math.round(budget.confetti * 0.18), 10.4, Math.PI / 2, 2.8, rnd);
+          cannon(left, -0.4, Math.round(budget.confetti * 0.14), 9.6);
+          cannon(right, Math.PI + 0.4, Math.round(budget.confetti * 0.14), 9.6);
         },
       },
       {
         at: 360,
         run: () => {
-          spawnConfetti(
-            particles,
-            spotlightX,
-            spotlightY,
-            colors,
-            Math.round(budget.confetti * 0.16),
-            6.6,
-            -Math.PI / 2,
-            2.3,
-            rnd,
-          );
           spawnStreamers(particles, width, colors, budget.streamers, rnd);
+          firework(width * 0.28, height * 0.3, budget.burstSparks, 1.15);
         },
       },
       {
-        at: 880,
-        run: () => spawnSparks(particles, width * 0.3, height * 0.32, colors, budget.burstSparks, rnd),
+        at: 1400,
+        run: () => firework(width * 0.72, height * 0.26, budget.burstSparks, 1.15),
       },
       {
-        at: 1680,
-        run: () => spawnSparks(particles, spotlightX, spotlightY - 16, colors, budget.burstSparks, rnd),
-      },
-      {
-        at: 2740,
+        at: 2600,
         run: () => {
-          rain(Math.round(budget.confetti * 0.12));
-          spawnSparks(particles, width * 0.52, height * 0.26, colors, budget.burstSparks, rnd);
+          spawnConfetti(particles, spotlightX, spotlightY, colors, Math.round(budget.confetti * 0.12), 7.4, -Math.PI / 2, 2.5, rnd);
+          firework(spotlightX, spotlightY - 20, Math.round(budget.burstSparks * 0.8), 0.95);
         },
       },
       {
         at: 4200,
-        run: () => spawnSparks(particles, width * 0.68, height * 0.38, colors, budget.burstSparks, rnd),
+        run: () => rain(Math.round(budget.confetti * 0.12)),
+      },
+      {
+        at: 5800,
+        run: () => firework(width * 0.5, height * 0.24, budget.burstSparks, 1.2),
+      },
+      {
+        at: 7600,
+        run: () => {
+          cannon(left, -0.35, Math.round(budget.confetti * 0.08), 8.4);
+          cannon(right, Math.PI + 0.35, Math.round(budget.confetti * 0.08), 8.4);
+        },
+      },
+      {
+        at: 9400,
+        run: () => firework(width * 0.64, height * 0.3, budget.burstSparks, 1.1),
+      },
+      {
+        at: 11200,
+        run: () => {
+          rain(Math.round(budget.confetti * 0.14));
+          spawnStreamers(particles, width, colors, Math.round(budget.streamers * 0.5), rnd);
+        },
+      },
+      {
+        at: 13200,
+        run: () => rain(Math.round(budget.confetti * 0.08)),
       },
     );
   }
@@ -406,7 +501,7 @@ export function runClubCelebration(
     onDone?: () => void;
   },
 ): CelebrationEngineHandle {
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { alpha: true });
   const particles: Particle[] = [];
   const timers: number[] = [];
   let raf = 0;
@@ -431,6 +526,7 @@ export function runClubCelebration(
     canvas.height = Math.max(1, Math.round(cssH * dpr));
     canvas.style.width = `${cssW}px`;
     canvas.style.height = `${cssH}px`;
+    canvas.style.display = "block";
     if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   };
   applyCanvasSize();
@@ -446,7 +542,6 @@ export function runClubCelebration(
       if (p.life >= p.maxLife) continue;
       if (!opts.hold) stepParticle(p, 16);
       else {
-        // hold: één fysica-stap-reeks tot het freeze-moment, daarna stil
         void elapsed;
       }
       drawParticle(ctx, p);
@@ -520,7 +615,7 @@ export function runClubCelebration(
       while (i < particles.length) {
         const p = particles[i]!;
         stepParticle(p, dt);
-        if (p.life >= p.maxLife || p.y > cssH + 80) {
+        if (p.life >= p.maxLife || p.y > cssH + 90) {
           particles[i] = particles[particles.length - 1]!;
           particles.pop();
           continue;

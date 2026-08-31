@@ -64,12 +64,26 @@
   0% {
     opacity: 1;
   }
-  55% {
-    opacity: 0.7;
+  35% {
+    opacity: 0.75;
   }
   100% {
     opacity: 0;
   }
+}
+
+/* Dedicated stacking layer — never rely on Tailwind z-[45] surviving a parent z-[1] shell. */
+.zvv-celebration-root,
+#homepage-celebration-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 80;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 1;
+  isolation: isolate;
 }
 
 .zvv-celebration-wash {
@@ -77,10 +91,10 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 18% 38%, rgba(253, 230, 138, 0.32), transparent 38%),
-    radial-gradient(circle at 82% 32%, rgba(255, 255, 255, 0.26), transparent 36%),
-    radial-gradient(circle at 50% 8%, rgba(147, 197, 253, 0.24), transparent 42%);
-  animation: zvv-celebration-wash 1.35s ease-out forwards;
+    radial-gradient(circle at 16% 22%, rgba(253, 230, 138, 0.38), transparent 36%),
+    radial-gradient(circle at 84% 28%, rgba(255, 255, 255, 0.32), transparent 34%),
+    radial-gradient(circle at 50% 6%, rgba(56, 189, 248, 0.22), transparent 40%);
+  animation: zvv-celebration-wash 3.6s ease-out forwards;
 }
 
 .zvv-celebration-wash-reduced {

@@ -82,7 +82,7 @@ results.push(
   }),
 );
 results.push(
-  await shotPage("10-after-celebration-1440", "/?celebration=victory", { width: 1440, height: 900 }, { waitMs: 8500 }),
+  await shotPage("10-after-celebration-1440", "/?celebration=victory", { width: 1440, height: 900 }, { waitMs: 16000 }),
 );
 results.push(
   await shotPage(

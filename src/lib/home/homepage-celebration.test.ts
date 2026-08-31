@@ -24,6 +24,8 @@ import {
 } from "@/lib/home/homepage-celebration";
 import {
   CELEBRATION_DURATION_MS,
+  CELEBRATION_START_DELAY_MS,
+  celebrationChoreography,
   celebrationColors,
   celebrationOverlayClassName,
   celebrationParticleBudget,
@@ -352,10 +354,14 @@ assert.equal(celebrationSessionKey("birthday_victory", "2026-08-31"), "zvv-celeb
 }
 
 // --- Visual / performance config ---
-assert.ok(CELEBRATION_DURATION_MS.birthday >= 4000 && CELEBRATION_DURATION_MS.birthday <= 6000);
-assert.ok(CELEBRATION_DURATION_MS.victory >= 5000 && CELEBRATION_DURATION_MS.victory <= 8000);
-assert.ok(CELEBRATION_DURATION_MS.birthday_victory <= 8000);
+assert.ok(CELEBRATION_DURATION_MS.birthday >= 10000 && CELEBRATION_DURATION_MS.birthday <= 12500);
+assert.ok(CELEBRATION_DURATION_MS.victory >= 12000 && CELEBRATION_DURATION_MS.victory <= 15500);
+assert.ok(CELEBRATION_DURATION_MS.birthday_victory >= 14000 && CELEBRATION_DURATION_MS.birthday_victory <= 16500);
 assert.ok(CELEBRATION_DURATION_MS.victory > CELEBRATION_DURATION_MS.birthday);
+assert.ok(CELEBRATION_DURATION_MS.birthday_victory > CELEBRATION_DURATION_MS.victory);
+assert.ok(CELEBRATION_START_DELAY_MS >= 400 && CELEBRATION_START_DELAY_MS <= 700);
+assert.equal(celebrationChoreography("birthday").startDelayMs, CELEBRATION_START_DELAY_MS);
+assert.ok(celebrationChoreography("birthday").fadeStartMs >= 9000);
 
 assert.equal(celebrationViewportTier(375), "mobile-375");
 assert.equal(celebrationViewportTier(390), "mobile-390");
@@ -373,13 +379,16 @@ const birthdayMobile = celebrationParticleBudget("birthday", 390);
 assert.ok(mobile.confetti < desktop.confetti);
 assert.ok(mobile.confetti >= 90);
 assert.ok(desktop.confetti >= 220);
-assert.ok(birthdayMobile.confetti >= 90);
-assert.ok(birthdayDesktop.confetti >= 160);
+assert.ok(birthdayMobile.confetti >= 140);
+assert.ok(birthdayDesktop.confetti >= 280);
+assert.ok(birthdayMobile.confetti <= 280);
 assert.ok(!celebrationColors("birthday").includes("#1d4ed8"));
+assert.ok(!celebrationColors("birthday").includes("#0b1f5f"));
 assert.ok(!celebrationColors("victory").includes("#1e3a8a"));
 assert.match(celebrationOverlayClassName(), /pointer-events-none/);
 assert.match(celebrationOverlayClassName(), /fixed/);
 assert.match(celebrationOverlayClassName(), /inset-0/);
+assert.match(celebrationOverlayClassName(), /zvv-celebration-root/);
 assert.ok(celebrationColors("victory").includes("#ffffff"));
 assert.ok(celebrationColors("victory").includes("#d4af37"));
 assert.ok(celebrationColors("birthday").includes("#fbbf24"));
@@ -399,6 +408,9 @@ assert.ok(celebrationColors("birthday").includes("#ffffff"));
   assert.match(overlay, /createPortal/);
   assert.doesNotMatch(overlay, /sessionStorage/);
   assert.match(overlay, /homepage-celebration/);
+  assert.match(overlay, /homepage-celebration-root/);
+  assert.match(overlay, /CELEBRATION_START_DELAY_MS/);
+  assert.match(overlay, /useLayoutEffect/);
   assert.match(overlay, /aria-hidden/);
   assert.match(overlay, /cancelAnimationFrame|handle\?\.stop/);
   assert.doesNotMatch(overlay, /autoplay|Audio|new Audio/);
@@ -414,11 +426,17 @@ assert.ok(celebrationColors("birthday").includes("#ffffff"));
   assert.match(engine, /canvas\.width = 0/);
   assert.match(engine, /elapsed >= duration/);
   assert.match(engine, /stopped = true/);
+  assert.match(engine, /spawnFirework|kind === "flash"/);
+  assert.match(engine, /createRadialGradient/);
 
   assert.match(hero, /HomeBirthdaySpotlight/);
   assert.match(hero, /HomeTeamSpotlight/);
   assert.match(spotlight, /birthday-hero-spotlight/);
   assert.doesNotMatch(hero, /HomepageCelebration/);
+
+  const css = readFileSync(join(root, "src/app/globals.css"), "utf8");
+  assert.match(css, /#homepage-celebration-root/);
+  assert.match(css, /z-index:\s*80/);
 }
 
 {

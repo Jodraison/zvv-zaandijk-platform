@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import type { CelebrationType } from "@/lib/home/homepage-celebration";
@@ -9,7 +9,7 @@ import {
   markHomepageCelebrationStarted,
   shouldReplayHomepageCelebration,
 } from "@/lib/home/homepage-celebration";
-import { celebrationOverlayClassName } from "@/lib/home/celebration-visual";
+import { CELEBRATION_START_DELAY_MS, celebrationOverlayClassName } from "@/lib/home/celebration-visual";
 import { runClubCelebration, type CelebrationEngineHandle } from "@/lib/home/celebration-engine";
 
 const OVERLAY_CLASS = cn(celebrationOverlayClassName(), "pointer-events-none");
@@ -58,14 +58,20 @@ export function HomepageCelebration({
       return;
     }
 
-    setPhase(hold ? "hold" : "play");
+    if (hold) {
+      setPhase("hold");
+      return;
+    }
 
-    if (preview || hold) return;
-    const markId = window.setTimeout(() => markHomepageCelebrationStarted(key), 400);
-    return () => window.clearTimeout(markId);
+    const startId = window.setTimeout(() => {
+      setPhase("play");
+      markHomepageCelebrationStarted(key);
+    }, CELEBRATION_START_DELAY_MS);
+
+    return () => window.clearTimeout(startId);
   }, [type, calendarDay, preview, hold]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!type) return;
     if (phase !== "play" && phase !== "hold") return;
     const canvas = canvasRef.current;
@@ -89,6 +95,7 @@ export function HomepageCelebration({
 
   return createPortal(
     <div
+      id="homepage-celebration-root"
       className={OVERLAY_CLASS}
       data-testid="homepage-celebration"
       data-celebration-type={type}
@@ -105,7 +112,11 @@ export function HomepageCelebration({
       ) : (
         <>
           <div className="zvv-celebration-wash" data-testid="homepage-celebration-wash" />
-          <canvas ref={canvasRef} className="h-full w-full" data-testid="homepage-celebration-canvas" />
+          <canvas
+            ref={canvasRef}
+            className="absolute inset-0 block h-full w-full"
+            data-testid="homepage-celebration-canvas"
+          />
         </>
       )}
     </div>,
