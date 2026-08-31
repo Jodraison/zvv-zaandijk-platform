@@ -37,6 +37,14 @@ import {
   celebrationDomBudget,
   celebrationDomNodeCount,
 } from "@/lib/home/celebration-dom";
+import {
+  HARD_FALLBACK_COLORS,
+  HARD_FALLBACK_ROOT_STYLE,
+  HARD_FALLBACK_Z_INDEX,
+  hardFallbackDurationMs,
+  hardFallbackPeakConfetti,
+  hardFallbackWaves,
+} from "@/lib/home/celebration-hard-fallback";
 import { getBirthdayPlayersForDate, type BirthdayPerson } from "@/lib/players/birthdays";
 
 const root = process.cwd();
@@ -419,6 +427,26 @@ assert.ok(celebrationColors("birthday").includes("#ffffff"));
   assert.ok(a.filter((p) => p.kind === "confetti").every((p) => p.width >= 8 && p.height >= 12));
 }
 
+{
+  assert.ok(HARD_FALLBACK_Z_INDEX >= 2_147_483_000);
+  assert.equal(HARD_FALLBACK_ROOT_STYLE.position, "fixed");
+  assert.equal(HARD_FALLBACK_ROOT_STYLE.pointerEvents, "none");
+  assert.equal(HARD_FALLBACK_ROOT_STYLE.opacity, 1);
+  assert.ok(HARD_FALLBACK_COLORS.includes("#FFFFFF"));
+  assert.ok(HARD_FALLBACK_COLORS.includes("#FFD84D"));
+  assert.ok(!(HARD_FALLBACK_COLORS as readonly string[]).includes("#1d4ed8"));
+  const waves = hardFallbackWaves("birthday", 1440);
+  assert.ok(waves.length >= 4);
+  assert.equal(waves[0]?.at, 0);
+  assert.ok(waves.some((w) => w.at >= 6000));
+  assert.ok(waves[0]!.confetti + waves[0]!.streamers >= 20);
+  assert.ok(hardFallbackPeakConfetti("birthday", 1440) >= 18);
+  assert.ok(hardFallbackDurationMs("birthday") >= 10000);
+  assert.ok(hardFallbackDurationMs("victory") > hardFallbackDurationMs("birthday"));
+  assert.ok(hardFallbackDurationMs("birthday_victory") >= hardFallbackDurationMs("victory"));
+  assert.ok(hardFallbackWaves("birthday", 390).reduce((n, w) => n + w.confetti, 0) < waves.reduce((n, w) => n + w.confetti, 0));
+}
+
 // --- UI source contracts ---
 {
   const overlay = readFileSync(join(root, "src/components/home/homepage-celebration.tsx"), "utf8");
@@ -427,27 +455,34 @@ assert.ok(celebrationColors("birthday").includes("#ffffff"));
   const hero = readFileSync(join(root, "src/components/home/club-home-hero.tsx"), "utf8");
   const spotlight = readFileSync(join(root, "src/components/home/home-birthday-spotlight.tsx"), "utf8");
 
-  assert.match(overlay, /pointer-events-none/);
   assert.match(overlay, /prefers-reduced-motion/);
-  assert.match(overlay, /shouldReplayHomepageCelebration/);
+  assert.match(overlay, /CelebrationHardFallback/);
+  assert.match(overlay, /waitUntilCelebrationCanStart/);
   assert.match(overlay, /createPortal/);
   assert.doesNotMatch(overlay, /sessionStorage/);
-  assert.match(overlay, /homepage-celebration/);
-  assert.match(overlay, /homepage-celebration-root/);
+  assert.doesNotMatch(overlay, /shouldReplayHomepageCelebration/);
   assert.match(overlay, /CELEBRATION_START_DELAY_MS/);
-  assert.match(overlay, /CelebrationDomLayer/);
-  assert.match(overlay, /buildCelebrationDomLayout/);
-  assert.match(overlay, /CELEBRATION_DURATION_MS/);
   assert.match(overlay, /useLayoutEffect/);
-  assert.match(overlay, /aria-hidden/);
-  assert.match(overlay, /cancelAnimationFrame|handle\?\.stop/);
   assert.doesNotMatch(overlay, /autoplay|Audio|new Audio/);
 
   assert.match(page, /getHomepageCelebration/);
   assert.match(page, /HomepageCelebration/);
-  assert.match(page, /celebration/);
+  assert.match(page, /celebration-server-type/);
   assert.match(page, /isPublicCelebrationPreviewAllowed/);
   assert.doesNotMatch(page, /home_score|away_score/);
+
+  const fallback = readFileSync(join(root, "src/components/home/celebration-hard-fallback.tsx"), "utf8");
+  const fallbackLib = readFileSync(join(root, "src/lib/home/celebration-hard-fallback.ts"), "utf8");
+  assert.match(fallback, /createPortal/);
+  assert.match(fallback, /HARD_FALLBACK_ROOT_STYLE/);
+  assert.match(fallback, /runHardFallback/);
+  assert.doesNotMatch(fallback, /globals\.css/);
+  assert.doesNotMatch(fallback, /className/);
+  assert.match(fallbackLib, /\.animate\(/);
+  assert.match(fallbackLib, /backgroundColor/);
+  assert.doesNotMatch(fallbackLib, /@keyframes/);
+  assert.doesNotMatch(fallbackLib, /globals\.css/);
+  assert.doesNotMatch(fallbackLib, /sessionStorage/);
 
   assert.match(engine, /cancelAnimationFrame/);
   assert.match(engine, /clearTimeout/);

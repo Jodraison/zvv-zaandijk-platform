@@ -2,27 +2,11 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
 import type { CelebrationType } from "@/lib/home/homepage-celebration";
-import {
-  celebrationSessionKey,
-  markHomepageCelebrationStarted,
-  shouldReplayHomepageCelebration,
-} from "@/lib/home/homepage-celebration";
-import {
-  CELEBRATION_DURATION_MS,
-  CELEBRATION_START_DELAY_MS,
-  celebrationOverlayClassName,
-} from "@/lib/home/celebration-visual";
-import {
-  buildCelebrationDomLayout,
-  CELEBRATION_CANVAS_ENHANCEMENT_DELAY_MS,
-  type CelebrationDomPiece,
-} from "@/lib/home/celebration-dom";
+import { waitUntilCelebrationCanStart } from "@/lib/home/homepage-celebration";
+import { CELEBRATION_START_DELAY_MS } from "@/lib/home/celebration-visual";
 import { runClubCelebration, type CelebrationEngineHandle } from "@/lib/home/celebration-engine";
-import { CelebrationDomLayer } from "@/components/home/celebration-dom-layer";
-
-const OVERLAY_CLASS = cn(celebrationOverlayClassName(), "pointer-events-none");
+import { CelebrationHardFallback } from "@/components/home/celebration-hard-fallback";
 
 type Phase = "pending" | "play" | "hold" | "reduced" | "skip" | "done";
 
@@ -45,7 +29,6 @@ export function HomepageCelebration({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>("pending");
-  const [domPieces, setDomPieces] = useState<CelebrationDomPiece[] | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -63,68 +46,30 @@ export function HomepageCelebration({
       return () => window.clearTimeout(id);
     }
 
-    const key = celebrationSessionKey(type, calendarDay);
-    if (!preview && !hold && !shouldReplayHomepageCelebration(key)) {
-      setPhase("skip");
-      return;
-    }
-
     if (hold) {
       setPhase("hold");
       return;
     }
 
-    const startId = window.setTimeout(() => {
-      setPhase("play");
-      markHomepageCelebrationStarted(key);
-    }, CELEBRATION_START_DELAY_MS);
-
-    return () => window.clearTimeout(startId);
+    let cancelled = false;
+    void waitUntilCelebrationCanStart(CELEBRATION_START_DELAY_MS).then(() => {
+      if (!cancelled) setPhase("play");
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [type, calendarDay, preview, hold]);
-
-  useEffect(() => {
-    if (!type) return;
-    if (phase !== "play" && phase !== "hold") return;
-    setDomPieces(
-      buildCelebrationDomLayout({
-        kind: type,
-        width: window.innerWidth,
-        seed: `${type}:${calendarDay}`,
-      }),
-    );
-  }, [type, calendarDay, phase]);
-
-  useEffect(() => {
-    if (!type || phase !== "play") return;
-    const id = window.setTimeout(() => setPhase("done"), CELEBRATION_DURATION_MS[type]);
-    return () => window.clearTimeout(id);
-  }, [type, phase]);
 
   useLayoutEffect(() => {
     if (!type) return;
     if (phase !== "play" && phase !== "hold") return;
     const canvas = canvasRef.current;
     if (!canvas) return;
-
-    let handle: CelebrationEngineHandle | null = null;
-    const startCanvas = () => {
-      handle = runClubCelebration(canvas, {
-        type,
-        hold: phase === "hold",
-      });
-    };
-
-    if (phase === "hold") {
-      startCanvas();
-      return () => {
-        handle?.stop();
-        handle = null;
-      };
-    }
-
-    const id = window.setTimeout(startCanvas, CELEBRATION_CANVAS_ENHANCEMENT_DELAY_MS);
+    let handle: CelebrationEngineHandle | null = runClubCelebration(canvas, {
+      type,
+      hold: phase === "hold",
+    });
     return () => {
-      window.clearTimeout(id);
       handle?.stop();
       handle = null;
     };
@@ -134,34 +79,43 @@ export function HomepageCelebration({
     return null;
   }
 
-  return createPortal(
-    <div
-      id="homepage-celebration-root"
-      className={OVERLAY_CLASS}
-      data-testid="homepage-celebration"
-      data-celebration-type={type}
-      data-celebration-phase={phase}
-      data-celebration-preview={preview ? "true" : "false"}
-      data-celebration-hold={hold ? "true" : "false"}
-      aria-hidden="true"
-    >
-      {phase === "reduced" ? (
-        <div
-          className="zvv-celebration-wash zvv-celebration-wash-reduced"
-          data-testid="homepage-celebration-reduced"
-        />
-      ) : (
-        <>
-          <div className="zvv-celebration-wash" data-testid="homepage-celebration-wash" />
-          {domPieces ? <CelebrationDomLayer pieces={domPieces} /> : null}
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0 block h-full w-full"
-            data-testid="homepage-celebration-canvas"
-          />
-        </>
+  if (phase === "reduced") {
+    return createPortal(
+      <div
+        data-testid="homepage-celebration-reduced"
+        aria-hidden="true"
+        style={{
+          position: "fixed",
+          inset: 0,
+          pointerEvents: "none",
+          zIndex: 2147483000,
+          background:
+            "radial-gradient(ellipse at 72% 28%, rgba(251,191,36,0.22), transparent 50%), radial-gradient(ellipse at 18% 18%, rgba(56,189,248,0.16), transparent 46%)",
+        }}
+      />,
+      document.body,
+    );
+  }
+
+  return (
+    <>
+      <CelebrationHardFallback type={type} hold={phase === "hold"} onDone={() => setPhase("done")} />
+      {createPortal(
+        <canvas
+          ref={canvasRef}
+          data-testid="homepage-celebration-canvas"
+          aria-hidden="true"
+          style={{
+            position: "fixed",
+            inset: 0,
+            width: "100vw",
+            height: "100vh",
+            pointerEvents: "none",
+            zIndex: 2147482990,
+          }}
+        />,
+        document.body,
       )}
-    </div>,
-    document.body,
+    </>
   );
 }

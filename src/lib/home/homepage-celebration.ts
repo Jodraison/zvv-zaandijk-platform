@@ -71,6 +71,29 @@ export function resetHomepageCelebrationGuardForTests(): void {
   lastCelebrationGuardAt = 0;
 }
 
+/** Full page load / visible tab: never start while the user cannot see the page. */
+export async function waitUntilCelebrationCanStart(delayMs: number): Promise<void> {
+  if (typeof document !== "undefined" && document.visibilityState !== "visible") {
+    await new Promise<void>((resolve) => {
+      const onChange = () => {
+        if (document.visibilityState === "visible") {
+          document.removeEventListener("visibilitychange", onChange);
+          resolve();
+        }
+      };
+      document.addEventListener("visibilitychange", onChange);
+    });
+  }
+  if (typeof requestAnimationFrame === "function") {
+    await new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }
+  await new Promise<void>((resolve) => {
+    setTimeout(resolve, delayMs);
+  });
+}
+
 export function hasBirthdayCelebrationToday(birthdayCount: number): boolean {
   return birthdayCount > 0;
 }

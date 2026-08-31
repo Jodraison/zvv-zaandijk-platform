@@ -82,6 +82,7 @@ export default async function HomePage({ searchParams }: Props) {
           In productie wordt deze parameter genegeerd.
         </div>
       ) : null}
+      <span hidden data-testid="celebration-server-type" data-celebration-server-type={celebration.type ?? "none"} />
       <HomepageCelebration
         type={celebration.type}
         calendarDay={celebration.calendarDay}

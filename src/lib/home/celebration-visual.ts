@@ -12,7 +12,7 @@ export const CELEBRATION_DURATION_MS: Record<CelebrationKind, number> = {
 };
 
 /** Homepage eerst zichtbaar, daarna pas DOM-feest. */
-export const CELEBRATION_START_DELAY_MS = 700;
+export const CELEBRATION_START_DELAY_MS = 750;
 
 export const CELEBRATION_REDUCED_MOTION_MS = 1400;
 export const CELEBRATION_HOLD_AT_MS = 1800;
