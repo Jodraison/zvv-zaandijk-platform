@@ -50,6 +50,27 @@ export function celebrationSessionKey(type: Exclude<CelebrationType, null>, cale
   return `zvv-celebration-${calendarDay}-${type}`;
 }
 
+/** Soft-nav cooldown only. Full page load resets module state so refresh always replays. */
+export const CELEBRATION_NAV_COOLDOWN_MS = 45_000;
+
+let lastCelebrationGuardKey: string | null = null;
+let lastCelebrationGuardAt = 0;
+
+export function shouldReplayHomepageCelebration(key: string, now: number = Date.now()): boolean {
+  if (lastCelebrationGuardKey !== key) return true;
+  return now - lastCelebrationGuardAt >= CELEBRATION_NAV_COOLDOWN_MS;
+}
+
+export function markHomepageCelebrationStarted(key: string, now: number = Date.now()): void {
+  lastCelebrationGuardKey = key;
+  lastCelebrationGuardAt = now;
+}
+
+export function resetHomepageCelebrationGuardForTests(): void {
+  lastCelebrationGuardKey = null;
+  lastCelebrationGuardAt = 0;
+}
+
 export function hasBirthdayCelebrationToday(birthdayCount: number): boolean {
   return birthdayCount > 0;
 }

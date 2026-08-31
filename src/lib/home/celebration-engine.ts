@@ -60,11 +60,11 @@ function spawnConfetti(
       vy: Math.sin(a) * spd,
       rot: rnd() * Math.PI * 2,
       vr: (rnd() - 0.5) * 0.28,
-      w: 5 + rnd() * 7,
-      h: 8 + rnd() * 11,
+      w: 9 + rnd() * 10,
+      h: 14 + rnd() * 14,
       color: pick(colors, rnd),
       life: 0,
-      maxLife: 2200 + rnd() * 2400,
+      maxLife: 2800 + rnd() * 2200,
       wobble: rnd() * Math.PI * 2,
       wobbleSpeed: 0.04 + rnd() * 0.05,
     });
@@ -85,11 +85,11 @@ function spawnStreamers(
       x: fromLeft ? width * (0.04 + rnd() * 0.18) : width * (0.78 + rnd() * 0.18),
       y: -20 - rnd() * 40,
       vx: (fromLeft ? 1 : -1) * (0.4 + rnd() * 0.7),
-      vy: 1.6 + rnd() * 1.4,
+      vy: 1.4 + rnd() * 1.1,
       rot: rnd() * Math.PI,
       vr: (rnd() - 0.5) * 0.08,
-      w: 3 + rnd() * 2,
-      h: 42 + rnd() * 36,
+      w: 5 + rnd() * 3,
+      h: 72 + rnd() * 48,
       color: pick(colors, rnd),
       life: 0,
       maxLife: 3200 + rnd() * 1800,
@@ -109,7 +109,7 @@ function spawnSparks(
 ): void {
   for (let i = 0; i < count; i += 1) {
     const a = (i / count) * Math.PI * 2 + (rnd() - 0.5) * 0.2;
-    const spd = 2.4 + rnd() * 3.4;
+    const spd = 3.2 + rnd() * 4.2;
     list.push({
       kind: "spark",
       x,
@@ -118,15 +118,32 @@ function spawnSparks(
       vy: Math.sin(a) * spd,
       rot: 0,
       vr: 0,
-      w: 2 + rnd() * 2.2,
-      h: 2 + rnd() * 2.2,
+      w: 3 + rnd() * 2.8,
+      h: 3 + rnd() * 2.8,
       color: pick(colors, rnd),
       life: 0,
-      maxLife: 700 + rnd() * 500,
+      maxLife: 900 + rnd() * 600,
       wobble: 0,
       wobbleSpeed: 0,
     });
   }
+}
+
+function fillRounded(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number,
+): void {
+  if (typeof ctx.roundRect === "function") {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    ctx.fill();
+    return;
+  }
+  ctx.fillRect(x, y, w, h);
 }
 
 function drawParticle(ctx: CanvasRenderingContext2D, p: Particle): void {
@@ -138,24 +155,20 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle): void {
   ctx.globalAlpha = Math.max(0, fade);
   if (p.kind === "spark") {
     ctx.fillStyle = p.color;
-    ctx.globalAlpha = Math.max(0, fade) * 0.28;
+    ctx.globalAlpha = Math.max(0, fade) * 0.45;
     ctx.beginPath();
-    ctx.arc(0, 0, p.w * 3.2, 0, Math.PI * 2);
+    ctx.arc(0, 0, p.w * 4.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.globalAlpha = Math.max(0, fade);
     ctx.beginPath();
-    ctx.arc(0, 0, p.w, 0, Math.PI * 2);
+    ctx.arc(0, 0, p.w * 1.35, 0, Math.PI * 2);
     ctx.fill();
   } else if (p.kind === "streamer") {
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.roundRect(-p.w / 2, -p.h / 2, p.w, p.h, 2);
-    ctx.fill();
+    fillRounded(ctx, -p.w / 2, -p.h / 2, p.w, p.h, 2);
   } else {
     ctx.fillStyle = p.color;
-    ctx.beginPath();
-    ctx.roundRect(-p.w / 2, -p.h / 2, p.w, p.h, 1.5);
-    ctx.fill();
+    fillRounded(ctx, -p.w / 2, -p.h / 2, p.w, p.h, 1.5);
   }
   ctx.restore();
 }
@@ -166,7 +179,7 @@ function stepParticle(p: Particle, dt: number): void {
   const drag = p.kind === "spark" ? 0.985 : 0.992;
   p.vx *= drag;
   p.vy *= drag;
-  p.vy += p.kind === "spark" ? 0.018 : 0.042;
+  p.vy += p.kind === "spark" ? 0.014 : 0.032;
   p.x += p.vx + (p.kind === "streamer" ? Math.sin(p.wobble) * 0.7 : Math.sin(p.wobble) * 0.18);
   p.y += p.vy;
   p.rot += p.vr;
@@ -217,54 +230,56 @@ function buildCues(
       {
         at: 0,
         run: () => {
-          cannon(left, -0.35, Math.round(budget.confetti * 0.18), 7.2);
-          cannon(right, Math.PI + 0.35, Math.round(budget.confetti * 0.18), 7.2);
-          rain(Math.round(budget.confetti * 0.16));
+          cannon(left, -0.55, Math.round(budget.confetti * 0.22), 8.4);
+          cannon(right, Math.PI + 0.55, Math.round(budget.confetti * 0.22), 8.4);
+          rain(Math.round(budget.confetti * 0.18));
+        },
+      },
+      {
+        at: 280,
+        run: () => {
+          cannon(left, -0.4, Math.round(budget.confetti * 0.1), 7.2);
+          cannon(right, Math.PI + 0.4, Math.round(budget.confetti * 0.1), 7.2);
           spawnStreamers(particles, width, colors, budget.streamers, rnd);
         },
       },
       {
-        at: 380,
+        at: 720,
         run: () =>
           spawnConfetti(
             particles,
             spotlightX,
             spotlightY,
             colors,
-            Math.round(budget.confetti * 0.2),
-            6.4,
+            Math.round(budget.confetti * 0.16),
+            7.1,
             -Math.PI / 2,
-            2.4,
+            2.6,
             rnd,
           ),
       },
       {
-        at: 920,
+        at: 1100,
+        run: () => rain(Math.round(budget.confetti * 0.14), -8),
+      },
+      {
+        at: 1680,
+        run: () => spawnSparks(particles, width * 0.28, height * 0.34, colors, budget.burstSparks, rnd),
+      },
+      {
+        at: 2280,
+        run: () => spawnSparks(particles, spotlightX, spotlightY - 20, colors, budget.burstSparks, rnd),
+      },
+      {
+        at: 2920,
         run: () => {
-          spawnSparks(particles, spotlightX, spotlightY - 24, colors, budget.burstSparks, rnd);
+          spawnSparks(particles, width * 0.62, height * 0.3, colors, budget.burstSparks, rnd);
           rain(Math.round(budget.confetti * 0.1));
         },
       },
       {
-        at: 1880,
-        run: () => spawnSparks(particles, width * 0.32, height * 0.38, colors, budget.burstSparks, rnd),
-      },
-      {
-        at: 2860,
-        run: () => {
-          spawnSparks(particles, width * 0.7, height * 0.3, colors, budget.burstSparks, rnd);
-          spawnConfetti(
-            particles,
-            spotlightX,
-            spotlightY + 20,
-            colors,
-            Math.round(budget.confetti * 0.12),
-            5.2,
-            -Math.PI / 2,
-            2.1,
-            rnd,
-          );
-        },
+        at: 3600,
+        run: () => spawnSparks(particles, width * 0.48, height * 0.26, colors, Math.round(budget.burstSparks * 0.7), rnd),
       },
     );
   } else if (kind === "victory") {
@@ -277,14 +292,14 @@ function buildCues(
             width * 0.5,
             top,
             colors,
-            Math.round(budget.confetti * 0.28),
-            9.2,
+            Math.round(budget.confetti * 0.3),
+            10.2,
             Math.PI / 2,
             2.8,
             rnd,
           );
-          cannon(left, -0.2, Math.round(budget.confetti * 0.16), 8.6);
-          cannon(right, Math.PI + 0.2, Math.round(budget.confetti * 0.16), 8.6);
+          cannon(left, -0.45, Math.round(budget.confetti * 0.18), 9.4);
+          cannon(right, Math.PI + 0.45, Math.round(budget.confetti * 0.18), 9.4);
           spawnStreamers(particles, width, colors, budget.streamers, rnd);
         },
       },
@@ -375,9 +390,7 @@ function buildCues(
     );
   }
 
-  if (budget.burstCount < cues.filter((c) => c.at > 500).length) {
-    return cues.slice(0, Math.max(3, budget.burstCount + 2));
-  }
+  void budget.burstCount;
   return cues;
 }
 
@@ -399,17 +412,28 @@ export function runClubCelebration(
   let stopped = false;
   const rnd = opts.random ?? Math.random;
 
-  const cssW = opts.width ?? (canvas.clientWidth || (typeof window !== "undefined" ? window.innerWidth : 1440));
-  const cssH = opts.height ?? (canvas.clientHeight || (typeof window !== "undefined" ? window.innerHeight : 900));
+  const readViewport = () => {
+    if (typeof window === "undefined") {
+      return { w: opts.width ?? 1440, h: opts.height ?? 900 };
+    }
+    return {
+      w: opts.width ?? window.innerWidth,
+      h: opts.height ?? window.innerHeight,
+    };
+  };
+  let cssW = readViewport().w;
+  let cssH = readViewport().h;
   const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
-  canvas.width = Math.max(1, Math.round(cssW * dpr));
-  canvas.height = Math.max(1, Math.round(cssH * dpr));
-  canvas.style.width = `${cssW}px`;
-  canvas.style.height = `${cssH}px`;
-  if (ctx) {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, cssW, cssH);
-  }
+
+  const applyCanvasSize = () => {
+    canvas.width = Math.max(1, Math.round(cssW * dpr));
+    canvas.height = Math.max(1, Math.round(cssH * dpr));
+    canvas.style.width = `${cssW}px`;
+    canvas.style.height = `${cssH}px`;
+    if (ctx) ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  };
+  applyCanvasSize();
+  if (ctx) ctx.clearRect(0, 0, cssW, cssH);
 
   const duration = CELEBRATION_DURATION_MS[opts.type];
   const cues = buildCues(opts.type, cssW, cssH, particles, rnd);
@@ -428,14 +452,29 @@ export function runClubCelebration(
     }
   };
 
+  const publishCount = () => {
+    canvas.dataset.particleCount = String(particles.length);
+  };
+
+  const onResize = () => {
+    if (stopped || opts.width || opts.height) return;
+    const next = readViewport();
+    cssW = next.w;
+    cssH = next.h;
+    applyCanvasSize();
+  };
+  if (typeof window !== "undefined") window.addEventListener("resize", onResize);
+
   const stop = () => {
     if (stopped) return;
     stopped = true;
+    if (typeof window !== "undefined") window.removeEventListener("resize", onResize);
     if (raf) cancelAnimationFrame(raf);
     raf = 0;
     for (const id of timers) window.clearTimeout(id);
     timers.length = 0;
     particles.length = 0;
+    publishCount();
     if (ctx) ctx.clearRect(0, 0, cssW, cssH);
     canvas.width = 0;
     canvas.height = 0;
@@ -450,6 +489,7 @@ export function runClubCelebration(
       for (const p of particles) stepParticle(p, 16);
     }
     drawFrame(CELEBRATION_HOLD_AT_MS);
+    publishCount();
     return {
       stop,
       particleCount: () => particles.length,
@@ -459,6 +499,10 @@ export function runClubCelebration(
   const started = performance.now();
   let last = started;
   let cueIndex = 0;
+  if (cues[0]?.at === 0) {
+    cues[0].run();
+    cueIndex = 1;
+  }
 
   const tick = (now: number) => {
     if (stopped) return;
@@ -484,6 +528,7 @@ export function runClubCelebration(
         i += 1;
       }
     }
+    publishCount();
     if (elapsed >= duration) {
       stop();
       opts.onDone?.();
@@ -492,6 +537,7 @@ export function runClubCelebration(
     raf = requestAnimationFrame(tick);
   };
 
+  publishCount();
   raf = requestAnimationFrame(tick);
 
   return {

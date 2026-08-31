@@ -9,14 +9,18 @@ import type { Match } from "@/types";
 import {
   buildCelebrationAdminPreviewHref,
   buildCelebrationHomepagePreviewHref,
+  CELEBRATION_NAV_COOLDOWN_MS,
   celebrationSessionKey,
   findTodayOfficialVictory,
   getHomepageCelebration,
   hasBirthdayCelebrationToday,
   isPublicCelebrationPreviewAllowed,
   isTodayOfficialVictory,
+  markHomepageCelebrationStarted,
+  resetHomepageCelebrationGuardForTests,
   resolveCelebrationHoldPreview,
   resolveCelebrationPreviewType,
+  shouldReplayHomepageCelebration,
 } from "@/lib/home/homepage-celebration";
 import {
   CELEBRATION_DURATION_MS,
@@ -333,6 +337,20 @@ const noonAug2 = new Date("2026-08-02T12:00:00+02:00");
 assert.equal(celebrationSessionKey("birthday", "2026-08-31"), "zvv-celebration-2026-08-31-birthday");
 assert.equal(celebrationSessionKey("birthday_victory", "2026-08-31"), "zvv-celebration-2026-08-31-birthday_victory");
 
+{
+  resetHomepageCelebrationGuardForTests();
+  const key = celebrationSessionKey("birthday", "2026-08-31");
+  assert.equal(shouldReplayHomepageCelebration(key, 1_000), true);
+  markHomepageCelebrationStarted(key, 1_000);
+  assert.equal(shouldReplayHomepageCelebration(key, 1_000 + 10_000), false);
+  assert.equal(shouldReplayHomepageCelebration(key, 1_000 + CELEBRATION_NAV_COOLDOWN_MS - 1), false);
+  assert.equal(shouldReplayHomepageCelebration(key, 1_000 + CELEBRATION_NAV_COOLDOWN_MS), true);
+  assert.equal(shouldReplayHomepageCelebration(celebrationSessionKey("victory", "2026-08-31"), 1_000), true);
+  resetHomepageCelebrationGuardForTests();
+  assert.equal(shouldReplayHomepageCelebration(key, 1_000), true);
+  assert.ok(CELEBRATION_NAV_COOLDOWN_MS >= 30_000 && CELEBRATION_NAV_COOLDOWN_MS <= 60_000);
+}
+
 // --- Visual / performance config ---
 assert.ok(CELEBRATION_DURATION_MS.birthday >= 4000 && CELEBRATION_DURATION_MS.birthday <= 6000);
 assert.ok(CELEBRATION_DURATION_MS.victory >= 5000 && CELEBRATION_DURATION_MS.victory <= 8000);
@@ -350,13 +368,22 @@ assert.ok(celebrationParticleScale(430) < celebrationParticleScale(1440));
 
 const mobile = celebrationParticleBudget("victory", 390);
 const desktop = celebrationParticleBudget("victory", 1440);
+const birthdayDesktop = celebrationParticleBudget("birthday", 1440);
+const birthdayMobile = celebrationParticleBudget("birthday", 390);
 assert.ok(mobile.confetti < desktop.confetti);
-assert.ok(mobile.confetti < 80);
+assert.ok(mobile.confetti >= 90);
+assert.ok(desktop.confetti >= 220);
+assert.ok(birthdayMobile.confetti >= 90);
+assert.ok(birthdayDesktop.confetti >= 160);
+assert.ok(!celebrationColors("birthday").includes("#1d4ed8"));
+assert.ok(!celebrationColors("victory").includes("#1e3a8a"));
 assert.match(celebrationOverlayClassName(), /pointer-events-none/);
 assert.match(celebrationOverlayClassName(), /fixed/);
 assert.match(celebrationOverlayClassName(), /inset-0/);
-assert.ok(celebrationColors("victory").includes("#1d4ed8"));
+assert.ok(celebrationColors("victory").includes("#ffffff"));
+assert.ok(celebrationColors("victory").includes("#d4af37"));
 assert.ok(celebrationColors("birthday").includes("#fbbf24"));
+assert.ok(celebrationColors("birthday").includes("#ffffff"));
 
 // --- UI source contracts ---
 {
@@ -368,7 +395,9 @@ assert.ok(celebrationColors("birthday").includes("#fbbf24"));
 
   assert.match(overlay, /pointer-events-none/);
   assert.match(overlay, /prefers-reduced-motion/);
-  assert.match(overlay, /sessionStorage/);
+  assert.match(overlay, /shouldReplayHomepageCelebration/);
+  assert.match(overlay, /createPortal/);
+  assert.doesNotMatch(overlay, /sessionStorage/);
   assert.match(overlay, /homepage-celebration/);
   assert.match(overlay, /aria-hidden/);
   assert.match(overlay, /cancelAnimationFrame|handle\?\.stop/);

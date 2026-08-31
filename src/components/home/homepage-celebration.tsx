@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import type { CelebrationType } from "@/lib/home/homepage-celebration";
-import { celebrationSessionKey } from "@/lib/home/homepage-celebration";
+import {
+  celebrationSessionKey,
+  markHomepageCelebrationStarted,
+  shouldReplayHomepageCelebration,
+} from "@/lib/home/homepage-celebration";
 import { celebrationOverlayClassName } from "@/lib/home/celebration-visual";
 import { runClubCelebration, type CelebrationEngineHandle } from "@/lib/home/celebration-engine";
 
@@ -14,22 +19,6 @@ type Phase = "pending" | "play" | "hold" | "reduced" | "skip" | "done";
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-}
-
-function sessionHasSeen(key: string): boolean {
-  try {
-    return window.sessionStorage.getItem(key) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function sessionMarkSeen(key: string): void {
-  try {
-    window.sessionStorage.setItem(key, "1");
-  } catch {
-    /* private mode */
-  }
 }
 
 export function HomepageCelebration({
@@ -44,7 +33,12 @@ export function HomepageCelebration({
   hold?: boolean;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [phase, setPhase] = useState<Phase>("pending");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!type) {
@@ -59,13 +53,16 @@ export function HomepageCelebration({
     }
 
     const key = celebrationSessionKey(type, calendarDay);
-    if (!preview && !hold && sessionHasSeen(key)) {
+    if (!preview && !hold && !shouldReplayHomepageCelebration(key)) {
       setPhase("skip");
       return;
     }
-    if (!preview && !hold) sessionMarkSeen(key);
 
     setPhase(hold ? "hold" : "play");
+
+    if (preview || hold) return;
+    const markId = window.setTimeout(() => markHomepageCelebrationStarted(key), 400);
+    return () => window.clearTimeout(markId);
   }, [type, calendarDay, preview, hold]);
 
   useEffect(() => {
@@ -86,23 +83,11 @@ export function HomepageCelebration({
     };
   }, [type, phase]);
 
-  if (!type || phase === "skip" || phase === "done" || phase === "pending") {
-    if (!type) return null;
-    if (phase === "pending") {
-      return (
-        <div
-          className={OVERLAY_CLASS}
-          data-testid="homepage-celebration"
-          data-celebration-type={type}
-          data-celebration-phase="pending"
-          aria-hidden="true"
-        />
-      );
-    }
+  if (!mounted || !type || phase === "skip" || phase === "done" || phase === "pending") {
     return null;
   }
 
-  return (
+  return createPortal(
     <div
       className={OVERLAY_CLASS}
       data-testid="homepage-celebration"
@@ -114,12 +99,16 @@ export function HomepageCelebration({
     >
       {phase === "reduced" ? (
         <div
-          className="absolute inset-0 bg-[radial-gradient(ellipse_at_72%_28%,rgba(251,191,36,0.14),transparent_52%),radial-gradient(ellipse_at_18%_18%,rgba(147,197,253,0.12),transparent_48%)]"
+          className="zvv-celebration-wash zvv-celebration-wash-reduced"
           data-testid="homepage-celebration-reduced"
         />
       ) : (
-        <canvas ref={canvasRef} className="h-full w-full" data-testid="homepage-celebration-canvas" />
+        <>
+          <div className="zvv-celebration-wash" data-testid="homepage-celebration-wash" />
+          <canvas ref={canvasRef} className="h-full w-full" data-testid="homepage-celebration-canvas" />
+        </>
       )}
-    </div>
+    </div>,
+    document.body,
   );
 }
