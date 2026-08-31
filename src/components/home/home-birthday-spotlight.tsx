@@ -127,9 +127,11 @@ function PlayerStage({
 export function HomeBirthdaySpotlight({
   players,
   className,
+  showBuildMarker = false,
 }: {
   players: HomeBirthdayPlayer[];
   className?: string;
+  showBuildMarker?: boolean;
 }) {
   if (players.length === 0) return null;
 
@@ -156,7 +158,7 @@ export function HomeBirthdaySpotlight({
     >
       <span className="sr-only">{sr}</span>
 
-      <div className="pointer-events-none absolute inset-0" aria-hidden="true">
+      <div className="pointer-events-none absolute inset-0" aria-hidden="true" data-testid="birthday-festive-state">
         <div className="absolute -right-16 top-0 h-56 w-56 rounded-full bg-amber-300/20 blur-3xl" />
         <div className="absolute -left-20 bottom-0 h-48 w-48 rounded-full bg-sky-300/15 blur-3xl" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-200/80 to-transparent" />
@@ -165,6 +167,10 @@ export function HomeBirthdaySpotlight({
         <span className="absolute right-16 top-14 h-1 w-1 rounded-full bg-white/70 motion-safe:animate-[birthdaySpark_1.1s_ease-out_0.15s_both]" />
         <span className="absolute bottom-10 right-12 h-1.5 w-1.5 rounded-full bg-amber-100/70 motion-safe:animate-[birthdaySpark_1.1s_ease-out_0.28s_both]" />
         <div className="absolute inset-x-6 top-0 h-10 bg-gradient-to-b from-amber-100/10 to-transparent motion-safe:animate-[birthdaySheen_1s_ease-out_both]" />
+        <span className="absolute left-7 top-[4.6rem] h-3 w-2 rotate-12 rounded-sm bg-amber-200/90" data-festive-accent />
+        <span className="absolute right-10 top-24 h-2.5 w-2.5 rotate-45 rounded-sm bg-white/85" data-festive-accent />
+        <span className="absolute left-12 bottom-16 h-2 w-3 -rotate-12 rounded-sm bg-sky-300/80" data-festive-accent />
+        <span className="absolute right-16 bottom-12 h-3 w-2 rotate-6 rounded-sm bg-amber-300/85" data-festive-accent />
       </div>
 
       <div className="relative z-10 flex h-full min-h-[inherit] flex-col">
@@ -197,6 +203,14 @@ export function HomeBirthdaySpotlight({
             </div>
           )}
         </div>
+        {showBuildMarker ? (
+          <p
+            data-testid="celebration-fx-marker"
+            className="mt-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-100/50"
+          >
+            FX v2
+          </p>
+        ) : null}
       </div>
     </div>
   );

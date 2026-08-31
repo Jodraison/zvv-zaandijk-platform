@@ -17,16 +17,17 @@ import {
   getHomepageCelebration,
   resolveCelebrationHoldPreview,
   resolveCelebrationPreviewType,
+  resolveCelebrationReducedPreview,
 } from "@/lib/home/homepage-celebration";
 import { withSeason } from "@/lib/admin/beheer-nav";
 
 type Props = {
-  searchParams: Promise<{ season?: string; kind?: string; datum?: string; hold?: string }>;
+  searchParams: Promise<{ season?: string; kind?: string; datum?: string; hold?: string; motion?: string }>;
 };
 
 /**
- * Authenticated review van homepage-celebrations.
- * Geen publieke forcering — alleen via /beheer.
+ * Authenticated development harness — niet bereikbaar voor gewone bezoekers.
+ * Production acceptance gebruikt deze pagina nooit.
  */
 export default async function BeheerCelebrationPreviewPage({ searchParams }: Props) {
   const sp = await searchParams;
@@ -38,6 +39,7 @@ export default async function BeheerCelebrationPreviewPage({ searchParams }: Pro
   if (!previewType) notFound();
 
   const hold = resolveCelebrationHoldPreview(sp.hold, { allowPreview: true });
+  const forceReducedMotion = resolveCelebrationReducedPreview(sp.motion, { allowPreview: true });
   const wantsBirthday = previewType === "birthday" || previewType === "birthday_victory";
 
   let datum = (sp.datum ?? "").trim().slice(0, 10);
@@ -77,7 +79,8 @@ export default async function BeheerCelebrationPreviewPage({ searchParams }: Pro
         <p className="font-semibold">Voorbeeldweergave — niet openbaar</p>
         <p className="mt-1 text-amber-900/90">
           Homepage-celebration ({label}
-          {hold ? ", stilstaand frame" : ""}). Bezoekers kunnen dit niet forceren via een openbare URL.
+          {hold ? ", stilstaand frame" : ""}
+          {forceReducedMotion ? ", reduced motion" : ""}). Bezoekers kunnen dit niet forceren via een openbare URL.
         </p>
         <div className="mt-3 flex flex-wrap gap-3">
           <Link
@@ -87,22 +90,34 @@ export default async function BeheerCelebrationPreviewPage({ searchParams }: Pro
             ← Terug naar beheer
           </Link>
           <Link
+            href={withSeason("/beheer/voorbeeld/celebration?kind=birthday", seasonId)}
+            className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
+          >
+            Verjaardag
+          </Link>
+          <Link
+            href={withSeason("/beheer/voorbeeld/celebration?kind=victory", seasonId)}
+            className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
+          >
+            Overwinning
+          </Link>
+          <Link
+            href={withSeason("/beheer/voorbeeld/celebration?kind=combined", seasonId)}
+            className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
+          >
+            Gecombineerd
+          </Link>
+          <Link
+            href={withSeason("/beheer/voorbeeld/celebration?kind=birthday&motion=reduce", seasonId)}
+            className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
+          >
+            Reduced motion
+          </Link>
+          <Link
             href={withSeason("/beheer/voorbeeld/celebration?kind=birthday&hold=1", seasonId)}
             className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
           >
-            Verjaardag hold
-          </Link>
-          <Link
-            href={withSeason("/beheer/voorbeeld/celebration?kind=victory&hold=1", seasonId)}
-            className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
-          >
-            Overwinning hold
-          </Link>
-          <Link
-            href={withSeason("/beheer/voorbeeld/celebration?kind=combined&hold=1", seasonId)}
-            className="inline-flex min-h-10 items-center text-sm font-semibold text-amber-950 underline-offset-4 hover:underline"
-          >
-            Gecombineerd hold
+            Hold-frame
           </Link>
         </div>
       </div>
@@ -113,12 +128,14 @@ export default async function BeheerCelebrationPreviewPage({ searchParams }: Pro
           calendarDay={celebration.calendarDay}
           preview
           hold={hold}
+          forceReducedMotion={forceReducedMotion}
         />
         <ClubHomeHero
           seasonId={seasonId}
           nextM={nextM}
           birthdayPlayers={birthdayPlayers}
           teamSpotlight={buildHomeTeamSpotlight(db, seasonId, birthdayOn)}
+          showBuildMarker
         />
       </div>
     </div>

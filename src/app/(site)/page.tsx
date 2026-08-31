@@ -25,6 +25,7 @@ import {
   resolveCelebrationHoldPreview,
   resolveCelebrationPreviewType,
 } from "@/lib/home/homepage-celebration";
+import { isCurrentUserAdmin } from "@/lib/auth/viewer";
 
 type Props = {
   searchParams: Promise<{ season?: string; vandaag?: string; celebration?: string; celebrationHold?: string }>;
@@ -59,6 +60,7 @@ export default async function HomePage({ searchParams }: Props) {
     now: birthdayOn,
     previewType: celebrationPreview,
   });
+  const showBuildMarker = await isCurrentUserAdmin();
 
   const q = (sid: string) => `?season=${encodeURIComponent(sid)}`;
   const navTiles = [
@@ -94,6 +96,7 @@ export default async function HomePage({ searchParams }: Props) {
         nextM={nextM}
         birthdayPlayers={birthdayPlayers}
         teamSpotlight={teamSpotlight}
+        showBuildMarker={showBuildMarker}
       />
 
       <main className="mx-auto max-w-[114rem] space-y-14 px-4 pb-14 pt-12 md:space-y-20 md:px-0 md:pb-16 md:pt-14">

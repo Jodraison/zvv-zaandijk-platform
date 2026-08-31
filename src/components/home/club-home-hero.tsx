@@ -22,17 +22,19 @@ export function ClubHomeHero({
   nextM,
   birthdayPlayers = [],
   teamSpotlight,
+  showBuildMarker = false,
 }: {
   seasonId: string;
   nextM: Match | null;
   birthdayPlayers?: HomeBirthdayPlayer[];
   teamSpotlight: HomeTeamSpotlightModel;
+  showBuildMarker?: boolean;
 }) {
   const q = seasonQuery(seasonId);
   const hasBirthday = birthdayPlayers.length > 0;
 
   const spotlight = hasBirthday ? (
-    <HomeBirthdaySpotlight players={birthdayPlayers} />
+    <HomeBirthdaySpotlight players={birthdayPlayers} showBuildMarker={showBuildMarker} />
   ) : (
     <HomeTeamSpotlight model={teamSpotlight} />
   );

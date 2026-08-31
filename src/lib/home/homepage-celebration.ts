@@ -46,48 +46,35 @@ export function resolveCelebrationHoldPreview(
   return v === "1" || v === "true" || v === "hold";
 }
 
-export function celebrationSessionKey(type: Exclude<CelebrationType, null>, calendarDay: string): string {
-  return `zvv-celebration-${calendarDay}-${type}`;
+export function resolveCelebrationReducedPreview(
+  raw: string | undefined,
+  opts: { allowPreview: boolean },
+): boolean {
+  if (!opts.allowPreview) return false;
+  const v = (raw ?? "").trim().toLowerCase();
+  return v === "1" || v === "true" || v === "reduce" || v === "reduced";
 }
 
-/** Soft-nav cooldown only. Full page load resets module state so refresh always replays. */
-export const CELEBRATION_NAV_COOLDOWN_MS = 45_000;
-
-let lastCelebrationGuardKey: string | null = null;
-let lastCelebrationGuardAt = 0;
-
-export function shouldReplayHomepageCelebration(key: string, now: number = Date.now()): boolean {
-  if (lastCelebrationGuardKey !== key) return true;
-  return now - lastCelebrationGuardAt >= CELEBRATION_NAV_COOLDOWN_MS;
-}
-
-export function markHomepageCelebrationStarted(key: string, now: number = Date.now()): void {
-  lastCelebrationGuardKey = key;
-  lastCelebrationGuardAt = now;
-}
-
-export function resetHomepageCelebrationGuardForTests(): void {
-  lastCelebrationGuardKey = null;
-  lastCelebrationGuardAt = 0;
-}
-
-/** Full page load / visible tab: never start while the user cannot see the page. */
+/**
+ * Full page load: short delay so the homepage paints first.
+ * Hidden tab: wait for visibility, but never hang — 2s cap, then start anyway.
+ */
 export async function waitUntilCelebrationCanStart(delayMs: number): Promise<void> {
   if (typeof document !== "undefined" && document.visibilityState !== "visible") {
-    await new Promise<void>((resolve) => {
-      const onChange = () => {
-        if (document.visibilityState === "visible") {
-          document.removeEventListener("visibilitychange", onChange);
-          resolve();
-        }
-      };
-      document.addEventListener("visibilitychange", onChange);
-    });
-  }
-  if (typeof requestAnimationFrame === "function") {
-    await new Promise<void>((resolve) => {
-      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-    });
+    await Promise.race([
+      new Promise<void>((resolve) => {
+        const onChange = () => {
+          if (document.visibilityState === "visible") {
+            document.removeEventListener("visibilitychange", onChange);
+            resolve();
+          }
+        };
+        document.addEventListener("visibilitychange", onChange);
+      }),
+      new Promise<void>((resolve) => {
+        setTimeout(resolve, 2000);
+      }),
+    ]);
   }
   await new Promise<void>((resolve) => {
     setTimeout(resolve, delayMs);
@@ -198,6 +185,7 @@ export function buildCelebrationAdminPreviewHref(opts: {
   seasonId: string;
   kind: "birthday" | "victory" | "combined";
   hold?: boolean;
+  reduced?: boolean;
   datum?: string;
 }): string {
   const q = new URLSearchParams({
@@ -205,6 +193,7 @@ export function buildCelebrationAdminPreviewHref(opts: {
     kind: opts.kind,
   });
   if (opts.hold) q.set("hold", "1");
+  if (opts.reduced) q.set("motion", "reduce");
   if (opts.datum) q.set("datum", opts.datum.slice(0, 10));
   return `/beheer/voorbeeld/celebration?${q.toString()}`;
 }
