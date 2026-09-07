@@ -9,6 +9,10 @@ import type { FitnessComponentKey } from "@/lib/fitness/protocol";
 import { FITNESS_COMPONENTS } from "@/lib/fitness/protocol";
 import { cn } from "@/lib/utils";
 import { RankingPodium, type PodiumEntry } from "@/components/ranking/ranking-podium";
+import {
+  layoutFitnessPodium,
+  splitPreservingOrderByPodiumIds,
+} from "@/lib/fitness/fitness-podium-layout";
 
 function formatComponentValue(key: FitnessComponentKey, value: number): string {
   if (key === "plank_seconds") return formatPlankDisplay(value);
@@ -21,11 +25,13 @@ export function FitnessPodiumList({
   rows,
   componentKey,
   total,
+  totalRankByPlayer,
 }: {
   title: string;
   rows: FitnessRankRow[] | FitnessTotalRankRow[];
   componentKey?: FitnessComponentKey;
   total?: boolean;
+  totalRankByPlayer?: ReadonlyMap<string, number>;
 }) {
   if (rows.length === 0) {
     return (
@@ -36,7 +42,17 @@ export function FitnessPodiumList({
     );
   }
 
-  const podiumEntries: PodiumEntry[] = rows.slice(0, 3).map((r) => ({
+  const componentRows = total ? [] : (rows as FitnessRankRow[]);
+  const totalRows = total ? (rows as FitnessTotalRankRow[]) : [];
+  const laidOut = total
+    ? splitPreservingOrderByPodiumIds(totalRows, totalRows.slice(0, 3))
+    : layoutFitnessPodium(
+        componentRows,
+        FITNESS_COMPONENTS.find((c) => c.key === componentKey)?.direction ?? "higher_better",
+        totalRankByPlayer ?? new Map(),
+      );
+
+  const podiumEntries: PodiumEntry[] = laidOut.podium.map((r, i) => ({
     player_id: r.player_id,
     full_name: r.full_name,
     shirt_number: r.shirt_number,
@@ -45,17 +61,16 @@ export function FitnessPodiumList({
       ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
       : formatComponentValue(componentKey!, (r as FitnessRankRow).value),
     photo_url: null,
-    rank: r.rank,
+    rank: i + 1,
   }));
-  const rest = rows.slice(3);
 
   return (
     <section className="space-y-3 rounded-2xl border border-zvv-border bg-white p-4 shadow-sm md:p-5">
       <h3 className="font-[family-name:var(--font-display)] text-2xl text-zvv-ink">{title}</h3>
       <RankingPodium entries={podiumEntries} />
-      {rest.length > 0 ? (
+      {laidOut.rest.length > 0 ? (
         <ul className="mt-2 divide-y divide-zvv-border border-t border-zvv-border">
-          {rest.map((r) => (
+          {laidOut.rest.map((r) => (
             <li key={r.player_id} className="flex items-center justify-between gap-3 py-2 text-sm">
               <span className="text-zvv-muted">#{r.rank}</span>
               <span className="min-w-0 flex-1 truncate font-medium text-zvv-ink">
@@ -63,7 +78,7 @@ export function FitnessPodiumList({
               </span>
               <span className="tabular-nums text-zvv-muted">
                 {total
-                  ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")}`
+                  ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
                   : formatComponentValue(componentKey!, (r as FitnessRankRow).value)}
               </span>
             </li>

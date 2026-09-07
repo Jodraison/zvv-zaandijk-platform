@@ -117,6 +117,8 @@ assert.ok(podium.includes("md:order-1"));
 assert.ok(podium.includes("md:order-2"));
 assert.ok(podium.includes("md:order-3"));
 assert.ok(podium.includes("place === 1"));
+assert.ok(podium.includes("resolvePodiumSlots"));
+assert.ok(!podium.includes("byRank(3)"));
 assert.ok(readSrc("src/app/(site)/dev/ranking-podium-fixture/page.tsx").includes("TESTFIXTURE"));
 assert.ok(
   readSrc("src/app/(site)/dev/ranking-podium-fixture/page.tsx").includes(

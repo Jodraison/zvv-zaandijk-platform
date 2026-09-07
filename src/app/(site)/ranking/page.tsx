@@ -37,6 +37,10 @@ import { getSeasonOperations } from "@/lib/season/season-operations-2026-27";
 
 type Props = { searchParams: Promise<{ season?: string; view?: string; session?: string }> };
 
+function totalRankByPlayerId(db: Awaited<ReturnType<typeof readDb>>, sessionId: string) {
+  return new Map(rankFitnessTotal(db, sessionId).map((r) => [r.player_id, r.rank]));
+}
+
 function sortByGoals(rows: ReturnType<typeof computeRanking>) {
   return [...rows]
     .filter((r) => r.goals_total > 0)
@@ -100,6 +104,8 @@ export default async function RankingPage({ searchParams }: Props) {
     history.find((s) => s.id === sp.session) ?? currentFitness ?? history[0] ?? null;
   const nextFitness = nextFitnessMoment(db, seasonId);
   const expectedNext = currentFitness ? expectedFitnessTestDate(currentFitness.test_on) : nextFitness.date;
+  const currentTotalRanks = currentFitness ? totalRankByPlayerId(db, currentFitness.id) : undefined;
+  const selectedTotalRanks = selectedSession ? totalRankByPlayerId(db, selectedSession.id) : undefined;
 
   return (
     <div className="space-y-10 md:space-y-12">
@@ -169,6 +175,7 @@ export default async function RankingPage({ searchParams }: Props) {
                     title={c.shortLabel}
                     rows={rankFitnessComponent(db, currentFitness.id, c.key)}
                     componentKey={c.key}
+                    totalRankByPlayer={currentTotalRanks}
                   />
                 ))}
                 <FitnessPodiumList
@@ -240,6 +247,7 @@ export default async function RankingPage({ searchParams }: Props) {
                       title={c.shortLabel}
                       rows={rankFitnessComponent(db, selectedSession.id, c.key)}
                       componentKey={c.key}
+                      totalRankByPlayer={selectedTotalRanks}
                     />
                   ))}
                   <FitnessPodiumList

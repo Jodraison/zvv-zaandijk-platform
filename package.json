@@ -14,7 +14,7 @@
     "test:admin-2": "npm run test:admin-nav && npm run test:match-integrity",
     "test:fitness-protocol": "tsx src/lib/fitness/fitness-protocol.test.ts",
     "test:fitness-reschedule": "tsx src/lib/fitness/fitness-reschedule-2026-09-07.test.ts",
-    "test:fitness-ranking": "tsx src/lib/fitness/session-ranking.test.ts",
+    "test:fitness-ranking": "tsx src/lib/fitness/session-ranking.test.ts && tsx src/lib/fitness/fitness-podium-layout.test.ts && tsx src/components/ranking/ranking-podium.test.ts",
     "test:countdown": "tsx src/lib/operations/countdown.test.ts && tsx src/lib/operations/countdown-scenarios.test.ts",
     "test:match-live-countdown": "tsx src/lib/match/match-live-countdown.test.ts",
     "test:hero-spotlight": "tsx src/lib/home/team-spotlight.test.ts",

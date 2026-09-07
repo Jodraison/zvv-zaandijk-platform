@@ -14,6 +14,23 @@ export type PodiumEntry = {
 };
 
 /**
+ * Visual 1/2/3 slots from the caller-provided top three.
+ * Does not re-sort — layout/tie-break happens before this.
+ * Shared sporting ranks still fill bronze when three entries are passed.
+ */
+export function resolvePodiumSlots(entries: PodiumEntry[]): {
+  first: PodiumEntry | null;
+  second: PodiumEntry | null;
+  third: PodiumEntry | null;
+} {
+  return {
+    first: entries[0] ?? null,
+    second: entries[1] ?? null,
+    third: entries[2] ?? null,
+  };
+}
+
+/**
  * Sportpodium: #1 midden hoger, #2 links, #3 rechts — met pedestal-hoogte en motion.
  */
 export function RankingPodium({
@@ -23,13 +40,8 @@ export function RankingPodium({
   entries: PodiumEntry[];
   unitHint?: string;
 }) {
-  const sorted = [...entries].sort((a, b) => a.rank - b.rank).slice(0, 3);
-  if (sorted.length === 0) return null;
-
-  const byRank = (r: number) => sorted.find((e) => e.rank === r) ?? null;
-  const first = byRank(1);
-  const second = byRank(2);
-  const third = byRank(3);
+  const { first, second, third } = resolvePodiumSlots(entries);
+  if (!first && !second && !third) return null;
 
   type Slot = { entry: PodiumEntry; place: 1 | 2 | 3; desktopOrder: string; pedestal: string; delay: string };
   const slots: Slot[] = (
