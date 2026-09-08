@@ -15,6 +15,7 @@ import {
   formatSecondsNl,
 } from "@/lib/fitness/parse-values";
 import { OperationsCountdownLabel } from "@/components/admin/operations/operations-countdown";
+import { FitnessScoreLegend } from "@/components/fitness/fitness-score-legend";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -240,9 +241,9 @@ export default async function FitheidPage({ searchParams }: Props) {
 
           <div className="rounded-2xl border border-zvv-border bg-white p-4 shadow-sm md:p-5">
             <h3 className="font-[family-name:var(--font-display)] text-xl text-zvv-ink">Totaalklassement</h3>
-            <p className="mt-1 text-sm text-zvv-muted">
-              Alleen speelsters met vier geldige onderdelen · gelijke weging 25%
-            </p>
+            <div className="mt-2">
+              <FitnessScoreLegend />
+            </div>
             <ol className="mt-4 space-y-2">
               {rankFitnessTotal(db, published.id)
                 .slice(0, 10)

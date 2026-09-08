@@ -94,6 +94,12 @@ export function formatMetersNl(meters: number | null | undefined): string {
   return `${meters.toLocaleString("nl-NL")} m`;
 }
 
+/** Onderdeelpunten 0–100, Nederlands (1 decimaal). */
+export function formatFitnessPoints(score: number | null | undefined): string {
+  if (score == null || !Number.isFinite(score)) return "—";
+  return score.toLocaleString("nl-NL", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+}
+
 export function plankSecondsToInput(totalSeconds: number | null | undefined): string {
   if (totalSeconds == null) return "";
   return formatPlankDisplay(totalSeconds);

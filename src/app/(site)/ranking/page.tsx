@@ -185,7 +185,7 @@ export default async function RankingPage({ searchParams }: Props) {
                 />
               </div>
               <p className="text-sm text-zvv-muted">
-                Totaalranking: alleen speelsters met alle vier onderdelen. Gelijke weging 25% per onderdeel, genormaliseerd binnen deze test.
+                Totaalranking: alleen speelsters met alle vier onderdelen. Uitleg bij Totaal fitheid.
               </p>
             </>
           ) : (

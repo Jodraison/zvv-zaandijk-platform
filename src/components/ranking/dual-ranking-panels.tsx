@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { FitnessRankRow, FitnessTotalRankRow } from "@/lib/fitness/session-ranking";
 import {
+  formatFitnessPoints,
   formatMetersNl,
   formatPlankDisplay,
   formatSecondsNl,
@@ -13,11 +14,21 @@ import {
   layoutFitnessPodium,
   splitPreservingOrderByPodiumIds,
 } from "@/lib/fitness/fitness-podium-layout";
+import { FitnessScoreLegend } from "@/components/fitness/fitness-score-legend";
 
 function formatComponentValue(key: FitnessComponentKey, value: number): string {
   if (key === "plank_seconds") return formatPlankDisplay(value);
   if (key === "six_minute_run_meters") return formatMetersNl(value);
   return formatSecondsNl(value);
+}
+
+function formatTotalBreakdown(r: FitnessTotalRankRow): string {
+  return [
+    `Loop ${formatFitnessPoints(r.componentScores.six_minute_run_meters)}`,
+    `Sprint ${formatFitnessPoints(r.componentScores.flying_sprint_30m_seconds)}`,
+    `Agi ${formatFitnessPoints(r.componentScores.agility_10_20_10_seconds)}`,
+    `Plank ${formatFitnessPoints(r.componentScores.plank_seconds)}`,
+  ].join(" · ");
 }
 
 export function FitnessPodiumList({
@@ -60,6 +71,7 @@ export function FitnessPodiumList({
     valueLabel: total
       ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
       : formatComponentValue(componentKey!, (r as FitnessRankRow).value),
+    detailLabel: total ? formatTotalBreakdown(r as FitnessTotalRankRow) : undefined,
     photo_url: null,
     rank: i + 1,
   }));
@@ -67,20 +79,28 @@ export function FitnessPodiumList({
   return (
     <section className="space-y-3 rounded-2xl border border-zvv-border bg-white p-4 shadow-sm md:p-5">
       <h3 className="font-[family-name:var(--font-display)] text-2xl text-zvv-ink">{title}</h3>
+      {total ? <FitnessScoreLegend /> : null}
       <RankingPodium entries={podiumEntries} />
       {laidOut.rest.length > 0 ? (
         <ul className="mt-2 divide-y divide-zvv-border border-t border-zvv-border">
           {laidOut.rest.map((r) => (
-            <li key={r.player_id} className="flex items-center justify-between gap-3 py-2 text-sm">
-              <span className="text-zvv-muted">#{r.rank}</span>
-              <span className="min-w-0 flex-1 truncate font-medium text-zvv-ink">
-                #{r.shirt_number} {r.full_name}
-              </span>
-              <span className="tabular-nums text-zvv-muted">
-                {total
-                  ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
-                  : formatComponentValue(componentKey!, (r as FitnessRankRow).value)}
-              </span>
+            <li key={r.player_id} className="py-2 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-zvv-muted">#{r.rank}</span>
+                <span className="min-w-0 flex-1 truncate font-medium text-zvv-ink">
+                  #{r.shirt_number} {r.full_name}
+                </span>
+                <span className="tabular-nums text-zvv-muted">
+                  {total
+                    ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
+                    : formatComponentValue(componentKey!, (r as FitnessRankRow).value)}
+                </span>
+              </div>
+              {total ? (
+                <p className="mt-0.5 pl-8 text-[11px] leading-snug text-zvv-muted">
+                  {formatTotalBreakdown(r as FitnessTotalRankRow)}
+                </p>
+              ) : null}
             </li>
           ))}
         </ul>
