@@ -1,17 +1,24 @@
 /**
- * Fitness score audit — 7 september 2026 dataset + regressie A–D.
- * Gebruikt dezelfde `rankFitnessTotal` als de production UI.
+ * Positiepunten — 7 september 2026 + regressie.
  * Run: npx tsx src/lib/fitness/session-ranking-score-audit.test.ts
  */
 import assert from "node:assert/strict";
-import type { ClubDatabase, FitnessTestResult } from "@/types";
-import { layoutFitnessPodium } from "@/lib/fitness/fitness-podium-layout";
+import type { ClubDatabase } from "@/types";
 import { FITNESS_COMPONENTS } from "@/lib/fitness/protocol";
-import { isFullFitnessResult, rankFitnessTotal } from "@/lib/fitness/session-ranking";
 import {
-  FITNESS_SCORE_LEGEND_BULLETS,
-  FITNESS_SCORE_LEGEND_NORMALIZATION,
+  fitnessScoreLegendMax,
+  fitnessScoreLegendScale,
 } from "@/lib/fitness/fitness-score-copy";
+import {
+  fitnessSessionFieldSize,
+  positionPoints,
+} from "@/lib/fitness/fitness-position-points";
+import {
+  isFullFitnessResult,
+  rankFitnessComponent,
+  rankFitnessTotal,
+  sessionFieldSize,
+} from "@/lib/fitness/session-ranking";
 
 type Athlete = {
   id: string;
@@ -23,7 +30,6 @@ type Athlete = {
   plank: number | null;
 };
 
-/** Exacte meetwaarden 7 september 2026 — niet muteren. */
 const SEPT7: Athlete[] = [
   { id: "jelisa", name: "Jelisa De Jonge", shirt: 1, run: 800, sprint: 3.85, agility: 12.65, plank: 29 },
   { id: "mariska", name: "Mariska Oosterhuis", shirt: 16, run: 800, sprint: null, agility: null, plank: 125 },
@@ -133,147 +139,158 @@ function sept7Db(athletes: Athlete[] = SEPT7): ClubDatabase {
   };
 }
 
-function byId(db: ClubDatabase) {
-  return new Map(rankFitnessTotal(db, "sess-sept7").map((r) => [r.player_id, r]));
-}
-
-function resultOf(db: ClubDatabase, playerId: string): FitnessTestResult {
-  return db.fitness_test_results.find((r) => r.player_id === playerId)!;
+function byId(rows: Array<{ player_id: string }>) {
+  return new Map(rows.map((r) => [r.player_id, r]));
 }
 
 {
-  // CASE A — gelijke 1000 m → dezelfde 6-min onderdeelscore
-  const totals = byId(sept7Db());
-  const runScores = ["dionne", "renee", "danique", "nienke"].map(
-    (id) => totals.get(id)!.componentScores.six_minute_run_meters,
-  );
-  assert.equal(new Set(runScores).size, 1);
-  assert.ok(runScores[0]! > 0);
-  assert.ok(runScores[0]! < 100);
+  // 13 deelnemers → 13 … 1
+  assert.equal(positionPoints(1, 13), 13);
+  assert.equal(positionPoints(2, 13), 12);
+  assert.equal(positionPoints(3, 13), 11);
+  assert.equal(positionPoints(13, 13), 1);
+  assert.equal(sessionFieldSize(sept7Db(), "sess-sept7"), 13);
 }
 
 {
-  // CASE B — Renée compleet: vier geldige onderdeelscores + totaal
-  const renee = byId(sept7Db()).get("renee")!;
-  assert.ok(renee);
-  for (const c of FITNESS_COMPONENTS) {
-    const score = renee.componentScores[c.key];
-    assert.ok(Number.isFinite(score), `${c.key} moet een eindig getal zijn`);
-    assert.ok(score > 0, `${c.key} mag geen 0 zijn voor Renée`);
-    assert.ok(score <= 100);
-  }
-  assert.ok(renee.totalScore > 0);
-  assert.equal(renee.totalScore, Math.round(renee.totalScore * 100) / 100);
-  const avg =
-    FITNESS_COMPONENTS.reduce((sum, c) => sum + renee.componentScores[c.key], 0) / FITNESS_COMPONENTS.length;
-  assert.equal(renee.totalScore, Math.round(avg * 100) / 100);
+  // Lege extra rij telt niet mee in N
+  const extra: Athlete = {
+    id: "ghost",
+    name: "Ghost",
+    shirt: 99,
+    run: null,
+    sprint: null,
+    agility: null,
+    plank: null,
+  };
+  assert.equal(sessionFieldSize(sept7Db([...SEPT7, extra]), "sess-sept7"), 13);
 }
 
 {
-  // CASE C — Mariska incompleet: geen totaal, NULL geen 0-seconden
   const db = sept7Db();
-  const totals = rankFitnessTotal(db, "sess-sept7");
-  assert.equal(totals.find((r) => r.player_id === "mariska"), undefined);
-  const raw = resultOf(db, "mariska");
-  assert.equal(isFullFitnessResult(raw), false);
+  const run = rankFitnessComponent(db, "sess-sept7", "six_minute_run_meters");
+  assert.deepEqual(
+    run.map((r) => r.full_name),
+    [
+      "Marisha Prins",
+      "Dionne van Dijk",
+      "Renée Koopman",
+      "Danique van Heeringen",
+      "Nienke Hoffman",
+      "Andrada Timmer",
+      "Melissa Rietveld",
+      "Lorelai Bakker",
+      "Jelisa De Jonge",
+      "Mariska Oosterhuis",
+      "Emie Agema",
+      "Anouk Aafjes",
+      "Tess Luijting",
+    ],
+  );
+  assert.deepEqual(
+    run.map((r) => r.points),
+    [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
+  );
+  assert.ok(run.every((r) => Number.isInteger(r.points)));
+}
+
+{
+  // Ontbrekend resultaat: geen ranking, 0 punten
+  const db = sept7Db();
+  const sprint = rankFitnessComponent(db, "sess-sept7", "flying_sprint_30m_seconds");
+  const agility = rankFitnessComponent(db, "sess-sept7", "agility_10_20_10_seconds");
+  assert.equal(sprint.find((r) => r.player_id === "mariska"), undefined);
+  assert.equal(agility.find((r) => r.player_id === "mariska"), undefined);
+  const raw = db.fitness_test_results.find((r) => r.player_id === "mariska")!;
   assert.equal(raw.flying_sprint_30m_seconds, null);
   assert.equal(raw.agility_10_20_10_seconds, null);
-  assert.notEqual(raw.flying_sprint_30m_seconds, 0);
-  assert.notEqual(raw.agility_10_20_10_seconds, 0);
-  assert.equal(raw.six_minute_run_meters, 800);
-  assert.equal(raw.plank_seconds, 125);
-}
-
-{
-  // CASE D — richting per onderdeel
-  const totals = byId(sept7Db());
-  assert.ok(
-    totals.get("marisha")!.componentScores.six_minute_run_meters >
-      totals.get("tess")!.componentScores.six_minute_run_meters,
-  );
-  assert.ok(
-    totals.get("dionne")!.componentScores.flying_sprint_30m_seconds >
-      totals.get("danique")!.componentScores.flying_sprint_30m_seconds,
-  );
-  assert.ok(
-    totals.get("dionne")!.componentScores.agility_10_20_10_seconds >
-      totals.get("lorelai")!.componentScores.agility_10_20_10_seconds,
-  );
-  assert.ok(
-    totals.get("marisha")!.componentScores.plank_seconds > totals.get("anouk")!.componentScores.plank_seconds,
-  );
-}
-
-{
-  // Podiumvolgorde mag scores niet wijzigen
-  const db = sept7Db();
+  assert.equal(isFullFitnessResult(raw), false);
   const totals = rankFitnessTotal(db, "sess-sept7");
-  const runRows = SEPT7.filter((a) => a.run != null).map((a) => ({
-    player_id: a.id,
-    full_name: a.name,
-    shirt_number: a.shirt,
-    value: a.run!,
-  }));
-  const totalRank = new Map(totals.map((r) => [r.player_id, r.rank]));
-  const laid = layoutFitnessPodium(runRows, "higher_better", totalRank);
-  assert.equal(laid.podium[0]!.player_id, "marisha");
-  assert.equal(laid.podium[1]!.player_id, "dionne");
-  assert.equal(laid.podium[2]!.player_id, "renee");
-  const again = byId(db);
+  assert.equal(totals.find((r) => r.player_id === "mariska"), undefined);
+}
+
+{
+  // Richting + optelling + geen decimalen
+  const db = sept7Db();
+  const renee = rankFitnessTotal(db, "sess-sept7").find((r) => r.player_id === "renee")!;
+  assert.equal(renee.componentScores.six_minute_run_meters, 11);
+  assert.equal(renee.componentScores.flying_sprint_30m_seconds, 10);
+  assert.equal(renee.componentScores.agility_10_20_10_seconds, 10);
+  assert.equal(renee.componentScores.plank_seconds, 12);
+  assert.equal(renee.totalScore, 43);
+  assert.ok(Number.isInteger(renee.totalScore));
   assert.equal(
-    again.get("renee")!.componentScores.six_minute_run_meters,
-    again.get("dionne")!.componentScores.six_minute_run_meters,
+    renee.totalScore,
+    FITNESS_COMPONENTS.reduce((sum, c) => sum + renee.componentScores[c.key], 0),
+  );
+
+  const sprint = rankFitnessComponent(db, "sess-sept7", "flying_sprint_30m_seconds");
+  assert.equal(sprint[0]!.player_id, "dionne");
+  assert.ok(sprint[0]!.value < sprint[sprint.length - 1]!.value);
+
+  const agility = rankFitnessComponent(db, "sess-sept7", "agility_10_20_10_seconds");
+  assert.equal(agility[0]!.player_id, "dionne");
+  assert.ok(agility[0]!.value < agility[agility.length - 1]!.value);
+
+  const run = rankFitnessComponent(db, "sess-sept7", "six_minute_run_meters");
+  assert.equal(run[0]!.player_id, "marisha");
+  assert.ok(run[0]!.value > run[run.length - 1]!.value);
+
+  const plank = rankFitnessComponent(db, "sess-sept7", "plank_seconds");
+  assert.equal(plank[0]!.player_id, "marisha");
+  assert.ok(plank[0]!.value > plank[plank.length - 1]!.value);
+}
+
+{
+  // Deterministische volgorde + niemand verdwijnt bij gelijke 1000 m
+  const db = sept7Db();
+  const run = rankFitnessComponent(db, "sess-sept7", "six_minute_run_meters");
+  assert.equal(run.length, 13);
+  assert.equal(new Set(run.map((r) => r.player_id)).size, 13);
+  const again = rankFitnessComponent(sept7Db([...SEPT7].reverse()), "sess-sept7", "six_minute_run_meters");
+  assert.deepEqual(
+    run.map((r) => r.player_id),
+    again.map((r) => r.player_id),
   );
 }
 
 {
-  // Arrayvolgorde mag scores niet wijzigen
-  const forward = byId(sept7Db(SEPT7));
-  const reverse = byId(sept7Db([...SEPT7].reverse()));
-  for (const a of SEPT7) {
-    const aRow = forward.get(a.id);
-    const bRow = reverse.get(a.id);
-    if (!aRow && !bRow) continue;
-    assert.deepEqual(aRow?.componentScores, bRow?.componentScores);
-    assert.equal(aRow?.totalScore, bRow?.totalScore);
-  }
-}
-
-{
-  // Legenda-copy komt overeen met de formule (0–100, 25%, complete only)
-  assert.match(FITNESS_SCORE_LEGEND_NORMALIZATION, /100 punten/);
-  assert.match(FITNESS_SCORE_LEGEND_NORMALIZATION, /0 punten/);
-  assert.match(FITNESS_SCORE_LEGEND_NORMALIZATION, /25%/);
-  assert.ok(FITNESS_SCORE_LEGEND_BULLETS.some((b) => b.includes("25%")));
-  assert.ok(FITNESS_SCORE_LEGEND_BULLETS.some((b) => b.includes("alle 4 onderdelen")));
-}
-
-{
-  // Volledige 13-speelster audit: 12 complete, Renée 78,90
-  const db = sept7Db();
-  const totals = rankFitnessTotal(db, "sess-sept7");
+  // Totaal: 12 complete, gehele scores, hoogste eerst
+  const totals = rankFitnessTotal(sept7Db(), "sess-sept7");
   assert.equal(totals.length, 12);
-  assert.equal(db.fitness_test_results.length, 13);
+  assert.ok(totals.every((r) => Number.isInteger(r.totalScore)));
+  for (let i = 1; i < totals.length; i++) {
+    assert.ok(totals[i - 1]!.totalScore >= totals[i]!.totalScore);
+  }
+  assert.equal(totals[0]!.player_id, "dionne");
+  assert.equal(totals[0]!.totalScore, 47);
+  assert.equal(totals[1]!.player_id, "marisha");
+  assert.equal(totals[1]!.totalScore, 46);
+}
 
-  const renee = totals.find((r) => r.player_id === "renee")!;
-  assert.equal(renee.componentScores.six_minute_run_meters, (1000 - 750) / (1050 - 750) * 100);
-  assert.equal(renee.componentScores.flying_sprint_30m_seconds, (3.98 - 3.43) / (3.98 - 3.21) * 100);
-  assert.equal(renee.componentScores.agility_10_20_10_seconds, (13.28 - 11.3) / (13.28 - 10.61) * 100);
-  assert.equal(renee.componentScores.plank_seconds, (132 - 15) / (150 - 15) * 100);
-  assert.equal(renee.totalScore, 78.9);
+{
+  assert.equal(
+    fitnessScoreLegendScale(13),
+    "1e 13 pt · 2e 12 pt · 3e 11 pt · 4e 10 pt · … · 13e 1 pt",
+  );
+  assert.equal(fitnessScoreLegendMax(13), "4 onderdelen · max. 52 pt");
+}
 
-  const table = [
-    ...totals.map((r) => ({
-      name: r.full_name,
-      run: Number(r.componentScores.six_minute_run_meters.toFixed(2)),
-      sprint: Number(r.componentScores.flying_sprint_30m_seconds.toFixed(2)),
-      agility: Number(r.componentScores.agility_10_20_10_seconds.toFixed(2)),
-      plank: Number(r.componentScores.plank_seconds.toFixed(2)),
-      total: r.totalScore,
-    })),
-    { name: "Mariska Oosterhuis", run: null, sprint: null, agility: null, plank: null, total: null },
-  ];
+{
+  const table = rankFitnessTotal(sept7Db(), "sess-sept7").map((r) => ({
+    name: r.full_name,
+    run: r.componentScores.six_minute_run_meters,
+    sprint: r.componentScores.flying_sprint_30m_seconds,
+    agility: r.componentScores.agility_10_20_10_seconds,
+    plank: r.componentScores.plank_seconds,
+    total: r.totalScore,
+  }));
   console.log("SCORE_AUDIT_TABLE", JSON.stringify(table, null, 2));
+}
+
+{
+  const n = fitnessSessionFieldSize(sept7Db().fitness_test_results);
+  assert.equal(n, 13);
 }
 
 console.log("session-ranking-score-audit.test.ts: ok");

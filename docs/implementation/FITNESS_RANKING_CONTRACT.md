@@ -16,21 +16,15 @@
 | Plank | higher_better | highest valid duration |
 | 6-minute run | higher_better | highest valid meters |
 
-Sporting ties share rank; technical order: shirt number asc → name (`nl`).
+Unique places after performance sort. Ties use the visual podium fill (session standing, then shirt → name) and the rest list (value → shirt → name). Missing component → excluded from that list, 0 points (never treated as a result).
 
-Missing component → excluded from that component list (never coerced to 0).
+Field size N = distinct athletes with at least one measured component. Place 1 = N points, last place = 1 point.
 
 ## Session total ranking
 
 Eligible only with **all four** valid components (`isFullFitnessResult`).
 
-Normalize each component within the session to 0–100:
-
-- higher_better: `(value - min) / (max - min) * 100`
-- lower_better: `(max - value) / (max - min) * 100`
-- all equal → 100 for every eligible athlete
-
-Weights: **25% / 25% / 25% / 25%**.
+Total = sum of four integer position points (no average, no 0–100 normalisation).
 
 Total tie-break order:
 

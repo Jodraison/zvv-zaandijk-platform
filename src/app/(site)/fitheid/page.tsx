@@ -6,6 +6,7 @@ import {
   latestPublishedFitnessSession,
   rankFitnessComponent,
   rankFitnessTotal,
+  sessionFieldSize,
 } from "@/lib/fitness/session-ranking";
 import { formatHumanDateNL } from "@/lib/utils/format-date";
 import { nextFitnessMoment } from "@/lib/operations/next-events";
@@ -242,7 +243,7 @@ export default async function FitheidPage({ searchParams }: Props) {
           <div className="rounded-2xl border border-zvv-border bg-white p-4 shadow-sm md:p-5">
             <h3 className="font-[family-name:var(--font-display)] text-xl text-zvv-ink">Totaalklassement</h3>
             <div className="mt-2">
-              <FitnessScoreLegend />
+              <FitnessScoreLegend fieldSize={sessionFieldSize(db, published.id)} />
             </div>
             <ol className="mt-4 space-y-2">
               {rankFitnessTotal(db, published.id)

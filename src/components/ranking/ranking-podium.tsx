@@ -9,8 +9,6 @@ export type PodiumEntry = {
   shirt_number: number;
   positionLabel: string;
   valueLabel: string;
-  /** Optionele tweede regel (bijv. fitheid-onderdeelpunten). */
-  detailLabel?: string;
   photo_url?: string | null;
   rank: number;
 };
@@ -149,9 +147,6 @@ export function RankingPodium({
                 #{entry.shirt_number} · {entry.positionLabel}
               </p>
               <p className="mt-2 text-lg font-bold tabular-nums text-amber-200">{entry.valueLabel}</p>
-              {entry.detailLabel ? (
-                <p className="mt-1 max-w-[12rem] text-[11px] leading-snug text-white/60">{entry.detailLabel}</p>
-              ) : null}
               <div className={cn("mt-4 w-full max-w-[11rem] rounded-t-lg", pedestal)} aria-hidden />
             </li>
           );

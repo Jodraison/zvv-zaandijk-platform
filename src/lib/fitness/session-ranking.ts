@@ -1,9 +1,17 @@
 /**
- * Fitheidsranking per gepubliceerde sessie — gelijke 25% weging, genormaliseerd binnen de sessie.
- * Tie-breaks: zie FITNESS_RANKING_CONTRACT.md (definitief).
+ * Fitheidsranking per gepubliceerde sessie — positiepunten (1e = N … laatste = 1).
+ * Totaal = som van vier onderdelen. Alleen complete speelsters in het totaalklassement.
  */
 import type { ClubDatabase, FitnessTestResult } from "@/types";
 import { FITNESS_COMPONENTS, type FitnessComponentKey } from "@/lib/fitness/protocol";
+import { layoutFitnessPodium } from "@/lib/fitness/fitness-podium-layout";
+import {
+  componentPointsOf,
+  fitnessSessionFieldSize,
+  isMeasuredFitnessValue,
+  measuredComponentEntries,
+  positionPoints,
+} from "@/lib/fitness/fitness-position-points";
 import { todayInClubTz } from "@/lib/season/season-operations-2026-27";
 
 export type FitnessRankRow = {
@@ -12,13 +20,15 @@ export type FitnessRankRow = {
   shirt_number: number;
   value: number;
   rank: number;
+  /** Gehele positiepunten (0 als niet gerangschikt). */
+  points: number;
 };
 
 export type FitnessTotalRankRow = {
   player_id: string;
   full_name: string;
   shirt_number: number;
-  /** 0–100 genormaliseerd gemiddelde van 4 onderdelen. */
+  /** Som van vier gehele positiepunten. */
   totalScore: number;
   componentScores: Record<FitnessComponentKey, number>;
   componentRanks: Record<FitnessComponentKey, number>;
@@ -36,31 +46,18 @@ function playerMeta(db: ClubDatabase, seasonId: string, playerId: string) {
   };
 }
 
-function assignRanks<T extends { value: number; player_id: string; shirt_number: number; full_name: string }>(
-  sorted: T[],
-): Array<T & { rank: number }> {
-  let rank = 0;
-  let lastValue: number | null = null;
-  return sorted.map((row, i) => {
-    if (lastValue === null || row.value !== lastValue) {
-      rank = i + 1;
-      lastValue = row.value;
-    }
-    return { ...row, rank };
-  });
+function sessionResults(db: ClubDatabase, sessionId: string): FitnessTestResult[] {
+  return db.fitness_test_results.filter((r) => r.session_id === sessionId);
 }
 
-export function rankFitnessComponent(
+function componentBaseRows(
   db: ClubDatabase,
-  sessionId: string,
+  seasonId: string,
+  results: FitnessTestResult[],
   key: FitnessComponentKey,
-): FitnessRankRow[] {
-  const session = db.fitness_test_sessions.find((s) => s.id === sessionId);
-  if (!session || session.status !== "published") return [];
-  const meta = FITNESS_COMPONENTS.find((c) => c.key === key)!;
-  const results = db.fitness_test_results.filter((r) => r.session_id === sessionId && r[key] != null);
-  const rows = results.map((r) => {
-    const m = playerMeta(db, session.season_id, r.player_id);
+) {
+  return measuredComponentEntries(results, key).map((r) => {
+    const m = playerMeta(db, seasonId, r.player_id);
     return {
       player_id: r.player_id,
       full_name: m.full_name,
@@ -68,82 +65,48 @@ export function rankFitnessComponent(
       value: r[key] as number,
     };
   });
-  rows.sort((a, b) => {
-    const d = meta.direction === "lower_better" ? a.value - b.value : b.value - a.value;
-    if (d !== 0) return d;
-    if (a.shirt_number !== b.shirt_number) return a.shirt_number - b.shirt_number;
-    return a.full_name.localeCompare(b.full_name, "nl");
-  });
-  return assignRanks(rows);
 }
 
-/** Min-max normalisatie binnen sessie → 0–100 (best = 100), keyed by player_id. */
-function normalizeByPlayer(
-  entries: Array<{ player_id: string; value: number }>,
+function uniqueOrderedRows(
+  rows: Array<{ player_id: string; full_name: string; shirt_number: number; value: number }>,
   direction: "lower_better" | "higher_better",
+  totalRankByPlayer: ReadonlyMap<string, number>,
+  fieldSize: number,
+): FitnessRankRow[] {
+  const { podium, rest } = layoutFitnessPodium(rows, direction, totalRankByPlayer);
+  return [...podium, ...rest].map((row, i) => {
+    const rank = i + 1;
+    return { ...row, rank, points: positionPoints(rank, fieldSize) };
+  });
+}
+
+function standingFromComponentMaps(
+  db: ClubDatabase,
+  seasonId: string,
+  complete: FitnessTestResult[],
+  rankMaps: Record<FitnessComponentKey, Map<string, number>>,
+  fieldSize: number,
 ): Map<string, number> {
-  const map = new Map<string, number>();
-  if (entries.length === 0) return map;
-  const values = entries.map((e) => e.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  for (const e of entries) {
-    if (max === min) {
-      map.set(e.player_id, 100);
-    } else if (direction === "lower_better") {
-      map.set(e.player_id, ((max - e.value) / (max - min)) * 100);
-    } else {
-      map.set(e.player_id, ((e.value - min) / (max - min)) * 100);
-    }
-  }
-  return map;
-}
-
-export function isFullFitnessResult(r: FitnessTestResult): boolean {
-  return FITNESS_COMPONENTS.every((c) => r[c.key] != null && (r[c.key] as number) > 0);
-}
-
-export function rankFitnessTotal(db: ClubDatabase, sessionId: string): FitnessTotalRankRow[] {
-  const session = db.fitness_test_sessions.find((s) => s.id === sessionId);
-  if (!session || session.status !== "published") return [];
-  const results = db.fitness_test_results.filter((r) => r.session_id === sessionId && isFullFitnessResult(r));
-  if (results.length === 0) return [];
-
-  const componentRankMaps = Object.fromEntries(
-    FITNESS_COMPONENTS.map((c) => {
-      const ranked = rankFitnessComponent(db, sessionId, c.key);
-      return [c.key, new Map(ranked.map((r) => [r.player_id, r.rank]))];
-    }),
-  ) as Record<FitnessComponentKey, Map<string, number>>;
-
-  const normMaps = Object.fromEntries(
-    FITNESS_COMPONENTS.map((c) => {
-      const entries = results.map((r) => ({ player_id: r.player_id, value: r[c.key] as number }));
-      return [c.key, normalizeByPlayer(entries, c.direction)];
-    }),
-  ) as Record<FitnessComponentKey, Map<string, number>>;
-
-  const rows: Omit<FitnessTotalRankRow, "rank">[] = results.map((r) => {
-    const m = playerMeta(db, session.season_id, r.player_id);
+  const rows = complete.map((r) => {
+    const m = playerMeta(db, seasonId, r.player_id);
     const componentScores = Object.fromEntries(
-      FITNESS_COMPONENTS.map((c) => [c.key, normMaps[c.key].get(r.player_id) ?? 0]),
+      FITNESS_COMPONENTS.map((c) => [c.key, componentPointsOf(rankMaps[c.key], r.player_id, fieldSize)]),
     ) as Record<FitnessComponentKey, number>;
     const componentRanks = Object.fromEntries(
-      FITNESS_COMPONENTS.map((c) => [c.key, componentRankMaps[c.key].get(r.player_id) ?? 999]),
+      FITNESS_COMPONENTS.map((c) => [c.key, rankMaps[c.key].get(r.player_id) ?? 999]),
     ) as Record<FitnessComponentKey, number>;
     const firstPlaces = FITNESS_COMPONENTS.filter((c) => componentRanks[c.key] === 1).length;
     const lowestComponentScore = Math.min(...FITNESS_COMPONENTS.map((c) => componentScores[c.key]));
-    const totalScore =
-      FITNESS_COMPONENTS.reduce((sum, c) => sum + componentScores[c.key], 0) / FITNESS_COMPONENTS.length;
+    const totalScore = FITNESS_COMPONENTS.reduce((sum, c) => sum + componentScores[c.key], 0);
     return {
       player_id: r.player_id,
       full_name: m.full_name,
       shirt_number: m.shirt_number,
-      totalScore: Math.round(totalScore * 100) / 100,
+      totalScore,
       componentScores,
       componentRanks,
       firstPlaces,
-      lowestComponentScore: Math.round(lowestComponentScore * 100) / 100,
+      lowestComponentScore,
     };
   });
 
@@ -161,15 +124,113 @@ export function rankFitnessTotal(db: ClubDatabase, sessionId: string): FitnessTo
     return a.full_name.localeCompare(b.full_name, "nl");
   });
 
+  return new Map(rows.map((row, i) => [row.player_id, i + 1]));
+}
+
+function scorePublishedSession(db: ClubDatabase, sessionId: string) {
+  const session = db.fitness_test_sessions.find((s) => s.id === sessionId);
+  if (!session || session.status !== "published") {
+    return {
+      fieldSize: 0,
+      components: Object.fromEntries(FITNESS_COMPONENTS.map((c) => [c.key, [] as FitnessRankRow[]])) as Record<
+        FitnessComponentKey,
+        FitnessRankRow[]
+      >,
+      totals: [] as FitnessTotalRankRow[],
+    };
+  }
+
+  const results = sessionResults(db, sessionId);
+  const fieldSize = fitnessSessionFieldSize(results);
+  const complete = results.filter(isFullFitnessResult);
+  const bases = Object.fromEntries(
+    FITNESS_COMPONENTS.map((c) => [c.key, componentBaseRows(db, session.season_id, results, c.key)]),
+  ) as Record<FitnessComponentKey, ReturnType<typeof componentBaseRows>>;
+
+  const orderPass = (totalRanks: ReadonlyMap<string, number>) =>
+    Object.fromEntries(
+      FITNESS_COMPONENTS.map((c) => [c.key, uniqueOrderedRows(bases[c.key], c.direction, totalRanks, fieldSize)]),
+    ) as Record<FitnessComponentKey, FitnessRankRow[]>;
+
+  const toRankMaps = (ordered: Record<FitnessComponentKey, FitnessRankRow[]>) =>
+    Object.fromEntries(
+      FITNESS_COMPONENTS.map((c) => [c.key, new Map(ordered[c.key].map((r) => [r.player_id, r.rank]))]),
+    ) as Record<FitnessComponentKey, Map<string, number>>;
+
+  const pass1 = orderPass(new Map());
+  const pass2 = orderPass(standingFromComponentMaps(db, session.season_id, complete, toRankMaps(pass1), fieldSize));
+  const pass3 = orderPass(standingFromComponentMaps(db, session.season_id, complete, toRankMaps(pass2), fieldSize));
+  const components = pass3;
+  const rankMaps = toRankMaps(components);
+
+  const totalsUnranked = complete.map((r) => {
+    const m = playerMeta(db, session.season_id, r.player_id);
+    const componentScores = Object.fromEntries(
+      FITNESS_COMPONENTS.map((c) => [c.key, componentPointsOf(rankMaps[c.key], r.player_id, fieldSize)]),
+    ) as Record<FitnessComponentKey, number>;
+    const componentRanks = Object.fromEntries(
+      FITNESS_COMPONENTS.map((c) => [c.key, rankMaps[c.key].get(r.player_id) ?? 999]),
+    ) as Record<FitnessComponentKey, number>;
+    const firstPlaces = FITNESS_COMPONENTS.filter((c) => componentRanks[c.key] === 1).length;
+    const lowestComponentScore = Math.min(...FITNESS_COMPONENTS.map((c) => componentScores[c.key]));
+    const totalScore = FITNESS_COMPONENTS.reduce((sum, c) => sum + componentScores[c.key], 0);
+    return {
+      player_id: r.player_id,
+      full_name: m.full_name,
+      shirt_number: m.shirt_number,
+      totalScore,
+      componentScores,
+      componentRanks,
+      firstPlaces,
+      lowestComponentScore,
+    };
+  });
+
+  totalsUnranked.sort((a, b) => {
+    if (b.totalScore !== a.totalScore) return b.totalScore - a.totalScore;
+    if (b.firstPlaces !== a.firstPlaces) return b.firstPlaces - a.firstPlaces;
+    if (b.lowestComponentScore !== a.lowestComponentScore) return b.lowestComponentScore - a.lowestComponentScore;
+    if (a.componentRanks.flying_sprint_30m_seconds !== b.componentRanks.flying_sprint_30m_seconds) {
+      return a.componentRanks.flying_sprint_30m_seconds - b.componentRanks.flying_sprint_30m_seconds;
+    }
+    if (a.componentRanks.agility_10_20_10_seconds !== b.componentRanks.agility_10_20_10_seconds) {
+      return a.componentRanks.agility_10_20_10_seconds - b.componentRanks.agility_10_20_10_seconds;
+    }
+    if (a.shirt_number !== b.shirt_number) return a.shirt_number - b.shirt_number;
+    return a.full_name.localeCompare(b.full_name, "nl");
+  });
+
   let rank = 0;
   let last: number | null = null;
-  return rows.map((row, i) => {
+  const totals: FitnessTotalRankRow[] = totalsUnranked.map((row, i) => {
     if (last === null || row.totalScore !== last) {
       rank = i + 1;
       last = row.totalScore;
     }
     return { ...row, rank };
   });
+
+  return { fieldSize, components, totals };
+}
+
+export function isFullFitnessResult(r: FitnessTestResult): boolean {
+  return FITNESS_COMPONENTS.every((c) => isMeasuredFitnessValue(r[c.key] as number | null));
+}
+
+export function sessionFieldSize(db: ClubDatabase, sessionId: string): number {
+  return scorePublishedSession(db, sessionId).fieldSize;
+}
+
+export function rankFitnessComponent(
+  db: ClubDatabase,
+  sessionId: string,
+  key: FitnessComponentKey,
+): FitnessRankRow[] {
+  return scorePublishedSession(db, sessionId).components[key];
+}
+
+export function rankFitnessTotal(db: ClubDatabase, sessionId: string): FitnessTotalRankRow[] {
+  return scorePublishedSession(db, sessionId).totals;
 }
 
 function isEligiblePublishedSession(
@@ -179,7 +240,6 @@ function isEligiblePublishedSession(
 ) {
   if (s.season_id !== seasonId || s.status !== "published") return false;
   if ((s.note ?? "").startsWith("[QA]")) return false;
-  // Future-dated published sessions must not drive rankings/homepage.
   if (s.test_on > today) return false;
   return true;
 }

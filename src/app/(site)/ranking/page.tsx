@@ -15,6 +15,7 @@ import {
   publishedFitnessSessions,
   rankFitnessComponent,
   rankFitnessTotal,
+  sessionFieldSize,
 } from "@/lib/fitness/session-ranking";
 import { FITNESS_COMPONENTS } from "@/lib/fitness/protocol";
 import { formatDateNL, formatHumanDateNL } from "@/lib/utils/format-date";
@@ -36,10 +37,6 @@ import { nextFitnessMoment } from "@/lib/operations/next-events";
 import { getSeasonOperations } from "@/lib/season/season-operations-2026-27";
 
 type Props = { searchParams: Promise<{ season?: string; view?: string; session?: string }> };
-
-function totalRankByPlayerId(db: Awaited<ReturnType<typeof readDb>>, sessionId: string) {
-  return new Map(rankFitnessTotal(db, sessionId).map((r) => [r.player_id, r.rank]));
-}
 
 function sortByGoals(rows: ReturnType<typeof computeRanking>) {
   return [...rows]
@@ -104,8 +101,8 @@ export default async function RankingPage({ searchParams }: Props) {
     history.find((s) => s.id === sp.session) ?? currentFitness ?? history[0] ?? null;
   const nextFitness = nextFitnessMoment(db, seasonId);
   const expectedNext = currentFitness ? expectedFitnessTestDate(currentFitness.test_on) : nextFitness.date;
-  const currentTotalRanks = currentFitness ? totalRankByPlayerId(db, currentFitness.id) : undefined;
-  const selectedTotalRanks = selectedSession ? totalRankByPlayerId(db, selectedSession.id) : undefined;
+  const currentFieldSize = currentFitness ? sessionFieldSize(db, currentFitness.id) : 0;
+  const selectedFieldSize = selectedSession ? sessionFieldSize(db, selectedSession.id) : 0;
 
   return (
     <div className="space-y-10 md:space-y-12">
@@ -175,18 +172,15 @@ export default async function RankingPage({ searchParams }: Props) {
                     title={c.shortLabel}
                     rows={rankFitnessComponent(db, currentFitness.id, c.key)}
                     componentKey={c.key}
-                    totalRankByPlayer={currentTotalRanks}
                   />
                 ))}
                 <FitnessPodiumList
                   title="Totaal fitheid"
                   rows={rankFitnessTotal(db, currentFitness.id)}
                   total
+                  fieldSize={currentFieldSize}
                 />
               </div>
-              <p className="text-sm text-zvv-muted">
-                Totaalranking: alleen speelsters met alle vier onderdelen. Uitleg bij Totaal fitheid.
-              </p>
             </>
           ) : (
             <div className="club-empty-state">
@@ -247,13 +241,13 @@ export default async function RankingPage({ searchParams }: Props) {
                       title={c.shortLabel}
                       rows={rankFitnessComponent(db, selectedSession.id, c.key)}
                       componentKey={c.key}
-                      totalRankByPlayer={selectedTotalRanks}
                     />
                   ))}
                   <FitnessPodiumList
                     title="Totaal fitheid"
                     rows={rankFitnessTotal(db, selectedSession.id)}
                     total
+                    fieldSize={selectedFieldSize}
                   />
                 </div>
               ) : null}
@@ -330,7 +324,7 @@ export default async function RankingPage({ searchParams }: Props) {
                       : "Seizoensfitheidsranking"}
                   </p>
                   <p className="mt-1 text-sm text-zvv-muted">
-                    Primaire score: gemiddelde genormaliseerde totaalscore over volledige deelnames.
+                    Primaire score: gemiddelde totaalscore over volledige deelnames.
                   </p>
                   <ul className="mt-3 space-y-2">
                     {seasonFitnessConsistency(db, seasonId)

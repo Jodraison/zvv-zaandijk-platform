@@ -1,19 +1,13 @@
 import Link from "next/link";
 import type { FitnessRankRow, FitnessTotalRankRow } from "@/lib/fitness/session-ranking";
 import {
-  formatFitnessPoints,
   formatMetersNl,
   formatPlankDisplay,
   formatSecondsNl,
 } from "@/lib/fitness/parse-values";
-import type { FitnessComponentKey } from "@/lib/fitness/protocol";
-import { FITNESS_COMPONENTS } from "@/lib/fitness/protocol";
+import { FITNESS_COMPONENTS, type FitnessComponentKey } from "@/lib/fitness/protocol";
 import { cn } from "@/lib/utils";
 import { RankingPodium, type PodiumEntry } from "@/components/ranking/ranking-podium";
-import {
-  layoutFitnessPodium,
-  splitPreservingOrderByPodiumIds,
-} from "@/lib/fitness/fitness-podium-layout";
 import { FitnessScoreLegend } from "@/components/fitness/fitness-score-legend";
 
 function formatComponentValue(key: FitnessComponentKey, value: number): string {
@@ -22,13 +16,18 @@ function formatComponentValue(key: FitnessComponentKey, value: number): string {
   return formatSecondsNl(value);
 }
 
-function formatTotalBreakdown(r: FitnessTotalRankRow): string {
-  return [
-    `Loop ${formatFitnessPoints(r.componentScores.six_minute_run_meters)}`,
-    `Sprint ${formatFitnessPoints(r.componentScores.flying_sprint_30m_seconds)}`,
-    `Agi ${formatFitnessPoints(r.componentScores.agility_10_20_10_seconds)}`,
-    `Plank ${formatFitnessPoints(r.componentScores.plank_seconds)}`,
-  ].join(" · ");
+function formatTotalPoints(score: number): string {
+  return `${score.toLocaleString("nl-NL")} pt`;
+}
+
+function rowValueLabel(
+  r: FitnessRankRow | FitnessTotalRankRow,
+  total: boolean | undefined,
+  componentKey?: FitnessComponentKey,
+): string {
+  if (total && "totalScore" in r) return formatTotalPoints(r.totalScore);
+  if ("value" in r && componentKey) return formatComponentValue(componentKey, r.value);
+  return "";
 }
 
 export function FitnessPodiumList({
@@ -36,13 +35,13 @@ export function FitnessPodiumList({
   rows,
   componentKey,
   total,
-  totalRankByPlayer,
+  fieldSize = 0,
 }: {
   title: string;
   rows: FitnessRankRow[] | FitnessTotalRankRow[];
   componentKey?: FitnessComponentKey;
   total?: boolean;
-  totalRankByPlayer?: ReadonlyMap<string, number>;
+  fieldSize?: number;
 }) {
   if (rows.length === 0) {
     return (
@@ -53,54 +52,42 @@ export function FitnessPodiumList({
     );
   }
 
-  const componentRows = total ? [] : (rows as FitnessRankRow[]);
-  const totalRows = total ? (rows as FitnessTotalRankRow[]) : [];
-  const laidOut = total
-    ? splitPreservingOrderByPodiumIds(totalRows, totalRows.slice(0, 3))
-    : layoutFitnessPodium(
-        componentRows,
-        FITNESS_COMPONENTS.find((c) => c.key === componentKey)?.direction ?? "higher_better",
-        totalRankByPlayer ?? new Map(),
-      );
+  const podium = rows.slice(0, 3);
+  const rest = rows.slice(3);
 
-  const podiumEntries: PodiumEntry[] = laidOut.podium.map((r, i) => ({
+  const podiumEntries: PodiumEntry[] = podium.map((r, i) => ({
     player_id: r.player_id,
     full_name: r.full_name,
     shirt_number: r.shirt_number,
     positionLabel: "",
-    valueLabel: total
-      ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
-      : formatComponentValue(componentKey!, (r as FitnessRankRow).value),
-    detailLabel: total ? formatTotalBreakdown(r as FitnessTotalRankRow) : undefined,
+    valueLabel: rowValueLabel(r, total, componentKey),
     photo_url: null,
     rank: i + 1,
   }));
 
   return (
-    <section className="space-y-3 rounded-2xl border border-zvv-border bg-white p-4 shadow-sm md:p-5">
-      <h3 className="font-[family-name:var(--font-display)] text-2xl text-zvv-ink">{title}</h3>
-      {total ? <FitnessScoreLegend /> : null}
+    <section className="space-y-4 rounded-2xl border border-zvv-border bg-white p-4 md:p-5">
+      <div className="space-y-2">
+        <h3 className="font-[family-name:var(--font-display)] text-2xl text-zvv-ink">{title}</h3>
+        {total ? <FitnessScoreLegend fieldSize={fieldSize} /> : null}
+      </div>
       <RankingPodium entries={podiumEntries} />
-      {laidOut.rest.length > 0 ? (
-        <ul className="mt-2 divide-y divide-zvv-border border-t border-zvv-border">
-          {laidOut.rest.map((r) => (
-            <li key={r.player_id} className="py-2 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-zvv-muted">#{r.rank}</span>
-                <span className="min-w-0 flex-1 truncate font-medium text-zvv-ink">
-                  #{r.shirt_number} {r.full_name}
-                </span>
-                <span className="tabular-nums text-zvv-muted">
-                  {total
-                    ? `${(r as FitnessTotalRankRow).totalScore.toLocaleString("nl-NL")} pt`
-                    : formatComponentValue(componentKey!, (r as FitnessRankRow).value)}
-                </span>
-              </div>
-              {total ? (
-                <p className="mt-0.5 pl-8 text-[11px] leading-snug text-zvv-muted">
-                  {formatTotalBreakdown(r as FitnessTotalRankRow)}
+      {rest.length > 0 ? (
+        <ul className="divide-y divide-zvv-border/80 rounded-2xl border border-zvv-border">
+          {rest.map((r) => (
+            <li key={r.player_id} className="flex items-center gap-3 px-3 py-3.5 sm:px-4">
+              <span className="w-8 shrink-0 font-[family-name:var(--font-display)] text-lg tabular-nums text-zvv-muted">
+                #{r.rank}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-[family-name:var(--font-display)] text-[17px] leading-tight tracking-wide text-zvv-ink">
+                  {r.full_name}
                 </p>
-              ) : null}
+                <p className="mt-0.5 text-sm text-zvv-muted">#{r.shirt_number}</p>
+              </div>
+              <span className="shrink-0 font-[family-name:var(--font-display)] text-lg tabular-nums text-zvv-ink">
+                {rowValueLabel(r, total, componentKey)}
+              </span>
             </li>
           ))}
         </ul>
