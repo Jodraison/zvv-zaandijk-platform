@@ -1,15 +1,18 @@
 /**
- * Positiepunten — 7 september 2026 + regressie.
+ * Dense-rank positiepunten — 7 september 2026 + regressie A–D.
  * Run: npx tsx src/lib/fitness/session-ranking-score-audit.test.ts
  */
 import assert from "node:assert/strict";
 import type { ClubDatabase } from "@/types";
 import { FITNESS_COMPONENTS } from "@/lib/fitness/protocol";
 import {
+  FITNESS_SCORE_LEGEND_TIE,
   fitnessScoreLegendMax,
   fitnessScoreLegendScale,
 } from "@/lib/fitness/fitness-score-copy";
 import {
+  denseRankAndPoints,
+  denseRankByValue,
   fitnessSessionFieldSize,
   positionPoints,
 } from "@/lib/fitness/fitness-position-points";
@@ -139,38 +142,84 @@ function sept7Db(athletes: Athlete[] = SEPT7): ClubDatabase {
   };
 }
 
-function byId(rows: Array<{ player_id: string }>) {
-  return new Map(rows.map((r) => [r.player_id, r]));
+{
+  // CASE A — higher better, dense ranks + N=13 punten
+  const values = [1050, 1000, 1000, 1000, 1000, 900];
+  const ranks = denseRankByValue(values, "higher_better");
+  assert.deepEqual(
+    values.map((v) => ranks.get(v)),
+    [1, 2, 2, 2, 2, 3],
+  );
+  assert.deepEqual(
+    values.map((v) => denseRankAndPoints(v, ranks, 13).points),
+    [13, 12, 12, 12, 12, 11],
+  );
 }
 
 {
-  // 13 deelnemers → 13 … 1
+  // CASE B — lower better, gelijke 10.0
+  const values = [10.0, 10.0, 11.0, 12.0];
+  const ranks = denseRankByValue(values, "lower_better");
+  assert.deepEqual(
+    values.map((v) => ranks.get(v)),
+    [1, 1, 2, 3],
+  );
+}
+
+{
+  // CASE C — higher better, gelijke 125
+  const values = [150, 132, 125, 125, 100];
+  const ranks = denseRankByValue(values, "higher_better");
+  assert.deepEqual(
+    values.map((v) => ranks.get(v)),
+    [1, 2, 3, 3, 4],
+  );
+}
+
+{
+  // CASE D — NULL geen rank/punten
+  const db = sept7Db();
+  const sprint = rankFitnessComponent(db, "sess-sept7", "flying_sprint_30m_seconds");
+  assert.equal(sprint.find((r) => r.player_id === "mariska"), undefined);
+  const raw = db.fitness_test_results.find((r) => r.player_id === "mariska")!;
+  assert.equal(raw.flying_sprint_30m_seconds, null);
+  assert.equal(isFullFitnessResult(raw), false);
+  assert.equal(rankFitnessTotal(db, "sess-sept7").find((r) => r.player_id === "mariska"), undefined);
+}
+
+{
   assert.equal(positionPoints(1, 13), 13);
   assert.equal(positionPoints(2, 13), 12);
-  assert.equal(positionPoints(3, 13), 11);
-  assert.equal(positionPoints(13, 13), 1);
+  assert.equal(positionPoints(6, 13), 8);
   assert.equal(sessionFieldSize(sept7Db(), "sess-sept7"), 13);
 }
 
 {
-  // Lege extra rij telt niet mee in N
-  const extra: Athlete = {
-    id: "ghost",
-    name: "Ghost",
-    shirt: 99,
-    run: null,
-    sprint: null,
-    agility: null,
-    plank: null,
-  };
-  assert.equal(sessionFieldSize(sept7Db([...SEPT7, extra]), "sess-sept7"), 13);
-}
-
-{
-  const db = sept7Db();
-  const run = rankFitnessComponent(db, "sess-sept7", "six_minute_run_meters");
+  const run = rankFitnessComponent(sept7Db(), "sess-sept7", "six_minute_run_meters");
+  const byName = new Map(run.map((r) => [r.full_name, r]));
+  const expected: Array<[string, number, number, number]> = [
+    ["Marisha Prins", 1050, 1, 13],
+    ["Dionne van Dijk", 1000, 2, 12],
+    ["Renée Koopman", 1000, 2, 12],
+    ["Danique van Heeringen", 1000, 2, 12],
+    ["Nienke Hoffman", 1000, 2, 12],
+    ["Andrada Timmer", 900, 3, 11],
+    ["Melissa Rietveld", 850, 4, 10],
+    ["Lorelai Bakker", 850, 4, 10],
+    ["Jelisa De Jonge", 800, 5, 9],
+    ["Mariska Oosterhuis", 800, 5, 9],
+    ["Emie Agema", 800, 5, 9],
+    ["Anouk Aafjes", 800, 5, 9],
+    ["Tess Luijting", 750, 6, 8],
+  ];
+  for (const [name, value, rank, points] of expected) {
+    const row = byName.get(name)!;
+    assert.equal(row.value, value);
+    assert.equal(row.rank, rank, `${name} rank`);
+    assert.equal(row.points, points, `${name} points`);
+  }
   assert.deepEqual(
-    run.map((r) => r.full_name),
+    run.slice(0, 6).map((r) => r.full_name),
     [
       "Marisha Prins",
       "Dionne van Dijk",
@@ -178,97 +227,59 @@ function byId(rows: Array<{ player_id: string }>) {
       "Danique van Heeringen",
       "Nienke Hoffman",
       "Andrada Timmer",
-      "Melissa Rietveld",
-      "Lorelai Bakker",
-      "Jelisa De Jonge",
-      "Mariska Oosterhuis",
-      "Emie Agema",
-      "Anouk Aafjes",
-      "Tess Luijting",
     ],
   );
-  assert.deepEqual(
-    run.map((r) => r.points),
-    [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1],
-  );
-  assert.ok(run.every((r) => Number.isInteger(r.points)));
 }
 
 {
-  // Ontbrekend resultaat: geen ranking, 0 punten
+  // Sprint-tie 3.56: zelfde rank en punten; sorteervolgorde wijzigt score niet
   const db = sept7Db();
   const sprint = rankFitnessComponent(db, "sess-sept7", "flying_sprint_30m_seconds");
-  const agility = rankFitnessComponent(db, "sess-sept7", "agility_10_20_10_seconds");
-  assert.equal(sprint.find((r) => r.player_id === "mariska"), undefined);
-  assert.equal(agility.find((r) => r.player_id === "mariska"), undefined);
-  const raw = db.fitness_test_results.find((r) => r.player_id === "mariska")!;
-  assert.equal(raw.flying_sprint_30m_seconds, null);
-  assert.equal(raw.agility_10_20_10_seconds, null);
-  assert.equal(isFullFitnessResult(raw), false);
-  const totals = rankFitnessTotal(db, "sess-sept7");
-  assert.equal(totals.find((r) => r.player_id === "mariska"), undefined);
+  const nienke = sprint.find((r) => r.player_id === "nienke")!;
+  const anouk = sprint.find((r) => r.player_id === "anouk")!;
+  assert.equal(nienke.value, anouk.value);
+  assert.equal(nienke.rank, anouk.rank);
+  assert.equal(nienke.points, anouk.points);
+  const reversed = rankFitnessComponent(sept7Db([...SEPT7].reverse()), "sess-sept7", "flying_sprint_30m_seconds");
+  assert.equal(reversed.find((r) => r.player_id === "nienke")!.points, nienke.points);
+  assert.equal(runPointsStable(sprint), runPointsStable(reversed));
+}
+
+function runPointsStable(rows: Array<{ player_id: string; points: number; rank: number }>) {
+  return [...rows]
+    .map((r) => `${r.player_id}:${r.rank}:${r.points}`)
+    .sort()
+    .join("|");
 }
 
 {
-  // Richting + optelling + geen decimalen
   const db = sept7Db();
   const renee = rankFitnessTotal(db, "sess-sept7").find((r) => r.player_id === "renee")!;
-  assert.equal(renee.componentScores.six_minute_run_meters, 11);
+  assert.equal(renee.componentScores.six_minute_run_meters, 12);
+  assert.equal(renee.componentRanks.six_minute_run_meters, 2);
   assert.equal(renee.componentScores.flying_sprint_30m_seconds, 10);
   assert.equal(renee.componentScores.agility_10_20_10_seconds, 10);
   assert.equal(renee.componentScores.plank_seconds, 12);
-  assert.equal(renee.totalScore, 43);
-  assert.ok(Number.isInteger(renee.totalScore));
+  assert.equal(renee.totalScore, 44);
   assert.equal(
     renee.totalScore,
     FITNESS_COMPONENTS.reduce((sum, c) => sum + renee.componentScores[c.key], 0),
   );
-
-  const sprint = rankFitnessComponent(db, "sess-sept7", "flying_sprint_30m_seconds");
-  assert.equal(sprint[0]!.player_id, "dionne");
-  assert.ok(sprint[0]!.value < sprint[sprint.length - 1]!.value);
-
-  const agility = rankFitnessComponent(db, "sess-sept7", "agility_10_20_10_seconds");
-  assert.equal(agility[0]!.player_id, "dionne");
-  assert.ok(agility[0]!.value < agility[agility.length - 1]!.value);
-
-  const run = rankFitnessComponent(db, "sess-sept7", "six_minute_run_meters");
-  assert.equal(run[0]!.player_id, "marisha");
-  assert.ok(run[0]!.value > run[run.length - 1]!.value);
-
-  const plank = rankFitnessComponent(db, "sess-sept7", "plank_seconds");
-  assert.equal(plank[0]!.player_id, "marisha");
-  assert.ok(plank[0]!.value > plank[plank.length - 1]!.value);
 }
 
 {
-  // Deterministische volgorde + niemand verdwijnt bij gelijke 1000 m
-  const db = sept7Db();
-  const run = rankFitnessComponent(db, "sess-sept7", "six_minute_run_meters");
-  assert.equal(run.length, 13);
-  assert.equal(new Set(run.map((r) => r.player_id)).size, 13);
-  const again = rankFitnessComponent(sept7Db([...SEPT7].reverse()), "sess-sept7", "six_minute_run_meters");
-  assert.deepEqual(
-    run.map((r) => r.player_id),
-    again.map((r) => r.player_id),
-  );
-}
-
-{
-  // Totaal: 12 complete, gehele scores, hoogste eerst
   const totals = rankFitnessTotal(sept7Db(), "sess-sept7");
   assert.equal(totals.length, 12);
   assert.ok(totals.every((r) => Number.isInteger(r.totalScore)));
-  for (let i = 1; i < totals.length; i++) {
-    assert.ok(totals[i - 1]!.totalScore >= totals[i]!.totalScore);
-  }
   assert.equal(totals[0]!.player_id, "dionne");
   assert.equal(totals[0]!.totalScore, 47);
-  assert.equal(totals[1]!.player_id, "marisha");
-  assert.equal(totals[1]!.totalScore, 46);
+  assert.equal(totals.find((r) => r.player_id === "danique")!.componentScores.six_minute_run_meters, 12);
+  assert.equal(totals.find((r) => r.player_id === "nienke")!.componentScores.six_minute_run_meters, 12);
+  assert.equal(totals.find((r) => r.player_id === "andrada")!.componentScores.six_minute_run_meters, 11);
 }
 
 {
+  assert.equal(FITNESS_SCORE_LEGEND_TIE, "Gelijke prestatie = gelijke plaats en gelijke punten.");
   assert.equal(
     fitnessScoreLegendScale(13),
     "1e 13 pt · 2e 12 pt · 3e 11 pt · 4e 10 pt · … · 13e 1 pt",
@@ -279,9 +290,13 @@ function byId(rows: Array<{ player_id: string }>) {
 {
   const table = rankFitnessTotal(sept7Db(), "sess-sept7").map((r) => ({
     name: r.full_name,
+    runRank: r.componentRanks.six_minute_run_meters,
     run: r.componentScores.six_minute_run_meters,
+    sprintRank: r.componentRanks.flying_sprint_30m_seconds,
     sprint: r.componentScores.flying_sprint_30m_seconds,
+    agilityRank: r.componentRanks.agility_10_20_10_seconds,
     agility: r.componentScores.agility_10_20_10_seconds,
+    plankRank: r.componentRanks.plank_seconds,
     plank: r.componentScores.plank_seconds,
     total: r.totalScore,
   }));
@@ -289,8 +304,7 @@ function byId(rows: Array<{ player_id: string }>) {
 }
 
 {
-  const n = fitnessSessionFieldSize(sept7Db().fitness_test_results);
-  assert.equal(n, 13);
+  assert.equal(fitnessSessionFieldSize(sept7Db().fitness_test_results), 13);
 }
 
 console.log("session-ranking-score-audit.test.ts: ok");

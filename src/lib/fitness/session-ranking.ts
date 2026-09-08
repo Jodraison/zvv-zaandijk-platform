@@ -7,10 +7,11 @@ import { FITNESS_COMPONENTS, type FitnessComponentKey } from "@/lib/fitness/prot
 import { layoutFitnessPodium } from "@/lib/fitness/fitness-podium-layout";
 import {
   componentPointsOf,
+  denseRankAndPoints,
+  denseRankByValue,
   fitnessSessionFieldSize,
   isMeasuredFitnessValue,
   measuredComponentEntries,
-  positionPoints,
 } from "@/lib/fitness/fitness-position-points";
 import { todayInClubTz } from "@/lib/season/season-operations-2026-27";
 
@@ -67,17 +68,28 @@ function componentBaseRows(
   });
 }
 
-function uniqueOrderedRows(
+function scoreComponentRows(
   rows: Array<{ player_id: string; full_name: string; shirt_number: number; value: number }>,
   direction: "lower_better" | "higher_better",
-  totalRankByPlayer: ReadonlyMap<string, number>,
   fieldSize: number,
 ): FitnessRankRow[] {
-  const { podium, rest } = layoutFitnessPodium(rows, direction, totalRankByPlayer);
-  return [...podium, ...rest].map((row, i) => {
-    const rank = i + 1;
-    return { ...row, rank, points: positionPoints(rank, fieldSize) };
+  const rankByValue = denseRankByValue(
+    rows.map((r) => r.value),
+    direction,
+  );
+  return rows.map((row) => {
+    const scored = denseRankAndPoints(row.value, rankByValue, fieldSize);
+    return { ...row, ...scored };
   });
+}
+
+function orderForDisplay(
+  rows: FitnessRankRow[],
+  direction: "lower_better" | "higher_better",
+  totalRankByPlayer: ReadonlyMap<string, number>,
+): FitnessRankRow[] {
+  const { podium, rest } = layoutFitnessPodium(rows, direction, totalRankByPlayer);
+  return [...podium, ...rest];
 }
 
 function standingFromComponentMaps(
@@ -147,21 +159,13 @@ function scorePublishedSession(db: ClubDatabase, sessionId: string) {
     FITNESS_COMPONENTS.map((c) => [c.key, componentBaseRows(db, session.season_id, results, c.key)]),
   ) as Record<FitnessComponentKey, ReturnType<typeof componentBaseRows>>;
 
-  const orderPass = (totalRanks: ReadonlyMap<string, number>) =>
-    Object.fromEntries(
-      FITNESS_COMPONENTS.map((c) => [c.key, uniqueOrderedRows(bases[c.key], c.direction, totalRanks, fieldSize)]),
-    ) as Record<FitnessComponentKey, FitnessRankRow[]>;
+  const scored = Object.fromEntries(
+    FITNESS_COMPONENTS.map((c) => [c.key, scoreComponentRows(bases[c.key], c.direction, fieldSize)]),
+  ) as Record<FitnessComponentKey, FitnessRankRow[]>;
 
-  const toRankMaps = (ordered: Record<FitnessComponentKey, FitnessRankRow[]>) =>
-    Object.fromEntries(
-      FITNESS_COMPONENTS.map((c) => [c.key, new Map(ordered[c.key].map((r) => [r.player_id, r.rank]))]),
-    ) as Record<FitnessComponentKey, Map<string, number>>;
-
-  const pass1 = orderPass(new Map());
-  const pass2 = orderPass(standingFromComponentMaps(db, session.season_id, complete, toRankMaps(pass1), fieldSize));
-  const pass3 = orderPass(standingFromComponentMaps(db, session.season_id, complete, toRankMaps(pass2), fieldSize));
-  const components = pass3;
-  const rankMaps = toRankMaps(components);
+  const rankMaps = Object.fromEntries(
+    FITNESS_COMPONENTS.map((c) => [c.key, new Map(scored[c.key].map((r) => [r.player_id, r.rank]))]),
+  ) as Record<FitnessComponentKey, Map<string, number>>;
 
   const totalsUnranked = complete.map((r) => {
     const m = playerMeta(db, session.season_id, r.player_id);
@@ -209,6 +213,11 @@ function scorePublishedSession(db: ClubDatabase, sessionId: string) {
     }
     return { ...row, rank };
   });
+
+  const totalRanks = standingFromComponentMaps(db, session.season_id, complete, rankMaps, fieldSize);
+  const components = Object.fromEntries(
+    FITNESS_COMPONENTS.map((c) => [c.key, orderForDisplay(scored[c.key], c.direction, totalRanks)]),
+  ) as Record<FitnessComponentKey, FitnessRankRow[]>;
 
   return { fieldSize, components, totals };
 }

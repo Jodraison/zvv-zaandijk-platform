@@ -30,6 +30,18 @@ function rowValueLabel(
   return "";
 }
 
+function podiumValueLabel(
+  r: FitnessRankRow | FitnessTotalRankRow,
+  total: boolean | undefined,
+  componentKey?: FitnessComponentKey,
+): string {
+  if (total && "totalScore" in r) return formatTotalPoints(r.totalScore);
+  if ("value" in r && componentKey) {
+    return `#${r.rank} · ${formatComponentValue(componentKey, r.value)}`;
+  }
+  return "";
+}
+
 export function FitnessPodiumList({
   title,
   rows,
@@ -60,7 +72,7 @@ export function FitnessPodiumList({
     full_name: r.full_name,
     shirt_number: r.shirt_number,
     positionLabel: "",
-    valueLabel: rowValueLabel(r, total, componentKey),
+    valueLabel: podiumValueLabel(r, total, componentKey),
     photo_url: null,
     rank: i + 1,
   }));

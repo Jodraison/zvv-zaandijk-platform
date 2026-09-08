@@ -16,9 +16,9 @@
 | Plank | higher_better | highest valid duration |
 | 6-minute run | higher_better | highest valid meters |
 
-Unique places after performance sort. Ties use the visual podium fill (session standing, then shirt → name) and the rest list (value → shirt → name). Missing component → excluded from that list, 0 points (never treated as a result).
+Dense rank on unique performances: equal value = equal place = equal points. Visual order (podium fill, then shirt → name) never changes rank or points. Missing component → excluded from that list, 0 points (never treated as a result).
 
-Field size N = distinct athletes with at least one measured component. Place 1 = N points, last place = 1 point.
+Field size N = distinct athletes with at least one measured component. Score = N − denseRank + 1.
 
 ## Session total ranking
 

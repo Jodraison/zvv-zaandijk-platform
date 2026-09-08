@@ -10,3 +10,5 @@ export function fitnessScoreLegendScale(fieldSize: number): string {
 export function fitnessScoreLegendMax(fieldSize: number): string {
   return `4 onderdelen · max. ${maxSessionTotalPoints(fieldSize)} pt`;
 }
+
+export const FITNESS_SCORE_LEGEND_TIE = "Gelijke prestatie = gelijke plaats en gelijke punten.";

@@ -23,6 +23,26 @@ export function positionPoints(place: number, fieldSize: number): number {
   return fieldSize - place + 1;
 }
 
+/** Dense rank per unieke prestatie. Gelijke waarde = gelijke plaats. */
+export function denseRankByValue(
+  values: readonly number[],
+  direction: "lower_better" | "higher_better",
+): Map<number, number> {
+  const unique = [...new Set(values)];
+  unique.sort((a, b) => (direction === "lower_better" ? a - b : b - a));
+  return new Map(unique.map((value, i) => [value, i + 1]));
+}
+
+export function denseRankAndPoints(
+  value: number,
+  rankByValue: ReadonlyMap<number, number>,
+  fieldSize: number,
+): { rank: number; points: number } {
+  const rank = rankByValue.get(value);
+  if (rank == null) return { rank: 0, points: 0 };
+  return { rank, points: positionPoints(rank, fieldSize) };
+}
+
 export function maxSessionTotalPoints(fieldSize: number): number {
   return Math.max(0, fieldSize) * FITNESS_COMPONENTS.length;
 }
