@@ -1,6 +1,20 @@
 import type { ClubDatabase } from "@/types";
 import type { MatchCardEventInput } from "@/lib/validations/match-events";
 
+export type MatchTimelineSubstitution = {
+  playerInId: string;
+  playerInName: string;
+  playerOutId: string;
+  playerOutName: string;
+};
+
+export type MatchTimelinePosChange = {
+  playerId: string;
+  playerName: string;
+  fromSlot: string;
+  toSlot: string;
+};
+
 export type MatchTimelineRow =
   | {
       kind: "goal";
@@ -25,13 +39,20 @@ export type MatchTimelineRow =
       playerInName: string;
       playerOutId: string;
       playerOutName: string;
+    }
+  | {
+      kind: "tactical_moment";
+      minute: number;
+      sortOrder: number;
+      substitutions: MatchTimelineSubstitution[];
+      positionChanges: MatchTimelinePosChange[];
     };
 
 function playerName(db: ClubDatabase, playerId: string): string {
   return db.players.find((p) => p.id === playerId)?.full_name ?? "—";
 }
 
-/** Chronologische wedstrijdgebeurtenissen (doelpunten, kaarten, wissels) voor publieke weergave. */
+/** Chronologische wedstrijdgebeurtenissen (doelpunten, kaarten, wisselmomenten) voor publieke weergave. */
 export function buildMatchTimeline(db: ClubDatabase, matchId: string): MatchTimelineRow[] {
   const goals = db.match_goal_events
     .filter((e) => e.match_id === matchId)
@@ -54,24 +75,107 @@ export function buildMatchTimeline(db: ClubDatabase, matchId: string): MatchTime
       playerName: playerName(db, e.player_id),
     }));
 
-  const substitutions = db.match_substitutions
-    .filter((e) => e.match_id === matchId)
-    .map((e, sortOrder) => ({
-      kind: "substitution" as const,
-      minute: e.minute,
-      sortOrder,
-      playerInId: e.player_in_id,
-      playerInName: playerName(db, e.player_in_id),
-      playerOutId: e.player_out_id,
-      playerOutName: playerName(db, e.player_out_id),
-    }));
+  const shapeRows = buildTacticalTimeline(db, matchId);
 
-  return [...goals, ...cards, ...substitutions].sort((a, b) => {
+  return [...goals, ...cards, ...shapeRows].sort((a, b) => {
     if (a.minute !== b.minute) return a.minute - b.minute;
     if (a.kind === "goal" && b.kind === "goal") return a.sortOrder - b.sortOrder;
-    if (a.kind === "substitution" && b.kind === "substitution") return a.sortOrder - b.sortOrder;
-    const order = { goal: 0, yellow_card: 1, red_card: 2, substitution: 3 };
+    if (
+      (a.kind === "substitution" || a.kind === "tactical_moment") &&
+      (b.kind === "substitution" || b.kind === "tactical_moment")
+    ) {
+      return a.sortOrder - b.sortOrder;
+    }
+    const order = { goal: 0, yellow_card: 1, red_card: 2, substitution: 3, tactical_moment: 3 };
     return order[a.kind] - order[b.kind];
+  });
+}
+
+function buildTacticalTimeline(db: ClubDatabase, matchId: string): MatchTimelineRow[] {
+  const subs = (db.match_substitutions ?? []).filter((e) => e.match_id === matchId);
+  const pos = (db.match_position_changes ?? []).filter((e) => e.match_id === matchId);
+  type Bucket = {
+    minute: number;
+    sortOrder: number;
+    substitutions: MatchTimelineSubstitution[];
+    positionChanges: MatchTimelinePosChange[];
+  };
+  const buckets = new Map<string, Bucket>();
+  const order: string[] = [];
+
+  const keyFor = (minute: number, groupId: string | null | undefined, fallback: string) => {
+    const g = groupId?.trim();
+    return g ? `${minute}::${g}` : `${minute}::${fallback}`;
+  };
+
+  const ensure = (key: string, minute: number, sortOrder: number) => {
+    let b = buckets.get(key);
+    if (!b) {
+      b = { minute, sortOrder, substitutions: [], positionChanges: [] };
+      buckets.set(key, b);
+      order.push(key);
+    }
+    return b;
+  };
+
+  const sortedSubs = [...subs].sort(
+    (a, b) => a.minute - b.minute || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id.localeCompare(b.id),
+  );
+  for (const [i, s] of sortedSubs.entries()) {
+    const key = keyFor(s.minute, s.change_group_id, `sub-${s.id}`);
+    const b = ensure(key, s.minute, s.sort_order ?? i);
+    b.substitutions.push({
+      playerInId: s.player_in_id,
+      playerInName: playerName(db, s.player_in_id),
+      playerOutId: s.player_out_id,
+      playerOutName: playerName(db, s.player_out_id),
+    });
+  }
+
+  const sortedPos = [...pos].sort(
+    (a, b) => a.minute - b.minute || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id.localeCompare(b.id),
+  );
+  for (const c of sortedPos) {
+    const explicit = c.change_group_id?.trim();
+    let key = explicit ? keyFor(c.minute, explicit, `pos-${c.id}`) : null;
+    if (!key) {
+      const ungroupedSubs = sortedSubs.filter((s) => s.minute === c.minute && !s.change_group_id?.trim());
+      if (ungroupedSubs.length === 1) {
+        key = keyFor(c.minute, null, `sub-${ungroupedSubs[0]!.id}`);
+      } else {
+        key = keyFor(c.minute, null, `pos-${c.id}`);
+      }
+    }
+    const b = ensure(key, c.minute, c.sort_order ?? 0);
+    b.positionChanges.push({
+      playerId: c.player_id,
+      playerName: playerName(db, c.player_id),
+      fromSlot: c.from_slot,
+      toSlot: c.to_slot,
+    });
+  }
+
+  return order.map((k) => {
+    const b = buckets.get(k)!;
+    if (b.substitutions.length === 1 && b.positionChanges.length === 0) {
+      const s = b.substitutions[0]!;
+      return {
+        kind: "substitution" as const,
+        minute: b.minute,
+        sortOrder: b.sortOrder,
+        playerInId: s.playerInId,
+        playerInName: s.playerInName,
+        playerOutId: s.playerOutId,
+        playerOutName: s.playerOutName,
+      };
+    }
+    return {
+      kind: "tactical_moment" as const,
+      minute: b.minute,
+      sortOrder: b.sortOrder,
+      substitutions: b.substitutions,
+      positionChanges: b.positionChanges,
+    };
   });
 }
 

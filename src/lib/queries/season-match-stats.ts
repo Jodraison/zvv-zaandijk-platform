@@ -11,7 +11,7 @@ import {
  * - goals / assists: aggregatie van `match_goal_events` over geverifieerde gespeelde wedstrijden
  * - MVP: aantal `match_wotm_winners` / `wotm_player_ids` over geverifieerde gespeelde wedstrijden (elke winnaar +1)
  * - matches_played: distinct `match_id` waarin speelster een bijdrage heeft (goal/assist/MVP)
- * - clean sheets (vanaf 2026/27): keeper/verdediger meegespeeld + goals_against === 0
+ * - clean sheets (vanaf 2026/27): 0 tegengoals + gespeelde defensieve matchrol (niet profielpositie)
  *
  * Alleen `data_scope=production` (of afgeleide production). Demo/qa tellen nooit mee.
  */

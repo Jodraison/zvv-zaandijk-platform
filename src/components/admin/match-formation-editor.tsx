@@ -5,6 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FORMATION_4231_SLOTS, type FormationSlotCode } from "@/lib/match/formation-4231";
 import { validateConfirmedFormation } from "@/lib/match/match-shape";
+import {
+  assignPlayerToSlot,
+  locationOfPlayer,
+  moveToAbsent as draftToAbsent,
+  moveToBench as draftToBench,
+  type LineupDraft,
+  unassignPlayer,
+} from "@/lib/match/lineup-assignment";
 import { saveMatchFormationAction } from "@/actions/match-formation";
 import { FormationPitch } from "@/components/match/formation-pitch";
 import { MatchPlayerPicker, type PickerPlayer } from "@/components/admin/match-player-picker";
@@ -14,6 +22,21 @@ import { matchWorkflowHref } from "@/lib/match/match-workflow-steps";
 
 type PlayerOpt = PickerPlayer;
 type SelectionTab = "basis" | "bank" | "absent" | "unassigned";
+
+type LineupDialog =
+  | { kind: "pick-player"; slot: FormationSlotCode }
+  | { kind: "occupied"; slot: FormationSlotCode }
+  | { kind: "move-slot"; playerId: string; fromSlot: FormationSlotCode | null }
+  | { kind: "swap-pick"; slot: FormationSlotCode }
+  | { kind: "replace-pick"; slot: FormationSlotCode }
+  | {
+      kind: "conflict";
+      playerId: string;
+      target: FormationSlotCode;
+      occupantId: string;
+    }
+  | { kind: "field-pick"; playerId: string }
+  | null;
 
 function RowActions({ children }: { children: ReactNode }) {
   return (
@@ -35,6 +58,10 @@ function actionBtnClass(tone: "default" | "danger" = "default") {
   return tone === "danger"
     ? "w-full rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-red-700 hover:bg-red-50"
     : "w-full rounded-lg px-2 py-1.5 text-left text-xs font-semibold text-zvv-ink hover:bg-zvv-card-mid";
+}
+
+function sortIds(ids: string[], byId: Record<string, PlayerOpt | undefined>): string[] {
+  return sortPlayersBySquadNumber(ids.map((id) => byId[id]).filter((p): p is PlayerOpt => !!p)).map((p) => p.player_id);
 }
 
 export function MatchFormationEditor({
@@ -84,9 +111,7 @@ export function MatchFormationEditor({
         .filter((p): p is PlayerOpt => !!p),
     ).map((p) => p.player_id),
   );
-  const [pickerSlot, setPickerSlot] = useState<FormationSlotCode | null>(null);
-  /** Speler uit "Nog indelen" die een vrij veldslot moet kiezen */
-  const [fieldPickPlayerId, setFieldPickPlayerId] = useState<string | null>(null);
+  const [dialog, setDialog] = useState<LineupDialog>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [prepComplete, setPrepComplete] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
@@ -127,12 +152,41 @@ export function MatchFormationEditor({
     [sortedPlayers],
   );
 
+  const draft: LineupDraft = { slots, bench, absent };
+
+  function commit(next: LineupDraft) {
+    setSlots(next.slots);
+    setBench(sortIds(next.bench, byId));
+    setAbsent(sortIds(next.absent, byId));
+  }
+
+  function hintFor(player: PickerPlayer): string {
+    const loc = locationOfPlayer(draft, player.player_id);
+    if (loc.kind === "field") return `Op het veld · ${loc.slot}`;
+    if (loc.kind === "bench") return "Bank";
+    if (loc.kind === "absent") return "Afwezig";
+    return player.position_label || (player.is_guest ? "Gast" : "Nog indelen");
+  }
+
   function requestFieldPick(playerId: string) {
-    if (freeSlots.length === 0) {
-      setMessage("Alle elf veldplaatsen zijn bezet. Maak eerst een slot leeg.");
+    setMessage(null);
+    setDialog({ kind: "field-pick", playerId });
+  }
+
+  function onSlotClick(code: FormationSlotCode) {
+    setMessage(null);
+    if (slots[code]) setDialog({ kind: "occupied", slot: code });
+    else setDialog({ kind: "pick-player", slot: code });
+  }
+
+  function placeOnSlot(playerId: string, target: FormationSlotCode, mode?: "swap" | "replace") {
+    const result = assignPlayerToSlot(draft, playerId, target, mode);
+    if (!result.ok) {
+      setDialog({ kind: "conflict", playerId, target, occupantId: result.occupantId });
       return;
     }
-    setFieldPickPlayerId(playerId);
+    commit(result.draft);
+    setDialog(null);
   }
 
   function renderPlayerRow(player: PlayerOpt, meta: string | null, actions: ReactNode) {
@@ -159,34 +213,19 @@ export function MatchFormationEditor({
     );
   }
 
-  function clearFromAll(playerId: string) {
-    setSlots((prev) => {
-      const next = { ...prev };
-      for (const s of FORMATION_4231_SLOTS) {
-        if (next[s.code] === playerId) next[s.code] = null;
-      }
-      return next;
-    });
-    setBench((b) => b.filter((id) => id !== playerId));
-    setAbsent((a) => a.filter((id) => id !== playerId));
-  }
-
-  function setSlot(code: FormationSlotCode, playerId: string | null) {
-    if (playerId) clearFromAll(playerId);
-    setSlots((prev) => ({ ...prev, [code]: playerId }));
-    setPickerSlot(null);
-  }
-
   function moveToBench(playerId: string) {
-    clearFromAll(playerId);
-    setBench((b) => sortPlayersBySquadNumber([...b, playerId].map((id) => byId[id]!).filter(Boolean)).map((p) => p.player_id));
+    commit(draftToBench(draft, playerId));
+    setDialog(null);
   }
 
   function moveToAbsent(playerId: string) {
-    clearFromAll(playerId);
-    setAbsent((a) =>
-      sortPlayersBySquadNumber([...a, playerId].map((id) => byId[id]!).filter(Boolean)).map((p) => p.player_id),
-    );
+    commit(draftToAbsent(draft, playerId));
+    setDialog(null);
+  }
+
+  function clearFromAll(playerId: string) {
+    commit(unassignPlayer(draft, playerId));
+    setDialog(null);
   }
 
   function save(confirm: boolean) {
@@ -223,7 +262,6 @@ export function MatchFormationEditor({
       if (confirm) {
         if (matchStatus === "played") {
           setMessage("Opstelling bevestigd — ga verder met Na de wedstrijd.");
-          // refresh/push buiten de transition-status zodat de knop niet disabled blijft
           queueMicrotask(() => {
             router.push(matchWorkflowHref(matchId, seasonId, "na-de-wedstrijd", { finish: "1" }));
             router.refresh();
@@ -264,9 +302,12 @@ export function MatchFormationEditor({
     );
   }
 
+  const pickerSlot = dialog?.kind === "pick-player" ? dialog.slot : dialog?.kind === "replace-pick" ? dialog.slot : null;
   const slotLabel = pickerSlot
     ? FORMATION_4231_SLOTS.find((s) => s.code === pickerSlot)?.labelNl ?? pickerSlot
     : "";
+  const occupiedPlayerId = dialog?.kind === "occupied" ? slots[dialog.slot] : null;
+  const movePlayerId = dialog?.kind === "move-slot" ? dialog.playerId : null;
 
   return (
     <section className="space-y-5 rounded-2xl border border-zvv-border bg-white p-4 md:p-6">
@@ -277,7 +318,8 @@ export function MatchFormationEditor({
             1-4-2-3-1 · basis, bank en afwezig
           </h2>
           <p className="mt-1 text-sm text-zvv-muted">
-            Status: {initialStatus === "confirmed" ? "Bevestigd" : "Concept"} · klik een positie om een speelster te kiezen
+            Status: {initialStatus === "confirmed" ? "Bevestigd" : "Concept"} · tik een speelster om te verplaatsen,
+            verwisselen of vervangen
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -305,8 +347,8 @@ export function MatchFormationEditor({
             title=""
             interactive
             size="workspace"
-            activeSlot={pickerSlot}
-            onSlotClick={(code) => setPickerSlot(code)}
+            activeSlot={pickerSlot ?? (dialog?.kind === "occupied" ? dialog.slot : null)}
+            onSlotClick={onSlotClick}
             slots={slots}
             playersById={pitchPlayersById}
           />
@@ -357,8 +399,8 @@ export function MatchFormationEditor({
                       player,
                       slot.code,
                       <RowActions>
-                        <button type="button" className={actionBtnClass()} onClick={() => setPickerSlot(slot.code)}>
-                          Wissel
+                        <button type="button" className={actionBtnClass()} onClick={() => setDialog({ kind: "occupied", slot: slot.code })}>
+                          Bewerk
                         </button>
                         <button type="button" className={actionBtnClass()} onClick={() => moveToBench(player.player_id)}>
                           Bank
@@ -485,52 +527,198 @@ export function MatchFormationEditor({
       </div>
 
       <MatchPlayerPicker
-        open={!!pickerSlot}
-        title={pickerSlot ? `${pickerSlot} · ${slotLabel}` : "Positie"}
-        players={sortedPlayers}
-        disabledIds={new Set([...used].filter((id) => id !== (pickerSlot ? slots[pickerSlot] : null)))}
-        allowClear
-        onClose={() => setPickerSlot(null)}
+        open={dialog?.kind === "pick-player" || dialog?.kind === "replace-pick" || dialog?.kind === "swap-pick"}
+        title={
+          dialog?.kind === "swap-pick"
+            ? "Verwissel met"
+            : dialog?.kind === "replace-pick"
+              ? `${dialog.slot} · vervang`
+              : pickerSlot
+                ? `${pickerSlot} · ${slotLabel}`
+                : "Positie"
+        }
+        players={
+          dialog?.kind === "swap-pick"
+            ? sortedPlayers.filter((p) => locationOfPlayer(draft, p.player_id).kind === "field" && slots[dialog.slot] !== p.player_id)
+            : sortedPlayers
+        }
+        playerHint={hintFor}
+        allowClear={dialog?.kind === "pick-player"}
+        onClose={() => setDialog(null)}
         onPick={(id) => {
-          if (!pickerSlot) return;
-          setSlot(pickerSlot, id);
+          if (dialog?.kind === "swap-pick") {
+            if (!id) return;
+            placeOnSlot(id, dialog.slot, "swap");
+            return;
+          }
+          if (dialog?.kind === "replace-pick") {
+            if (!id) return;
+            placeOnSlot(id, dialog.slot, "replace");
+            return;
+          }
+          if (dialog?.kind !== "pick-player") return;
+          if (!id) {
+            const occupant = slots[dialog.slot];
+            if (occupant) clearFromAll(occupant);
+            else setDialog(null);
+            return;
+          }
+          placeOnSlot(id, dialog.slot);
         }}
       />
 
-      {fieldPickPlayerId ? (
+      {dialog?.kind === "occupied" && occupiedPlayerId ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-3 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Speelster bewerken"
+        >
+          <button type="button" className="absolute inset-0 cursor-default" aria-label="Sluiten" onClick={() => setDialog(null)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-zvv-border bg-white p-4 shadow-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-primary">{dialog.slot}</p>
+            <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-zvv-ink">
+              {byId[occupiedPlayerId]?.name ?? "Speelster"}
+            </h3>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                className="club-btn-primary club-btn-primary-sm"
+                onClick={() => setDialog({ kind: "move-slot", playerId: occupiedPlayerId, fromSlot: dialog.slot })}
+              >
+                Verplaats
+              </button>
+              <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => setDialog({ kind: "swap-pick", slot: dialog.slot })}>
+                Verwissel
+              </button>
+              <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => moveToBench(occupiedPlayerId)}>
+                Naar bank
+              </button>
+              <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => setDialog({ kind: "replace-pick", slot: dialog.slot })}>
+                Vervang
+              </button>
+            </div>
+            <div className="mt-2 flex gap-2">
+              <button type="button" className="flex-1 rounded-xl border border-zvv-border px-3 py-2 text-sm font-semibold" onClick={() => moveToAbsent(occupiedPlayerId)}>
+                Afwezig
+              </button>
+              <button type="button" className="flex-1 rounded-xl border border-zvv-border px-3 py-2 text-sm font-semibold" onClick={() => clearFromAll(occupiedPlayerId)}>
+                Nog indelen
+              </button>
+            </div>
+            <button type="button" className="club-btn-secondary club-btn-primary-sm mt-3 w-full" onClick={() => setDialog(null)}>
+              Annuleren
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {dialog?.kind === "move-slot" && movePlayerId ? (
+        <div
+          className="fixed inset-0 z-[80] flex items-end justify-center bg-black/45 p-3 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Kies veldpositie"
+        >
+          <button type="button" className="absolute inset-0 cursor-default" aria-label="Sluiten" onClick={() => setDialog(null)} />
+          <div className="relative z-10 w-full max-w-md rounded-2xl border border-zvv-border bg-white p-4 shadow-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-primary">Verplaats</p>
+            <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-zvv-ink">
+              {byId[movePlayerId]?.name ?? "Speelster"} · kies positie
+            </h3>
+            <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+              {FORMATION_4231_SLOTS.filter((s) => s.code !== dialog.fromSlot).map((s) => {
+                const occupant = slots[s.code];
+                return (
+                  <li key={s.code}>
+                    <button
+                      type="button"
+                      className="flex min-h-11 w-full flex-col items-center justify-center rounded-xl border border-zvv-border px-2 py-2 text-sm font-semibold hover:border-zvv-primary/40 hover:bg-zvv-primary-muted"
+                      onClick={() => placeOnSlot(movePlayerId, s.code)}
+                    >
+                      <span className="text-zvv-primary">{s.code}</span>
+                      <span className="text-[11px] font-normal text-zvv-muted">
+                        {occupant ? byId[occupant]?.name ?? "Bezet" : s.labelNl}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <button type="button" className="club-btn-secondary club-btn-primary-sm mt-4" onClick={() => setDialog(null)}>
+              Annuleren
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {dialog?.kind === "conflict" ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-3 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Positie bezet"
+        >
+          <button type="button" className="absolute inset-0 cursor-default" aria-label="Sluiten" onClick={() => setDialog(null)} />
+          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-zvv-border bg-white p-4 shadow-xl">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-primary">{dialog.target} is bezet</p>
+            <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-zvv-ink">
+              {byId[dialog.occupantId]?.name ?? "Speelster"} staat hier
+            </h3>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" className="club-btn-primary club-btn-primary-sm" onClick={() => placeOnSlot(dialog.playerId, dialog.target, "swap")}>
+                Verwisselen
+              </button>
+              <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => placeOnSlot(dialog.playerId, dialog.target, "replace")}>
+                Vervangen
+              </button>
+            </div>
+            <p className="mt-3 text-xs text-zvv-muted">
+              Verwisselen ruilt de posities. Vervangen zet de huidige speelster op de bank.
+            </p>
+            <button type="button" className="club-btn-secondary club-btn-primary-sm mt-3 w-full" onClick={() => setDialog(null)}>
+              Annuleren
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      {dialog?.kind === "field-pick" ? (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-3 sm:items-center"
           role="dialog"
           aria-modal="true"
           aria-label="Kies veldpositie"
         >
-          <button type="button" className="absolute inset-0 cursor-default" aria-label="Sluiten" onClick={() => setFieldPickPlayerId(null)} />
+          <button type="button" className="absolute inset-0 cursor-default" aria-label="Sluiten" onClick={() => setDialog(null)} />
           <div className="relative z-10 w-full max-w-md rounded-2xl border border-zvv-border bg-white p-4 shadow-xl">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-primary">Op veld zetten</p>
             <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-zvv-ink">
-              {byId[fieldPickPlayerId]?.name ?? "Speelster"} · kies positie
+              {byId[dialog.playerId]?.name ?? "Speelster"} · kies positie
             </h3>
             <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {freeSlots.map((s) => (
-                <li key={s.code}>
-                  <button
-                    type="button"
-                    className="flex min-h-11 w-full flex-col items-center justify-center rounded-xl border border-zvv-border px-2 py-2 text-sm font-semibold hover:border-zvv-primary/40 hover:bg-zvv-primary-muted"
-                    onClick={() => {
-                      setSlot(s.code, fieldPickPlayerId);
-                      setFieldPickPlayerId(null);
-                    }}
-                  >
-                    <span className="text-zvv-primary">{s.code}</span>
-                    <span className="text-[11px] font-normal text-zvv-muted">{s.labelNl}</span>
-                  </button>
-                </li>
-              ))}
+              {FORMATION_4231_SLOTS.map((s) => {
+                const occupant = slots[s.code];
+                return (
+                  <li key={s.code}>
+                    <button
+                      type="button"
+                      className="flex min-h-11 w-full flex-col items-center justify-center rounded-xl border border-zvv-border px-2 py-2 text-sm font-semibold hover:border-zvv-primary/40 hover:bg-zvv-primary-muted"
+                      onClick={() => placeOnSlot(dialog.playerId, s.code, occupant ? "replace" : undefined)}
+                    >
+                      <span className="text-zvv-primary">{s.code}</span>
+                      <span className="text-[11px] font-normal text-zvv-muted">
+                        {occupant ? byId[occupant]?.name ?? "Bezet" : s.labelNl}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
             {freeSlots.length === 0 ? (
-              <p className="mt-3 text-sm text-zvv-muted">Geen vrije slots. Maak eerst een positie leeg.</p>
+              <p className="mt-3 text-sm text-zvv-muted">Alle plaatsen bezet — tik een positie om te vervangen.</p>
             ) : null}
-            <button type="button" className="club-btn-secondary club-btn-primary-sm mt-4" onClick={() => setFieldPickPlayerId(null)}>
+            <button type="button" className="club-btn-secondary club-btn-primary-sm mt-4" onClick={() => setDialog(null)}>
               Annuleren
             </button>
           </div>

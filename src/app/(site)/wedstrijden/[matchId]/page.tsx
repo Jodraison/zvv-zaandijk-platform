@@ -217,8 +217,21 @@ export default async function MatchDetailPage({ params, searchParams }: Props) {
                     </>
                   ) : row.kind === "substitution" ? (
                     <span>
-                      Wissel: {row.playerOutName} → {row.playerInName}
+                      {row.playerInName} ↔ {row.playerOutName}
                     </span>
+                  ) : row.kind === "tactical_moment" ? (
+                    <div className="space-y-1">
+                      {row.substitutions.map((s) => (
+                        <p key={`${s.playerOutId}-${s.playerInId}`}>
+                          {s.playerInName} ↔ {s.playerOutName}
+                        </p>
+                      ))}
+                      {row.positionChanges.map((c) => (
+                        <p key={`${c.playerId}-${c.fromSlot}-${c.toSlot}`} className="text-sm font-normal text-zvv-muted">
+                          {c.playerName} {c.fromSlot} → {c.toSlot}
+                        </p>
+                      ))}
+                    </div>
                   ) : (
                     <span>
                       {row.playerName}

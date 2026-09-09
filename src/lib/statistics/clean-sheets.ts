@@ -1,11 +1,17 @@
 import type { ClubDatabase, PlayerPosition } from "@/types";
 import { SEASON_2026_27_ID } from "@/lib/season/season-operations-2026-27";
+import { computePlayerSlotIntervals, matchHasReconstructableSlots } from "@/lib/match/match-shape";
 
 /**
  * Speler-clean sheets vanaf seizoen 2026/27:
- * - speelster heeft meegespeeld (basis of inval)
- * - team kreeg geen tegendoelpunt
- * - speelster stond als keeper of verdediger (incl. centrale verdedigers)
+ * - Zaandijk kreeg 0 tegendoelpunten
+ * - speelster heeft daadwerkelijk minuten gespeeld (basis of inval)
+ * - zij heeft in DÍE wedstrijd een defensieve rol gespeeld (niet haar profielpositie)
+ *
+ * Canonical regel (geen extra minuutdrempel — die bestond niet):
+ * "daadwerkelijk gespeeld in een defensieve rol tijdens de clean-sheetwedstrijd".
+ * Elke reconstructeerbare interval op GK/LB/LCB/CB/RCB/RB/LWB/RWB telt.
+ * Start als RB en later RM telt dus wél; start als SP telt niet.
  *
  * Team-clean sheets (wedstrijden met goals_against === 0) blijven apart in team-season-summary.
  */
@@ -60,8 +66,9 @@ export function playerAppearedInMatch(db: ClubDatabase, matchId: string, playerI
 }
 
 /**
- * Effective defensive/keeper role for clean-sheet eligibility in a match.
- * Prefer lineup/formation slot; fall back to season membership for subs without a slot.
+ * Effectieve defensieve/keeper-rol in deze wedstrijd.
+ * Heeft de wedstrijd reconstructeerbare match-slots, dan telt ALLEEN die historie —
+ * nooit de profielpositie als vervanging.
  */
 export function isPlayerCleanSheetEligibleInMatch(
   db: ClubDatabase,
@@ -71,29 +78,52 @@ export function isPlayerCleanSheetEligibleInMatch(
 ): boolean {
   if (!playerAppearedInMatch(db, matchId, playerId)) return false;
 
-  const entry = db.match_lineup_entries.find((e) => e.match_id === matchId && e.player_id === playerId);
-  if (entry && isCleanSheetEligibleSlot(entry.position)) return true;
+  const intervals = computePlayerSlotIntervals(db, matchId, 90).filter((iv) => iv.player_id === playerId);
+  if (intervals.length > 0) {
+    return intervals.some((iv) => isCleanSheetEligibleSlot(iv.slot));
+  }
 
-  // Position change onto a clean-sheet slot (e.g. midfielder moved to CB).
-  const changes = db.match_position_changes
-    .filter((c) => c.match_id === matchId && c.player_id === playerId)
-    .slice()
-    .sort((a, b) => a.minute - b.minute || a.sort_order - b.sort_order);
-  const lastChange = changes[changes.length - 1];
-  if (lastChange && isCleanSheetEligibleSlot(lastChange.to_slot)) {
-    return true;
+  if (matchHasReconstructableSlots(db, matchId)) {
+    // Verschenen, maar geen reconstructeerbare rol — niet gokken via profiel.
+    return false;
   }
 
   const mem = db.player_season_memberships.find((m) => m.player_id === playerId && m.season_id === seasonId);
   if (!mem) return false;
-  // Subs / incomplete lineup slots: membership line GK/DEF counts.
-  if (entry?.role === "starter" && !entry.position) {
-    return isCleanSheetEligibleMembership(mem.position, mem.display_position);
+  return isCleanSheetEligibleMembership(mem.position, mem.display_position);
+}
+
+export type CleanSheetAmbiguity = {
+  matchId: string;
+  playerId: string;
+  reason: "appeared_without_slot_while_match_has_slots" | "legacy_membership_fallback";
+};
+
+/** Rapportage: geen fictieve posities schrijven; wel markeren wat ambigu is. */
+export function listCleanSheetAmbiguities(
+  db: ClubDatabase,
+  seasonId: string,
+  matchId: string,
+): CleanSheetAmbiguity[] {
+  const out: CleanSheetAmbiguity[] = [];
+  const hasSlots = matchHasReconstructableSlots(db, matchId);
+  const appeared = new Set<string>();
+  for (const e of db.match_lineup_entries.filter((row) => row.match_id === matchId && row.role === "starter")) {
+    appeared.add(e.player_id);
   }
-  if (db.match_substitutions.some((s) => s.match_id === matchId && s.player_in_id === playerId)) {
-    return isCleanSheetEligibleMembership(mem.position, mem.display_position);
+  for (const s of db.match_substitutions.filter((row) => row.match_id === matchId)) {
+    appeared.add(s.player_in_id);
   }
-  return false;
+  const intervalPlayers = new Set(computePlayerSlotIntervals(db, matchId, 90).map((iv) => iv.player_id));
+  for (const playerId of appeared) {
+    if (hasSlots && !intervalPlayers.has(playerId)) {
+      out.push({ matchId, playerId, reason: "appeared_without_slot_while_match_has_slots" });
+    } else if (!hasSlots && playerAppearedInMatch(db, matchId, playerId)) {
+      out.push({ matchId, playerId, reason: "legacy_membership_fallback" });
+    }
+  }
+  void seasonId;
+  return out;
 }
 
 /** Show clean-sheet stat on profile when player is GK/DEF or already has credits. */

@@ -24,6 +24,7 @@ export function MatchPlayerPicker({
   title,
   players,
   disabledIds,
+  playerHint,
   onPick,
   onClose,
   allowClear,
@@ -32,6 +33,7 @@ export function MatchPlayerPicker({
   title: string;
   players: PickerPlayer[];
   disabledIds?: Set<string>;
+  playerHint?: (player: PickerPlayer) => string | null | undefined;
   onPick: (playerId: string | null) => void;
   onClose: () => void;
   allowClear?: boolean;
@@ -126,7 +128,7 @@ export function MatchPlayerPicker({
                     <span className="block truncate font-semibold text-zvv-ink">{formatPlayerOptionLabel(p)}</span>
                     <span className="block text-xs text-zvv-muted">
                       {[
-                        p.position_label || (p.is_guest ? "Gast" : "Selectie"),
+                        playerHint?.(p) || p.position_label || (p.is_guest ? "Gast" : "Selectie"),
                         p.is_captain ? "C · Aanvoerder" : p.is_vice_captain ? "VC · Vice-aanvoerder" : null,
                       ]
                         .filter(Boolean)

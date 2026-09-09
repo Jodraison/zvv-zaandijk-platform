@@ -219,4 +219,195 @@ const dbOld = emptyDb({
 });
 assert.equal(playerTotalsFromAggregate(aggregateSeasonMatchStats(dbOld, "season-2025"), gk.id).clean_sheets_total, 0);
 
+// Profile ATT / SP may never earn a clean sheet from membership when match slots exist.
+const emie: Player = { ...mid, id: "p-emie", full_name: "Emie Agema" };
+const andrada: Player = { ...cb, id: "p-andrada", full_name: "Andrada Timmer" };
+const jelisa: Player = { ...gk, id: "p-jelisa", full_name: "Jelisa" };
+const matchRole = { ...matchClean, id: "match-roles" };
+const roleMems: PlayerSeasonMembership[] = [
+  {
+    id: "mem-emie",
+    player_id: emie.id,
+    season_id: SEASON_2026_27_ID,
+    shirt_number: 9,
+    position: "ATT",
+    display_position: "SP",
+    is_captain: false,
+    is_vice_captain: false,
+    is_guest: false,
+  },
+  {
+    id: "mem-andrada",
+    player_id: andrada.id,
+    season_id: SEASON_2026_27_ID,
+    shirt_number: 2,
+    position: "MID",
+    display_position: "RM",
+    is_captain: false,
+    is_vice_captain: false,
+    is_guest: false,
+  },
+  {
+    id: "mem-jelisa",
+    player_id: jelisa.id,
+    season_id: SEASON_2026_27_ID,
+    shirt_number: 1,
+    position: "GK",
+    display_position: "GK",
+    is_captain: false,
+    is_vice_captain: false,
+    is_guest: false,
+  },
+];
+const roleLineup: MatchLineupEntry[] = [
+  {
+    id: "rl-j",
+    match_id: matchRole.id,
+    player_id: jelisa.id,
+    role: "starter",
+    position: "GK",
+    absence_reason: null,
+    sort_order: 0,
+  },
+  {
+    id: "rl-a",
+    match_id: matchRole.id,
+    player_id: andrada.id,
+    role: "starter",
+    position: "RB",
+    absence_reason: null,
+    sort_order: 1,
+  },
+  {
+    id: "rl-e",
+    match_id: matchRole.id,
+    player_id: emie.id,
+    role: "starter",
+    position: "SP",
+    absence_reason: null,
+    sort_order: 2,
+  },
+];
+const dbRoles = emptyDb({
+  seasons: [seasonNew],
+  players: [emie, andrada, jelisa],
+  player_season_memberships: roleMems,
+  matches: [matchRole],
+  match_lineup_entries: roleLineup,
+});
+assert.equal(isPlayerCleanSheetEligibleInMatch(dbRoles, SEASON_2026_27_ID, matchRole.id, emie.id), false);
+assert.equal(isPlayerCleanSheetEligibleInMatch(dbRoles, SEASON_2026_27_ID, matchRole.id, andrada.id), true);
+assert.equal(isPlayerCleanSheetEligibleInMatch(dbRoles, SEASON_2026_27_ID, matchRole.id, jelisa.id), true);
+assert.equal(playerTotalsFromAggregate(aggregateSeasonMatchStats(dbRoles, SEASON_2026_27_ID), emie.id).clean_sheets_total, 0);
+assert.equal(playerTotalsFromAggregate(aggregateSeasonMatchStats(dbRoles, SEASON_2026_27_ID), andrada.id).clean_sheets_total, 1);
+
+// RB → RM later still counts: defensive minutes were played.
+const dbMoved = emptyDb({
+  ...dbRoles,
+  match_position_changes: [
+    {
+      id: "pc-andrada",
+      match_id: matchRole.id,
+      player_id: andrada.id,
+      minute: 70,
+      stoppage_time: 0,
+      from_slot: "RB",
+      to_slot: "RM",
+      change_group_id: null,
+      notes: null,
+      sort_order: 0,
+    },
+  ],
+});
+assert.equal(isPlayerCleanSheetEligibleInMatch(dbMoved, SEASON_2026_27_ID, matchRole.id, andrada.id), true);
+
+// Profile DEF but only played SP in a slotted match → no credit.
+const defAsSp: Player = { ...cb, id: "p-def-sp", full_name: "Def als SP" };
+const dbProfileIgnored = emptyDb({
+  seasons: [seasonNew],
+  players: [defAsSp],
+  player_season_memberships: [
+    {
+      id: "mem-def-sp",
+      player_id: defAsSp.id,
+      season_id: SEASON_2026_27_ID,
+      shirt_number: 5,
+      position: "DEF",
+      display_position: "CB",
+      is_captain: false,
+      is_vice_captain: false,
+      is_guest: false,
+    },
+  ],
+  matches: [matchRole],
+  match_lineup_entries: [
+    {
+      id: "rl-def-sp",
+      match_id: matchRole.id,
+      player_id: defAsSp.id,
+      role: "starter",
+      position: "SP",
+      absence_reason: null,
+      sort_order: 0,
+    },
+  ],
+});
+assert.equal(isPlayerCleanSheetEligibleInMatch(dbProfileIgnored, SEASON_2026_27_ID, matchRole.id, defAsSp.id), false);
+
+// Membership line GK must not credit a sub who inherited a SP slot.
+const dbSubSp = emptyDb({
+  seasons: [seasonNew],
+  players: [emie, jelisa],
+  player_season_memberships: [
+    roleMems[0]!,
+    { ...roleMems[0]!, id: "mem-emie-gk", position: "GK", display_position: "SP" },
+    roleMems[2]!,
+  ],
+  matches: [matchRole],
+  match_lineup_entries: [
+    {
+      id: "rl-j2",
+      match_id: matchRole.id,
+      player_id: jelisa.id,
+      role: "starter",
+      position: "GK",
+      absence_reason: null,
+      sort_order: 0,
+    },
+    {
+      id: "rl-sp",
+      match_id: matchRole.id,
+      player_id: "p-starter-sp",
+      role: "starter",
+      position: "SP",
+      absence_reason: null,
+      sort_order: 1,
+    },
+    {
+      id: "rl-emie-b",
+      match_id: matchRole.id,
+      player_id: emie.id,
+      role: "bench",
+      position: null,
+      absence_reason: null,
+      sort_order: 2,
+    },
+  ],
+  match_substitutions: [
+    {
+      id: "sub-emie-sp",
+      match_id: matchRole.id,
+      player_in_id: emie.id,
+      player_out_id: "p-starter-sp",
+      minute: 60,
+      to_slot: null,
+      stoppage_time: 0,
+      sort_order: 0,
+      change_group_id: null,
+      notes: null,
+    },
+  ],
+});
+assert.equal(isPlayerCleanSheetEligibleInMatch(dbSubSp, SEASON_2026_27_ID, matchRole.id, emie.id), false);
+
 console.log("clean-sheets.test.ts: ok");
