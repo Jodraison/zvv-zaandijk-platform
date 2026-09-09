@@ -83,23 +83,18 @@ export function isPlayerCleanSheetEligibleInMatch(
     return intervals.some((iv) => isCleanSheetEligibleSlot(iv.slot));
   }
 
-  if (matchHasReconstructableSlots(db, matchId)) {
-    // Verschenen, maar geen reconstructeerbare rol — niet gokken via profiel.
-    return false;
-  }
-
-  const mem = db.player_season_memberships.find((m) => m.player_id === playerId && m.season_id === seasonId);
-  if (!mem) return false;
-  return isCleanSheetEligibleMembership(mem.position, mem.display_position);
+  // Geen profielfallback. Zonder reconstructeerbaar defensief interval: geen credit.
+  void seasonId;
+  return false;
 }
 
 export type CleanSheetAmbiguity = {
   matchId: string;
   playerId: string;
-  reason: "appeared_without_slot_while_match_has_slots" | "legacy_membership_fallback";
+  reason: "appeared_without_slot_while_match_has_slots" | "no_reconstructable_slots";
 };
 
-/** Rapportage: geen fictieve posities schrijven; wel markeren wat ambigu is. */
+/** Rapportage: geen fictieve posities schrijven; wel markeren wat ambigu is. Geen credit-fallback. */
 export function listCleanSheetAmbiguities(
   db: ClubDatabase,
   seasonId: string,
@@ -119,7 +114,7 @@ export function listCleanSheetAmbiguities(
     if (hasSlots && !intervalPlayers.has(playerId)) {
       out.push({ matchId, playerId, reason: "appeared_without_slot_while_match_has_slots" });
     } else if (!hasSlots && playerAppearedInMatch(db, matchId, playerId)) {
-      out.push({ matchId, playerId, reason: "legacy_membership_fallback" });
+      out.push({ matchId, playerId, reason: "no_reconstructable_slots" });
     }
   }
   void seasonId;

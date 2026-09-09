@@ -43,7 +43,7 @@
     "test:four-blockers-real-browser": "tsx src/lib/four-blockers-real-browser.test.ts && node scripts/four-blockers-reality-gate.mjs",
     "test:dutch-language-audit": "tsx src/lib/copy/dutch-language-audit.test.ts",
     "test:dutch-language": "npm run test:dutch-language-audit",
-    "test:clean-sheets": "tsx src/lib/statistics/clean-sheets.test.ts",
+    "test:clean-sheets": "tsx src/lib/statistics/clean-sheets.test.ts && tsx src/lib/statistics/clean-sheet-live-matches.test.ts",
     "test:lineup-assignment": "tsx src/lib/match/lineup-assignment.test.ts",
     "test:match-shape-history": "tsx src/lib/match/match-shape-history.test.ts",
     "test:match-timeline": "tsx src/lib/queries/match-timeline.test.ts",

@@ -146,8 +146,11 @@ function applySinglePos(state: ShapeState, change: MatchPositionChange): void {
   if (state.slots[from] !== change.player_id) {
     state.warnings.push(`Positiewijziging ${change.id}: speelster stond niet op ${from}`);
   }
-  const occupantTo = state.slots[to];
-  state.slots[from] = occupantTo;
+  // Alleen de benoemde speelster verhuist. Geen impliciete swap:
+  // die maakt spookintervals (bijv. Dionne tijdelijk RB) voor history/CS.
+  for (const code of FORMATION_SLOT_CODES) {
+    if (state.slots[code] === change.player_id) state.slots[code] = null;
+  }
   state.slots[to] = change.player_id;
 }
 
@@ -238,7 +241,7 @@ export function evaluateAtomicGroup(
 
 /**
  * Atomair wisselmoment: eindbestemmingen, geen sequentiële tussenstates.
- * Losse (ongegroepeerde) events blijven de bestaande swap/sub-semantiek gebruiken.
+ * Losse positiewijzigingen verplaatsen alleen de benoemde speelster (geen swap).
  */
 function applyAtomicGroup(state: ShapeState, cluster: TimelineEvent[]): void {
   const leaving = new Set<string>();

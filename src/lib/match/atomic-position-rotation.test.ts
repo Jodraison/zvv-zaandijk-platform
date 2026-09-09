@@ -207,9 +207,9 @@ const lorelai = "lorelai";
   assert.equal(moments[0]?.substitutions.length, 0);
 }
 
-// Lone historical swap blijft swap (Krommenie 74′)
+// Lone move naar bezet slot: geen impliciete swap (geen spook-RB voor Dionne)
 {
-  const matchId = "qa-lone-swap";
+  const matchId = "qa-lone-move";
   const db = emptyDb({
     match_lineup_entries: [
       { id: "1", match_id: matchId, player_id: andrada, role: "starter", position: "RB", absence_reason: null, sort_order: 0 },
@@ -232,7 +232,8 @@ const lorelai = "lorelai";
   });
   const after = getMatchShapeAtMinute(db, matchId, 74);
   assert.equal(after.slots.RM, andrada);
-  assert.equal(after.slots.RB, dionne);
+  assert.equal(after.slots.RB, null);
+  assert.equal(after.onPitch.includes(dionne), false);
 }
 
 const editor = readFileSync(join(process.cwd(), "src/components/admin/match-shape-events-editor.tsx"), "utf8");
