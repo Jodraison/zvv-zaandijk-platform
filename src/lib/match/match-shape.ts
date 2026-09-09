@@ -113,21 +113,21 @@ function collectEvents(db: ClubDatabase, matchId: string): TimelineEvent[] {
   ].sort(eventOrder);
 }
 
-/** Groepeer events met dezelfde change_group_id op dezelfde minuut+stoppage. */
+/**
+ * Groepeer events tot één wisselmoment:
+ * - dezelfde change_group_id op dezelfde minuut+stoppage
+ * - of ongegroepeerde events op dezelfde minuut+stoppage (historische data zonder group-id)
+ */
 export function clusterShapeEvents(events: TimelineEvent[]): TimelineEvent[][] {
   const clusters: TimelineEvent[][] = [];
   for (const ev of events) {
     const last = clusters[clusters.length - 1];
     const last0 = last?.[0];
-    if (
-      last &&
-      last0 &&
-      ev.groupId &&
-      last0.groupId &&
-      ev.groupId === last0.groupId &&
-      ev.minute === last0.minute &&
-      ev.stoppage === last0.stoppage
-    ) {
+    const sameClock =
+      !!last0 && ev.minute === last0.minute && ev.stoppage === last0.stoppage;
+    const sameGroup = !!(ev.groupId && last0?.groupId && ev.groupId === last0.groupId);
+    const bothUngrouped = !ev.groupId && !last0?.groupId;
+    if (last && sameClock && (sameGroup || bothUngrouped)) {
       last.push(ev);
     } else {
       clusters.push([ev]);

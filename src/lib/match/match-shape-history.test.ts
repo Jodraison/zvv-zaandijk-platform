@@ -125,4 +125,23 @@ assert.equal(after.onPitch.includes(andrada), true);
 assert.equal(after.onPitch.filter((id) => id === andrada).length, 1);
 assert.equal(after.onPitch.filter((id) => id === lorelai).length, 1);
 
+// Historische data: zelfde minuut, geen change_group_id — toch atomair.
+const ungrouped = {
+  match_lineup_entries: lineup,
+  match_substitutions: [
+    {
+      ...subs[0]!,
+      id: "sub-ungrouped",
+      change_group_id: null,
+    },
+  ],
+  match_position_changes: pos.map((c, i) => ({ ...c, id: `pos-u-${i}`, change_group_id: null })),
+} as unknown as ClubDatabase;
+const afterUngrouped = getMatchShapeAtMinute(ungrouped, matchId, 75);
+assert.equal(afterUngrouped.slots.RCVM, dionne);
+assert.equal(afterUngrouped.slots.RM, andrada);
+assert.equal(afterUngrouped.slots.RB, lorelai);
+assert.ok(!afterUngrouped.onPitch.includes(renee));
+assert.deepEqual(validateShapeOccupancy(afterUngrouped), []);
+
 console.log("match-shape-history.test.ts: ok");
