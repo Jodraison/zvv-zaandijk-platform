@@ -61,8 +61,9 @@ export interface PlayerSeasonMembership {
   player_id: string;
   season_id: string;
   shirt_number: number;
+  /** Linie-enum; moet passen bij `display_position` (SP → ATT, GK → GK). */
   position: PlayerPosition;
-  /** Leesbare positie (NL), bron voor UI; `position` is enum voor filters/logica */
+  /** Canonical profielcode in de UI (SP, CVM, GK). Los van wedstrijdslot. */
   display_position: string;
   is_captain: boolean;
   is_vice_captain: boolean;

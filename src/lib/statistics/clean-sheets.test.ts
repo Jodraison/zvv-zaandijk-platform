@@ -410,4 +410,28 @@ const dbSubSp = emptyDb({
 });
 assert.equal(isPlayerCleanSheetEligibleInMatch(dbSubSp, SEASON_2026_27_ID, matchRole.id, emie.id), false);
 
+// Profiel GK→ATT mag match-role clean sheets niet wijzigen.
+const dbEmieGkProfile = emptyDb({
+  ...dbRoles,
+  player_season_memberships: roleMems.map((m) =>
+    m.player_id === emie.id ? { ...m, position: "GK", display_position: "SP" } : m,
+  ),
+});
+assert.equal(
+  isPlayerCleanSheetEligibleInMatch(dbEmieGkProfile, SEASON_2026_27_ID, matchRole.id, emie.id),
+  isPlayerCleanSheetEligibleInMatch(dbRoles, SEASON_2026_27_ID, matchRole.id, emie.id),
+);
+assert.equal(
+  playerTotalsFromAggregate(aggregateSeasonMatchStats(dbEmieGkProfile, SEASON_2026_27_ID), emie.id)
+    .clean_sheets_total,
+  playerTotalsFromAggregate(aggregateSeasonMatchStats(dbRoles, SEASON_2026_27_ID), emie.id)
+    .clean_sheets_total,
+);
+assert.equal(
+  playerTotalsFromAggregate(aggregateSeasonMatchStats(dbRoles, SEASON_2026_27_ID), andrada.id)
+    .clean_sheets_total,
+  playerTotalsFromAggregate(aggregateSeasonMatchStats(dbEmieGkProfile, SEASON_2026_27_ID), andrada.id)
+    .clean_sheets_total,
+);
+
 console.log("clean-sheets.test.ts: ok");

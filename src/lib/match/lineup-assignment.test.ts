@@ -4,6 +4,7 @@
  * Run: npx tsx src/lib/match/lineup-assignment.test.ts
  */
 import assert from "node:assert/strict";
+import { FORMATION_SLOT_CODES } from "@/lib/match/formation-4231";
 import {
   assignPlayerToSlot,
   emptyLineupDraft,
@@ -101,6 +102,29 @@ function kadoelenStart() {
     assert.equal(viaPicker.draft.slots.LCVM, null);
     assert.equal(viaPicker.draft.slots.LB, mandy);
   }
+}
+
+{
+  const start = kadoelenStart();
+  assert.equal(locationOfPlayer(start, mandy).kind, "field");
+  const again = assignPlayerToSlot(start, mandy, "LB");
+  assert.equal(again.ok, true);
+  if (again.ok) {
+    assert.equal(again.action, "move");
+    assert.equal(again.draft.slots.LB, mandy);
+    assert.equal(lineupInvariants(again.draft).length, 0);
+  }
+}
+
+{
+  const full = emptyLineupDraft();
+  FORMATION_SLOT_CODES.forEach((code, i) => {
+    full.slots[code] = `p-${i}`;
+  });
+  assert.equal(FORMATION_SLOT_CODES.length, 11);
+  assert.equal(lineupInvariants(full).length, 0);
+  full.slots.SP = "p-0";
+  assert.ok(lineupInvariants(full).some((e) => e.includes("dubbel")));
 }
 
 console.log("lineup-assignment.test.ts: ok");

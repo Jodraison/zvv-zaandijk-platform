@@ -3,6 +3,10 @@
 import { randomUUID } from "crypto";
 import { mutateDb } from "@/lib/data/mutate";
 import { FORMATION_SLOT_CODES, type FormationSlotCode } from "@/lib/match/formation-4231";
+import {
+  lineupSaveRequiresValidFormation,
+  resolveLineupSaveStatus,
+} from "@/lib/match/lineup-editability";
 import { validateConfirmedFormation } from "@/lib/match/match-shape";
 import { isSeasonSquadPlayer } from "@/lib/match-lineup";
 import { isGuestPlayer } from "@/lib/players/season-squad";
@@ -24,10 +28,7 @@ export async function saveMatchFormationAction(raw: {
   const bench = [...new Set(raw.bench ?? [])];
   const absent = [...new Set(raw.absent ?? [])];
 
-  if (raw.confirm) {
-    const v = validateConfirmedFormation(slots, bench);
-    if (!v.ok) return { ok: false, error: v.error };
-  }
+  const formationCheck = validateConfirmedFormation(slots, bench);
 
   const allIds = [
     ...FORMATION_SLOT_CODES.map((c) => slots[c]).filter((id): id is string => !!id),
@@ -44,6 +45,22 @@ export async function saveMatchFormationAction(raw: {
         const match = db.matches.find((m) => m.id === matchId);
         if (!match) throw new Error("Wedstrijd niet gevonden.");
         if (match.season_id !== seasonId) throw new Error("Seizoen komt niet overeen.");
+
+        const currentLineupStatus = match.lineup_status === "confirmed" ? "confirmed" : "draft";
+        const mustBeValid = lineupSaveRequiresValidFormation({
+          matchStatus: match.status,
+          currentLineupStatus,
+          confirm: raw.confirm,
+        });
+        if (mustBeValid && !formationCheck.ok) {
+          throw new Error(formationCheck.error);
+        }
+        const nextStatus = resolveLineupSaveStatus({
+          matchStatus: match.status,
+          currentLineupStatus,
+          confirm: raw.confirm,
+          formationValid: formationCheck.ok,
+        });
 
         const rosterGuestIds = new Set(
           db.match_matchday_roster.filter((r) => r.match_id === matchId).map((r) => r.player_id),
@@ -95,8 +112,12 @@ export async function saveMatchFormationAction(raw: {
           });
         }
 
-        match.lineup_status = raw.confirm ? "confirmed" : "draft";
-        match.lineup_confirmed_at = raw.confirm ? new Date().toISOString() : null;
+        match.lineup_status = nextStatus;
+        if (nextStatus === "confirmed") {
+          match.lineup_confirmed_at = match.lineup_confirmed_at ?? new Date().toISOString();
+        } else {
+          match.lineup_confirmed_at = null;
+        }
       },
       {
         action: () => "update",

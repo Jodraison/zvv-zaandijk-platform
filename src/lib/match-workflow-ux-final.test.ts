@@ -59,7 +59,8 @@ console.log("→ match-workflow-ux-final");
   assert.match(formEditor, /Afwezig/);
   assert.match(formEditor, /Nog indelen/);
   assert.match(formEditor, /Opstelling bevestigen/);
-  assert.match(formEditor, /Wedstrijdvoorbereiding compleet/);
+  assert.match(formEditor, /Wijzigingen opslaan/);
+  assert.match(formEditor, /tot de wedstrijd nog wijzigbaar/);
   assert.match(formEditor, /MatchPlayerPicker/);
   assert.match(formEditor, /Gastspeelster toevoegen/);
 

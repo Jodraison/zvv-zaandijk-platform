@@ -47,9 +47,12 @@ assert.match(editor, /Op veld/);
 assert.match(editor, /Gastspeelster toevoegen/);
 assert.match(editor, /saveMatchFormationAction/);
 assert.match(editor, /Verplaats/);
-assert.match(editor, /Verwissel/);
-assert.match(editor, /Vervang/);
+assert.match(editor, /Verwisselen/);
+assert.match(editor, /Vervangen/);
 assert.match(editor, /Naar bank/);
+assert.match(editor, /kind: "occupied"/);
+assert.match(editor, /data-testid="lineup-occupied-actions"/);
+assert.match(editor, /Wijzigingen opslaan/);
 assert.doesNotMatch(editor, /Maak eerst een slot leeg/);
 assert.doesNotMatch(editor, /disabledIds=\{new Set\(\[\.\.\.used\]/);
 

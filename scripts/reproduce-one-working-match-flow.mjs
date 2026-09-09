@@ -332,7 +332,7 @@ try {
     await page.waitForTimeout(1000);
     await shot("13-bevestigen-poging.png");
     const t = await bodyText();
-    if (/Wedstrijdvoorbereiding compleet/i.test(t)) {
+    if (/Wedstrijdvoorbereiding compleet|tot de wedstrijd nog wijzigen/i.test(t)) {
       ok("bevestiging compleet (onverwacht als incompleet?)");
     } else if (/basis|keeper|indelen|vul/i.test(t)) {
       ok("validatiefouten zichtbaar bij incomplete bevestiging");

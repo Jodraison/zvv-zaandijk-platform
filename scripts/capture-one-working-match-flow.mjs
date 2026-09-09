@@ -452,7 +452,7 @@ try {
   await clickConfirmLineup();
   await shot("12-lineup-confirmed");
   let body = await page.locator("body").innerText();
-  if (!/Wedstrijdvoorbereiding compleet|Opstelling bevestigd/i.test(body)) {
+  if (!/Wedstrijdvoorbereiding compleet|Opstelling bevestigd|tot de wedstrijd nog wijzigen/i.test(body)) {
     await assignAllRemaining();
     await clickConfirmLineup();
     await shot("12-lineup-confirmed");
@@ -460,7 +460,7 @@ try {
   }
   mark(
     "lineup_confirmed",
-    /Wedstrijdvoorbereiding compleet|Opstelling bevestigd/i.test(body),
+    /Wedstrijdvoorbereiding compleet|Opstelling bevestigd|tot de wedstrijd nog wijzigen/i.test(body),
     body.match(/Nog \d+|Keeper|Wedstrijdvoorbereiding|Opstelling bevestigd/)?.[0] ??
       body.slice(0, 160),
   );

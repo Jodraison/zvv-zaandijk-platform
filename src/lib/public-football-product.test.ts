@@ -26,7 +26,7 @@ assert.equal(bindingByName("Naomi Lattig")?.display_position, "CB");
 assert.equal(bindingByName("Naomi Lattig")?.line, "DEF");
 assert.equal(bindingByName("Evy Nibbering")?.display_position, "GK");
 assert.equal(bindingByName("Evy Nibbering")?.line, "GK");
-assert.equal(SEASON_2026_27_SQUAD_POSITIONS.length, 20);
+assert.equal(SEASON_2026_27_SQUAD_POSITIONS.length, 21);
 
 const expected = [
   ["Jelisa De Jonge", "GK"],
@@ -40,6 +40,7 @@ const expected = [
   ["Melissa Rietveld", "CAM"],
   ["Dionne van Dijk", "CVM"],
   ["Nienke Hoffman", "SP"],
+  ["Emie Agema", "SP"],
   ["Andrada Timmer", "LM-RM"],
   ["Maura Hoffman", "LB"],
   ["Melissa Donkers", "RB"],

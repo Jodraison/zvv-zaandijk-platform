@@ -29,9 +29,10 @@ assert.match(pitch, /Kies speelster/);
 
 const editor = readFileSync(join(root, "src/components/admin/match-formation-editor.tsx"), "utf8");
 assert.match(editor, /Op veld/);
-assert.match(editor, /fieldPickPlayerId/);
+assert.match(editor, /field-pick/);
 assert.match(editor, /Concept bewaren/);
 assert.match(editor, /Opstelling bevestigen/);
+assert.match(editor, /Wijzigingen opslaan/);
 
 const picker = readFileSync(join(root, "src/components/admin/match-player-picker.tsx"), "utf8");
 assert.match(picker, /items-center justify-center/);

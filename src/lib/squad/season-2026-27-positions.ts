@@ -11,10 +11,11 @@ export type SquadPositionBinding = {
   line: PlayerPosition;
 };
 
-function lineFromCode(code: string): PlayerPosition {
+/** Linie die bij een display-code hoort. `position` (GK|DEF|MID|ATT) moet hiermee kloppen. */
+export function lineFromDisplayCode(code: string): PlayerPosition {
   const c = code.toUpperCase();
   if (c === "GK") return "GK";
-  if (["CB", "LB", "RB", "LWB", "RWB"].includes(c)) return "DEF";
+  if (["CB", "LCB", "RCB", "LB", "RB", "LWB", "RWB"].includes(c)) return "DEF";
   if (["SP", "ST", "CF", "LW", "RW"].some((x) => c === x || c.startsWith(`${x}-`) || c.endsWith(`-${x}`))) {
     // LM-SP → ATT; pure wing mid codes stay MID unless SP is primary
     if (c.includes("SP") || c === "ST" || c === "CF") return "ATT";
@@ -36,6 +37,7 @@ const RAW: { full_name: string; display_position: string }[] = [
   { full_name: "Melissa Rietveld", display_position: "CAM" },
   { full_name: "Dionne van Dijk", display_position: "CVM" },
   { full_name: "Nienke Hoffman", display_position: "SP" },
+  { full_name: "Emie Agema", display_position: "SP" },
   { full_name: "Andrada Timmer", display_position: "LM-RM" },
   { full_name: "Maura Hoffman", display_position: "LB" },
   { full_name: "Melissa Donkers", display_position: "RB" },
@@ -49,7 +51,7 @@ const RAW: { full_name: string; display_position: string }[] = [
 
 export const SEASON_2026_27_SQUAD_POSITIONS: readonly SquadPositionBinding[] = RAW.map((r) => ({
   ...r,
-  line: lineFromCode(r.display_position),
+  line: lineFromDisplayCode(r.display_position),
 }));
 
 export { SEASON_2026_27_ID };

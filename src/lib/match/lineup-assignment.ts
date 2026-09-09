@@ -74,6 +74,8 @@ export function lineupInvariants(draft: LineupDraft): string[] {
   }
   for (const id of draft.bench) mark(id, "bank");
   for (const id of draft.absent) mark(id, "afwezig");
+  const fieldCount = FORMATION_SLOT_CODES.filter((code) => !!draft.slots[code]).length;
+  if (fieldCount > 11) errors.push(`max 11 veldspelers (${fieldCount})`);
   return errors;
 }
 

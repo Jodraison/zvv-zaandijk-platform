@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { FORMATION_4231_SLOTS, type FormationSlotCode } from "@/lib/match/formation-4231";
 import { validateConfirmedFormation } from "@/lib/match/match-shape";
 import {
@@ -13,6 +12,10 @@ import {
   type LineupDraft,
   unassignPlayer,
 } from "@/lib/match/lineup-assignment";
+import {
+  futureConfirmedLineupIsEditable,
+  shouldStayOnLineupEditorAfterSave,
+} from "@/lib/match/lineup-editability";
 import { saveMatchFormationAction } from "@/actions/match-formation";
 import { FormationPitch } from "@/components/match/formation-pitch";
 import { MatchPlayerPicker, type PickerPlayer } from "@/components/admin/match-player-picker";
@@ -113,7 +116,6 @@ export function MatchFormationEditor({
   );
   const [dialog, setDialog] = useState<LineupDialog>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [prepComplete, setPrepComplete] = useState(false);
   const [guestOpen, setGuestOpen] = useState(false);
   const [tab, setTab] = useState<SelectionTab>("basis");
   const [pending, startTransition] = useTransition();
@@ -268,39 +270,18 @@ export function MatchFormationEditor({
           });
           return;
         }
-        setPrepComplete(true);
-        setMessage("Wedstrijdvoorbereiding compleet.");
-        queueMicrotask(() => router.refresh());
-        return;
+        if (shouldStayOnLineupEditorAfterSave(matchStatus)) {
+          setMessage("Opstelling bijgewerkt. Je kunt tot de wedstrijd nog wijzigen.");
+          queueMicrotask(() => router.refresh());
+          return;
+        }
       }
-      setMessage("Concept bewaard.");
+      setMessage(confirm ? "Opstelling bevestigd." : "Concept bewaard.");
       queueMicrotask(() => router.refresh());
     });
   }
 
-  if (prepComplete) {
-    return (
-      <section className="space-y-4 rounded-2xl border border-emerald-200 bg-emerald-50/60 p-6 md:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-800">Klaar</p>
-        <h2 className="font-[family-name:var(--font-display)] text-3xl text-zvv-ink">Wedstrijdvoorbereiding compleet</h2>
-        <p className="max-w-xl text-sm text-zvv-muted">
-          Basis, bank en afwezig zijn vastgelegd. Na de wedstrijd vul je eindstand, doelpunten, wissels en MVP in.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <Link href={`/beheer/wedstrijden?season=${encodeURIComponent(seasonId)}`} className="club-btn-primary">
-            Terug naar wedstrijden
-          </Link>
-          <Link
-            href={matchWorkflowHref(matchId, seasonId, "opstelling")}
-            className="club-btn-secondary"
-            onClick={() => setPrepComplete(false)}
-          >
-            Wedstrijd bekijken
-          </Link>
-        </div>
-      </section>
-    );
-  }
+  const confirmedFuture = futureConfirmedLineupIsEditable(matchStatus, initialStatus);
 
   const pickerSlot = dialog?.kind === "pick-player" ? dialog.slot : dialog?.kind === "replace-pick" ? dialog.slot : null;
   const slotLabel = pickerSlot
@@ -318,17 +299,30 @@ export function MatchFormationEditor({
             1-4-2-3-1 · basis, bank en afwezig
           </h2>
           <p className="mt-1 text-sm text-zvv-muted">
-            Status: {initialStatus === "confirmed" ? "Bevestigd" : "Concept"} · tik een speelster om te verplaatsen,
-            verwisselen of vervangen
+            Status:{" "}
+            {confirmedFuture
+              ? "Bevestigd — tot de wedstrijd nog wijzigbaar"
+              : initialStatus === "confirmed"
+                ? "Bevestigd"
+                : "Concept"}{" "}
+            · tik een speelster om te verplaatsen, verwisselen of vervangen
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <button type="button" disabled={pending} onClick={() => save(false)} className="club-btn-secondary club-btn-primary-sm">
-            Concept bewaren
-          </button>
-          <button type="button" disabled={pending} onClick={() => save(true)} className="club-btn-primary club-btn-primary-sm">
-            Opstelling bevestigen
-          </button>
+          {confirmedFuture ? (
+            <button type="button" disabled={pending} onClick={() => save(true)} className="club-btn-primary club-btn-primary-sm">
+              Wijzigingen opslaan
+            </button>
+          ) : (
+            <>
+              <button type="button" disabled={pending} onClick={() => save(false)} className="club-btn-secondary club-btn-primary-sm">
+                Concept bewaren
+              </button>
+              <button type="button" disabled={pending} onClick={() => save(true)} className="club-btn-primary club-btn-primary-sm">
+                Opstelling bevestigen
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -540,7 +534,12 @@ export function MatchFormationEditor({
         players={
           dialog?.kind === "swap-pick"
             ? sortedPlayers.filter((p) => locationOfPlayer(draft, p.player_id).kind === "field" && slots[dialog.slot] !== p.player_id)
-            : sortedPlayers
+            : dialog?.kind === "replace-pick"
+              ? sortedPlayers.filter((p) => {
+                  const loc = locationOfPlayer(draft, p.player_id);
+                  return loc.kind === "bench" || loc.kind === "unassigned";
+                })
+              : sortedPlayers
         }
         playerHint={hintFor}
         allowClear={dialog?.kind === "pick-player"}
@@ -580,7 +579,7 @@ export function MatchFormationEditor({
             <h3 className="mt-1 font-[family-name:var(--font-display)] text-xl text-zvv-ink">
               {byId[occupiedPlayerId]?.name ?? "Speelster"}
             </h3>
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="mt-4 grid grid-cols-2 gap-2" data-testid="lineup-occupied-actions">
               <button
                 type="button"
                 className="club-btn-primary club-btn-primary-sm"
@@ -589,13 +588,13 @@ export function MatchFormationEditor({
                 Verplaats
               </button>
               <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => setDialog({ kind: "swap-pick", slot: dialog.slot })}>
-                Verwissel
+                Verwisselen
               </button>
               <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => moveToBench(occupiedPlayerId)}>
                 Naar bank
               </button>
               <button type="button" className="club-btn-secondary club-btn-primary-sm" onClick={() => setDialog({ kind: "replace-pick", slot: dialog.slot })}>
-                Vervang
+                Vervangen
               </button>
             </div>
             <div className="mt-2 flex gap-2">
