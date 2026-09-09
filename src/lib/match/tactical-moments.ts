@@ -5,6 +5,9 @@
 import type { MatchPositionChange, MatchSubstitution } from "@/types";
 import { isFormationSlotCode, type FormationSlotCode } from "@/lib/match/formation-4231";
 
+/** Tweede helft start in deze administratie als 45′ (WSV na-rust rotatie). */
+export const SECOND_HALF_START_MINUTE = 45;
+
 function newGroupId(): string {
   if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
   return `g-${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -69,6 +72,7 @@ export function groupRowsIntoMoments(
     });
   }
 
+  const ungroupedPosGroup = new Map<number, string>();
   const sortedPos = [...pos].sort(
     (a, b) => a.minute - b.minute || (a.sort_order ?? 0) - (b.sort_order ?? 0) || a.id.localeCompare(b.id),
   );
@@ -99,8 +103,9 @@ export function groupRowsIntoMoments(
       });
       continue;
     }
-    const g = newGroupId();
-    const key = groupKey(c.minute, null, `pos-${c.id}`);
+    const g = ungroupedPosGroup.get(c.minute) ?? newGroupId();
+    ungroupedPosGroup.set(c.minute, g);
+    const key = groupKey(c.minute, null, `ungrouped-pos-${c.minute}`);
     const row = ensure(key, c.minute, g);
     row.positionChanges.push({
       id: c.id,
@@ -150,6 +155,16 @@ export function emptyMoment(minute = 75): TacticalMomentDraft {
     minute,
     substitutions: [{ player_out_id: "", player_in_id: "", to_slot: "" }],
     positionChanges: [],
+  };
+}
+
+/** Alleen positierotatie — geen Uit/In vereist. */
+export function emptyPositionMoment(minute = SECOND_HALF_START_MINUTE): TacticalMomentDraft {
+  return {
+    groupId: newGroupId(),
+    minute,
+    substitutions: [],
+    positionChanges: [{ player_id: "", from_slot: "", to_slot: "" }],
   };
 }
 

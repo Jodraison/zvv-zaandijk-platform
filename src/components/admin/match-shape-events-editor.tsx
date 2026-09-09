@@ -1,11 +1,12 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { FORMATION_4231_SLOTS, FORMATION_SLOT_CODES, type FormationSlotCode } from "@/lib/match/formation-4231";
+import { FORMATION_4231_SLOTS, FORMATION_SLOT_CODES, isFormationSlotCode, type FormationSlotCode } from "@/lib/match/formation-4231";
 import { saveMatchShapeEventsAction } from "@/actions/match-shape-events";
 import { getMatchShapeAtMinute, slotOfShape, validateShapeOccupancy } from "@/lib/match/match-shape";
 import {
   emptyMoment,
+  emptyPositionMoment,
   flattenMoments,
   groupRowsIntoMoments,
   type TacticalMomentDraft,
@@ -163,6 +164,10 @@ export function MatchShapeEventsEditor({
     setMoments((prev) => [...prev, emptyMoment(draftMinute)]);
   }
 
+  function addPositionMoment() {
+    setMoments((prev) => [...prev, emptyPositionMoment(draftMinute)]);
+  }
+
   function save() {
     setMessage(null);
     const flat = flattenMoments(moments);
@@ -217,11 +222,12 @@ export function MatchShapeEventsEditor({
             Wisselmoment
           </h2>
           <p className="mt-1 text-sm text-zvv-muted">
-            Eén moment kan een wissel én meerdere positiewijzigingen op dezelfde minuut bevatten.
+            Eén moment = één minuut. Alleen positiewijzigingen is geldig. Bezette slots mogen als
+            iemand binnen dit moment verder schuift.
           </p>
         </div>
         <button type="button" disabled={pending} onClick={save} className="club-btn-primary club-btn-primary-sm">
-          Opslaan
+          Opslaan moment
         </button>
       </div>
 
@@ -242,6 +248,9 @@ export function MatchShapeEventsEditor({
         <button type="button" onClick={addMoment} className="club-btn-secondary club-btn-primary-sm">
           + Wisselmoment
         </button>
+        <button type="button" onClick={addPositionMoment} className="club-btn-secondary club-btn-primary-sm">
+          + Positiewijzigingsmoment
+        </button>
       </div>
 
       {moments.length === 0 ? <p className="text-sm text-zvv-muted">Nog geen wisselmomenten — later invullen mag.</p> : null}
@@ -251,6 +260,8 @@ export function MatchShapeEventsEditor({
         const onField = sortedPlayers.filter((p) => before.onPitch.includes(p.player_id));
         const offField = sortedPlayers.filter((p) => !before.onPitch.includes(p.player_id));
         const sub = m.substitutions[0] ?? { player_out_id: "", player_in_id: "", to_slot: "" };
+        const hasSub = m.substitutions.some((s) => s.player_in_id || s.player_out_id);
+        const movingIds = new Set(m.positionChanges.map((c) => c.player_id).filter(Boolean));
 
         function patchMoment(patch: Partial<TacticalMomentDraft>) {
           setMoments((prev) => prev.map((row, i) => (i === idx ? { ...row, ...patch } : row)));
@@ -283,6 +294,7 @@ export function MatchShapeEventsEditor({
               </button>
             </div>
 
+            {hasSub || m.substitutions.length > 0 ? (
             <div className="grid gap-2 sm:grid-cols-2">
               <label className="space-y-1 text-xs font-semibold text-zvv-muted">
                 Uit
@@ -331,12 +343,23 @@ export function MatchShapeEventsEditor({
                 </select>
               </label>
             </div>
+            ) : (
+              <button
+                type="button"
+                className="text-sm font-semibold text-zvv-primary"
+                onClick={() => patchMoment({ substitutions: [{ player_out_id: "", player_in_id: "", to_slot: "" }] })}
+              >
+                + wissel toevoegen
+              </button>
+            )}
 
             <div className="space-y-2 border-t border-zvv-border/70 pt-3">
               <p className="text-xs font-bold uppercase tracking-[0.14em] text-zvv-primary">Positiewijzigingen</p>
               {m.positionChanges.map((c, pIdx) => {
                 const fromAuto = c.player_id ? slotOfShape(before.slots, c.player_id) : null;
                 const from = fromAuto ?? (c.from_slot || "");
+                const occupant = c.to_slot && isFormationSlotCode(c.to_slot) ? before.slots[c.to_slot] : null;
+                const occupantMovesAway = !!(occupant && movingIds.has(occupant) && occupant !== c.player_id);
                 return (
                   <div key={`${m.groupId}-pos-${pIdx}`} className="grid gap-2 rounded-xl border border-zvv-border bg-white p-2 sm:grid-cols-[1fr_auto_auto]">
                     <label className="space-y-1 text-xs font-semibold text-zvv-muted">
@@ -397,9 +420,17 @@ export function MatchShapeEventsEditor({
                         {slotOpts.map((slot) => (
                           <option key={slot.code} value={slot.code}>
                             {slot.code}
+                            {before.slots[slot.code] && before.slots[slot.code] !== c.player_id
+                              ? movingIds.has(before.slots[slot.code]!)
+                                ? " · komt vrij"
+                                : ` · ${nameOf(before.slots[slot.code]!)}`
+                              : ""}
                           </option>
                         ))}
                       </select>
+                      {occupant && occupantMovesAway ? (
+                        <span className="font-normal text-zvv-muted">{c.to_slot} komt vrij binnen dit moment</span>
+                      ) : null}
                     </label>
                     <button
                       type="button"

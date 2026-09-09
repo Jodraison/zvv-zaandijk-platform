@@ -168,6 +168,74 @@ function applySingleSub(state: ShapeState, sub: MatchSubstitution): void {
   state.bench.add(outId);
 }
 
+export type AtomicGroupInput = {
+  leaving: string[];
+  entering: { id: string; to: FormationSlotCode | null; outId?: string | null }[];
+  moves: { id: string; to: FormationSlotCode }[];
+};
+
+/**
+ * Twee-fasen: lees pre-state, schrijf alleen de kandidaat-eindstate.
+ * Geen sequentiële tussenstates — cycles van 2+ speelsters zijn geldig.
+ */
+export function evaluateAtomicGroup(
+  preSlots: Record<FormationSlotCode, string | null>,
+  input: AtomicGroupInput,
+): { ok: boolean; slots: Record<FormationSlotCode, string | null>; errors: string[] } {
+  const errors: string[] = [];
+  const leaving = new Set(input.leaving);
+  const destinations = new Map<string, FormationSlotCode>();
+
+  for (const code of FORMATION_SLOT_CODES) {
+    const pid = preSlots[code];
+    if (pid && !leaving.has(pid)) destinations.set(pid, code);
+  }
+  for (const move of input.moves) {
+    if (leaving.has(move.id)) {
+      errors.push(`Positiewijziging: ${move.id} gaat ook eruit`);
+      continue;
+    }
+    destinations.set(move.id, move.to);
+  }
+  for (const inn of input.entering) {
+    const vacated = inn.outId ? slotOfShape(preSlots, inn.outId) : null;
+    const to = inn.to ?? vacated;
+    if (!to) {
+      errors.push(`Wissel: geen slot voor inkomende speelster ${inn.id}`);
+      continue;
+    }
+    destinations.set(inn.id, to);
+  }
+
+  const next = emptyFormationMap();
+  const usedSlots = new Set<FormationSlotCode>();
+  const usedPlayers = new Set<string>();
+  for (const [pid, slot] of destinations) {
+    if (usedPlayers.has(pid)) errors.push(`Speelster ${pid} heeft twee veldposities`);
+    if (usedSlots.has(slot)) errors.push(`Slot ${slot} heeft twee bezetters`);
+    usedPlayers.add(pid);
+    usedSlots.add(slot);
+    next[slot] = pid;
+  }
+
+  const before = new Set(
+    FORMATION_SLOT_CODES.map((c) => preSlots[c]).filter((id): id is string => !!id),
+  );
+  const expected = new Set(before);
+  for (const id of leaving) expected.delete(id);
+  for (const inn of input.entering) expected.add(inn.id);
+  const after = new Set(usedPlayers);
+  for (const id of expected) {
+    if (!after.has(id)) errors.push(`Speelster ${id} verdween zonder wissel`);
+  }
+  for (const id of after) {
+    if (!expected.has(id)) errors.push(`Speelster ${id} verscheen zonder wissel`);
+  }
+  if (after.size > 11) errors.push("Meer dan 11 speelsters op het veld");
+
+  return { ok: errors.length === 0, slots: next, errors };
+}
+
 /**
  * Atomair wisselmoment: eindbestemmingen, geen sequentiële tussenstates.
  * Losse (ongegroepeerde) events blijven de bestaande swap/sub-semantiek gebruiken.
@@ -201,41 +269,18 @@ function applyAtomicGroup(state: ShapeState, cluster: TimelineEvent[]): void {
     }
   }
 
-  const destinations = new Map<string, FormationSlotCode>();
-  for (const code of FORMATION_SLOT_CODES) {
-    const pid = state.slots[code];
-    if (pid && !leaving.has(pid)) destinations.set(pid, code);
-  }
-  for (const move of moves) {
-    if (leaving.has(move.id)) {
-      state.warnings.push(`Positiewijziging ${move.eventId}: speelster gaat ook eruit`);
-      continue;
-    }
-    destinations.set(move.id, move.to);
-  }
-  for (const inn of entering) {
+  const enteringWithOut = entering.map((inn) => {
     const outForThis = cluster.find((ev) => ev.kind === "sub" && ev.sub.player_in_id === inn.id);
     const outId = outForThis && outForThis.kind === "sub" ? outForThis.sub.player_out_id : null;
-    const vacated = outId ? slotOfShape(state.slots, outId) : null;
-    const to = inn.to ?? vacated;
-    if (!to) {
-      state.warnings.push(`Wissel ${inn.eventId}: geen slot voor inkomende speelster`);
-      continue;
-    }
-    destinations.set(inn.id, to);
-  }
-
-  const next = emptyFormationMap();
-  const usedSlots = new Set<FormationSlotCode>();
-  const usedPlayers = new Set<string>();
-  for (const [pid, slot] of destinations) {
-    if (usedPlayers.has(pid)) state.warnings.push(`Wisselmoment: ${pid} dubbel toegewezen`);
-    if (usedSlots.has(slot)) state.warnings.push(`Wisselmoment: slot ${slot} dubbel bezet`);
-    usedPlayers.add(pid);
-    usedSlots.add(slot);
-    next[slot] = pid;
-  }
-  state.slots = next;
+    return { id: inn.id, to: inn.to, outId };
+  });
+  const evaluated = evaluateAtomicGroup(state.slots, {
+    leaving: [...leaving],
+    entering: enteringWithOut,
+    moves,
+  });
+  state.warnings.push(...evaluated.errors);
+  state.slots = evaluated.slots;
 
   for (const outId of leaving) {
     state.substitutedOut.add(outId);

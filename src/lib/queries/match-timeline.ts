@@ -143,7 +143,7 @@ function buildTacticalTimeline(db: ClubDatabase, matchId: string): MatchTimeline
       if (ungroupedSubs.length === 1) {
         key = keyFor(c.minute, null, `sub-${ungroupedSubs[0]!.id}`);
       } else {
-        key = keyFor(c.minute, null, `pos-${c.id}`);
+        key = keyFor(c.minute, null, `ungrouped-pos-${c.minute}`);
       }
     }
     const b = ensure(key, c.minute, c.sort_order ?? 0);

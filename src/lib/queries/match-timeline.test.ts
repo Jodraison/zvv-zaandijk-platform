@@ -67,4 +67,30 @@ if (rows[0]?.kind === "tactical_moment") {
   assert.ok(rows[0].positionChanges.some((c) => c.playerName === "Andrada Timmer" && c.fromSlot === "RB" && c.toSlot === "RM"));
 }
 
+{
+  const posOnly = {
+    players: [
+      { id: "renee", full_name: "Renée Koopman" },
+      { id: "dionne", full_name: "Dionne van Dijk" },
+      { id: "andrada", full_name: "Andrada Timmer" },
+    ],
+    match_goal_events: [],
+    match_card_events: [],
+    match_substitutions: [],
+    match_position_changes: [
+      { id: "a", match_id: "wsv", player_id: "renee", minute: 45, from_slot: "RB", to_slot: "RCVM", change_group_id: null, sort_order: 0 },
+      { id: "b", match_id: "wsv", player_id: "dionne", minute: 45, from_slot: "RCVM", to_slot: "RM", change_group_id: null, sort_order: 1 },
+      { id: "c", match_id: "wsv", player_id: "andrada", minute: 45, from_slot: "RM", to_slot: "RB", change_group_id: null, sort_order: 2 },
+    ],
+  } as unknown as ClubDatabase;
+  const tl = buildMatchTimeline(posOnly, "wsv");
+  assert.equal(tl.length, 1);
+  assert.equal(tl[0]?.kind, "tactical_moment");
+  if (tl[0]?.kind === "tactical_moment") {
+    assert.equal(tl[0].minute, 45);
+    assert.equal(tl[0].substitutions.length, 0);
+    assert.equal(tl[0].positionChanges.length, 3);
+  }
+}
+
 console.log("match-timeline.test.ts: ok");

@@ -3,6 +3,7 @@
 import { randomUUID } from "crypto";
 import { mutateDb } from "@/lib/data/mutate";
 import { FORMATION_SLOT_CODES, isFormationSlotCode } from "@/lib/match/formation-4231";
+import { getMatchShapeAtMinute, validateShapeOccupancy } from "@/lib/match/match-shape";
 import type { MatchPositionChange, MatchSubstitution } from "@/types";
 
 export type ShapeSubInput = {
@@ -110,6 +111,15 @@ export async function saveMatchShapeEventsAction(raw: {
           sort_order: c.sort_order ?? i,
         }));
         db.match_position_changes = [...(db.match_position_changes ?? []), ...posRows];
+
+        const preview = getMatchShapeAtMinute(db, matchId, 90);
+        const occupancy = validateShapeOccupancy(preview);
+        if (occupancy.length) {
+          throw new Error(occupancy[0] ?? "Eindopstelling na dit moment is ongeldig.");
+        }
+        if (preview.warnings.some((w) => /dubbel|verdween|twee bezetters/i.test(w))) {
+          throw new Error(preview.warnings.find((w) => /dubbel|verdween|twee bezetters/i.test(w)) ?? "Ongeldig tactisch moment.");
+        }
 
         void FORMATION_SLOT_CODES;
       },
